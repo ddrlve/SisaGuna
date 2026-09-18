@@ -1,6 +1,6 @@
 # SisaGuna
 
-Aplikasi mobile redistribusi makanan untuk UMKM kuliner Indonesia.
+Aplikasi mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia.
 Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum
 menjadi sampah. Pembeli di sekitar dapat membeli atau mengambilnya langsung di tempat by app.
 
