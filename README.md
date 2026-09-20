@@ -2,7 +2,7 @@
 
 Aplikasi mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum menjadi sampah, pembeli di sekitar membeli atau mengambilnya langsung di tempat lewat app, bayar di lokasi saat ambil.
 
-Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Konteks lengkap keputusan produk, stack, dan aturan kerja ada di `ANDROID_CLAUDE.md`.
+Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack, dan aturan kerja ada di `ANDROID_CLAUDE.md`.
 
 Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
 
@@ -30,7 +30,7 @@ Layar Home sudah dibangun dengan data mock (belum tersambung ke Supabase). Layar
 | Bahasa | Kotlin | Wajib untuk Compose |
 | Navigasi | Navigation Compose | Type safe nav dengan sealed class routes |
 | Async / DI | Kotlin Coroutines + Flow, Hilt | Standar Android modern |
-| Backend | Supabase (supabase kt) | Belum tersambung, masih pakai mock repository |
+| Backend | Supabase (supabase kt) | Dikerjakan terpisah oleh anggota tim lain, repo ini masih pakai mock repository |
 | Image loading | Coil | Ringan, native Compose support |
 | Local state | ViewModel + StateFlow | Bukan LiveData |
 | Build | Gradle 8.9, AGP 8.5.2, compileSdk 34, minSdk 26 | |
@@ -108,7 +108,7 @@ Atau lewat terminal:
 
 ## Deploy Production
 
-Belum ada build production. Rencana ke depan: backend Supabase disambungkan begitu keputusan project (lihat `ANDROID_CLAUDE.md`) dikonfirmasi, lalu distribusi lewat Play Store internal testing untuk kebutuhan demo.
+Belum ada build production. Backend Supabase dikerjakan di repo terpisah oleh anggota tim lain, disambungkan ke app ini begitu keputusan project (lihat `ANDROID_CLAUDE.md`) dikonfirmasi, lalu distribusi lewat Play Store internal testing untuk kebutuhan demo.
 
 ## Catatan
 
