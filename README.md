@@ -4,7 +4,12 @@ Aplikasi mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB 
 Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum
 menjadi sampah. Pembeli di sekitar dapat membeli atau mengambilnya langsung di tempat by app.
 
-Venture Creation (ENPR6312), BINUS, Kelompok 4 kelas LZ01.
+Venture Creation (ENPR6312), BINUS.
+
+Kelompok 4 
+
+kelas LZ01.
+
 Tema: Lingkungan Alam.
 
 Canva PPT Idea: [PPT](https://canva.link/d403zux6vbz05gn)
