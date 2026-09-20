@@ -6,11 +6,11 @@ menjadi sampah. Pembeli di sekitar dapat membeli atau mengambilnya langsung di t
 
 Venture Creation (ENPR6312), BINUS.
 
-Kelompok 4 
+Group 4.
 
-kelas LZ01.
+Class LZ01.
 
-Tema: Lingkungan Alam.
+Theme: Lingkungan Alam.
 
 Canva PPT Idea: [PPT](https://canva.link/d403zux6vbz05gn)
 
