@@ -7,6 +7,6 @@ menjadi sampah. Pembeli di sekitar dapat membeli atau mengambilnya langsung di t
 Venture Creation (ENPR6312), BINUS, Kelompok 4 kelas LZ01.
 Tema: Lingkungan Alam.
 
-Canva PPT Idea: https://canva.link/d403zux6vbz05gn
+Canva PPT Idea: [PPT](https://canva.link/d403zux6vbz05gn)
 
-Figma: https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1
+Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
