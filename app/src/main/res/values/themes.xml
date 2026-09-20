@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash/launcher theme only. All in-app theming is done by ui/theme/Theme.kt (Compose). -->
+    <style name="Theme.SisaGuna" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#10B981</item>
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
+</resources>

@@ -1,0 +1,937 @@
+Landing Page
+/* Landing Page */
+
+box-sizing: border-box;
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+isolation: isolate;
+
+position: relative;
+width: 393px;
+height: 852px;
+min-height: 852px;
+
+background: #FAFAFA;
+border: 1px solid #E5E5E5;
+border-radius: 40px;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 393px;
+height: 700px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+z-index: 0;
+
+
+/* Status bar */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 2.333px 9px 0px;
+
+width: 402px;
+height: 62px;
+
+background: #FFFFFF;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Time */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 6px 0px 0px;
+
+width: 129.5px;
+height: 13px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 1;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+gap: 10px;
+
+width: 37px;
+height: 22px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Time */
+
+width: 37px;
+height: 22px;
+
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 590;
+font-size: 17px;
+line-height: 22px;
+/* identical to box height, or 129% */
+text-align: center;
+
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Dynamic Island */
+
+width: 125px;
+height: 37px;
+
+background: #000000;
+border-radius: 100px;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Levels */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px 1px 0px 0px;
+
+width: 129.5px;
+height: 13px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 1;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 8px 0px 0px;
+gap: 7px;
+
+width: 85.33px;
+height: 13px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Cellular Connection */
+
+width: 19.33px;
+height: 12.33px;
+
+background: #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector */
+
+position: absolute;
+left: 18.8%;
+right: 77.35%;
+top: 2.58%;
+bottom: 2.58%;
+
+background: #000000;
+
+
+/* Vector */
+
+position: absolute;
+left: 12.54%;
+right: 83.6%;
+top: 24.04%;
+bottom: 2.65%;
+
+background: #000000;
+
+
+/* Vector */
+
+position: absolute;
+left: 6.27%;
+right: 89.87%;
+top: 43.81%;
+bottom: 2.58%;
+
+background: #000000;
+
+
+/* Vector */
+
+position: absolute;
+left: 0%;
+right: 96.14%;
+top: 60.88%;
+bottom: 2.58%;
+
+background: #000000;
+
+
+/* Wifi */
+
+width: 16.67px;
+height: 12.33px;
+
+background: #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Battery */
+
+width: 27.33px;
+height: 13px;
+
+background: #000000;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* Hero Area */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+justify-content: space-between;
+align-items: flex-start;
+padding: 24px;
+
+width: 393px;
+height: 320px;
+
+background: url(A beautiful warm organic flat vector illustration featuring a woven basket filled with fresh handpicked local vegetables and artisanal bakery items. The style is clean and minimal, emphasizing eco-friendly food rescue concepts using cream and pastel green colors against a clean background..jpg);
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 8px 16px;
+
+width: 95px;
+height: 33px;
+
+background: #55B931;
+border-radius: 100px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* sisaguna */
+
+width: 63px;
+height: 17px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 14px;
+line-height: 17px;
+/* identical to box height */
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 28px 24px 0px;
+gap: 16px;
+
+width: 393px;
+height: 192px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Selamatkan Makanan, Lindungi Bumi Kita */
+
+width: 345px;
+height: 68px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 700;
+font-size: 26px;
+line-height: 34px;
+/* or 131% */
+
+color: #262626;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Setiap tahun, berton-ton makanan layak makan terbuang sia-sia. Bersama SisaGuna, ambil bagian menyelamatkan surplus makanan lezat di sekitarmu dengan harga sangat terjangkau atau bahkan gratis! */
+
+width: 345px;
+height: 80px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 20px;
+/* or 143% */
+
+color: #737373;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 20px 24px 0px;
+gap: 12px;
+
+width: 393px;
+height: 126px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 345px;
+height: 47px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 32px;
+height: 32px;
+
+background: #F0FDF4;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 🌱 */
+
+width: 14px;
+height: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 17px;
+
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 301px;
+height: 47px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+
+/* 100% Eco-Friendly */
+
+width: 127px;
+height: 17px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 14px;
+line-height: 17px;
+/* identical to box height */
+
+color: #262626;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Mengurangi emisi karbon langsung dari limbah makanan organik. */
+
+width: 301px;
+height: 30px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 15px;
+
+color: #737373;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 12px;
+
+width: 345px;
+height: 47px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 0px;
+
+width: 32px;
+height: 32px;
+
+background: #FFEDD5;
+border-radius: 16px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* 💰 */
+
+width: 14px;
+height: 14px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 17px;
+
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: flex-start;
+padding: 0px;
+
+width: 301px;
+height: 47px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 1;
+
+
+/* Hemat & Berbagi */
+
+width: 114px;
+height: 17px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 14px;
+line-height: 17px;
+/* identical to box height */
+
+color: #262626;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Dapatkan surplus lezat dengan potongan harga s/d 70%. */
+
+width: 301px;
+height: 30px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 12px;
+line-height: 15px;
+
+color: #737373;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 24px;
+gap: 12px;
+
+width: 393px;
+height: 128px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+z-index: 1;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+justify-content: center;
+align-items: center;
+padding: 16px;
+
+width: 345px;
+height: 51px;
+
+background: #55B931;
+border-radius: 100px;
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+align-self: stretch;
+flex-grow: 0;
+
+
+/* Mulai Sekarang */
+
+width: 120px;
+height: 19px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 16px;
+line-height: 19px;
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 4px;
+
+width: 178px;
+height: 17px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Sudah punya akun? */
+
+width: 129px;
+height: 17px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 400;
+font-size: 14px;
+line-height: 17px;
+/* identical to box height */
+
+color: #737373;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Masuk */
+
+width: 45px;
+height: 17px;
+
+font-family: 'Inter';
+font-style: normal;
+font-weight: 600;
+font-size: 14px;
+line-height: 17px;
+/* identical to box height */
+
+color: #4DA62C;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Brand Opening Motion */
+
+position: absolute;
+width: 393px;
+height: 852px;
+left: 0px;
+top: 0px;
+
+background: #49C22E;
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+z-index: 2;
+
+
+/* Organic Orb 1 */
+
+position: absolute;
+width: 92px;
+height: 92px;
+left: 45px;
+top: 250px;
+
+background: rgba(115, 219, 87, 0.55);
+
+
+/* Organic Orb 2 */
+
+position: absolute;
+width: 128px;
+height: 128px;
+left: 265px;
+top: 180px;
+
+background: rgba(92, 207, 64, 0.55);
+
+
+/* Organic Orb 3 */
+
+position: absolute;
+width: 80px;
+height: 80px;
+left: 230px;
+top: 540px;
+
+background: rgba(140, 230, 107, 0.55);
+
+
+/* Logo 26 Opening */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 8px;
+
+position: absolute;
+width: 117px;
+height: 32px;
+left: calc(50% - 117px/2);
+top: calc(50% - 32px/2);
+
+
+
+/* Group 6 */
+
+width: 32px;
+height: 32px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector 4 */
+
+position: absolute;
+width: 23.19px;
+height: 20.04px;
+left: 0px;
+top: 0px;
+
+background: #FFFFFF;
+
+
+/* Vector 5 */
+
+position: absolute;
+width: 23.19px;
+height: 20.04px;
+left: 8.81px;
+top: 11.96px;
+
+background: #FFFFFF;
+transform: rotate(180deg);
+
+
+/* sisaguna */
+
+width: 77px;
+height: 23px;
+
+font-family: 'Plus Jakarta Sans';
+font-style: normal;
+font-weight: 500;
+font-size: 18px;
+line-height: 23px;
+/* identical to box height */
+
+color: #FFFFFF;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+<RelativeLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+android:id="@+id/landing_pag"
+android:layout_width="393dp"
+android:layout_height="852dp"
+android:clipToOutline="true"
+android:background="@drawable/landing_pag"
+ />
+
+<!-- drawable/landing_pag.xml -->
+<vector
+xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:aapt="http://schemas.android.com/aapt"
+android:width="393dp"
+android:height="852dp"
+android:viewportWidth="393"
+android:viewportHeight="852"
+ >
+<group>
+<clip-path
+android:pathData="M40 0H353C375.091 0 393 17.9086 393 40V812C393 834.091 375.091 852 353 852H40C17.9086 852 0 834.091 0 812V40C0 17.9086 17.9086 0 40 0Z"
+/>
+<path
+android:pathData="M0 0V852H393V0"
+android:fillColor="#FAFAFA"
+/>
+<path
+android:pathData="M40 0H353C375.091 0 393 17.9086 393 40V812C393 834.091 375.091 852 353 852H40C17.9086 852 0 834.091 0 812V40C0 17.9086 17.9086 0 40 0Z"
+android:strokeWidth="2"
+android:strokeColor="#E5E5E5"
+/>
+</group>
+</vector>
+
+
+Home Page
+<RelativeLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+android:id="@+id/home"
+android:layout_width="393dp"
+android:layout_height="2120dp"
+android:clipToOutline="true"
+android:background="#F5F5F5"
+ />
+
