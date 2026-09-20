@@ -7,16 +7,17 @@ Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, di
 Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
 
 Link Terkait:
+
 Canva PPT Idea: [PPT](https://canva.link/d403zux6vbz05gn)
+
 Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
 
 ## Contributors
 
-Nama (NIM)
-Nama (NIM)
-Nama (NIM)
-Nama (NIM)
-Nama (NIM)
+- Fadhlan Nur Rachman (2802491690)
+- Dian Rakhmawati Lestari (2802539085)
+- Nasauramecca Nour Haqqanshah Shodiqin (2802541921)
+- Catherine Zaneta Adji (2802512442)
 
 ## Status Pengerjaan
 
