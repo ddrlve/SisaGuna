@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SisaGuna</string>
+
+    <!-- Home -->
+    <string name="home_default_address_label">Rumah</string>
+    <string name="home_wishlist_cd">Favorit</string>
+    <string name="home_notifications_cd">Notifikasi</string>
+    <string name="home_search_placeholder">Cari makanan</string>
+    <string name="home_promo_title">Nikmati makanan GRATIIISSS</string>
+    <string name="home_promo_subtitle">Selamatkan makanan sisa dari mitra sekitarmu</string>
+    <string name="home_category_title">Kategori</string>
+    <string name="home_radius_tag">Radius &lt; 2km</string>
+    <string name="home_see_all">Lihat Semua</string>
+    <string name="home_rail_nearby">Terdekat dari kamu</string>
+    <string name="home_rail_nearby_subtitle">Ayo cepat ambil sebelum waktu habis</string>
+    <string name="home_rail_deals">Buat kamu yang hemat</string>
+    <string name="home_rail_deals_subtitle">Dapatkan sisa makanan dengan gratis</string>
+    <string name="home_rail_animal_feed">Untuk makanan ternakmu</string>
+    <string name="home_rail_animal_feed_subtitle">Temukan sisa makanan untuk ternakmu</string>
+    <string name="home_rail_compost">Kompos</string>
+    <string name="home_rail_compost_subtitle">Manfaatkan sisa makanan menjadi kompos</string>
+    <string name="home_empty_title">Tidak ada hasil</string>
+    <string name="home_empty_subtitle">Coba kata kunci lain atau hapus pencarian</string>
+    <string name="tier_human">Untuk manusia</string>
+    <string name="tier_animal_feed">Pakan Hewan</string>
+    <string name="tier_compost">Untuk Kompos</string>
+</resources>

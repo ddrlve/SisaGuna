@@ -1,0 +1,71 @@
+# ===== Built application files =====
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+
+# ===== Gradle =====
+.gradle/
+build/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
+.gradletasknamecache
+.kotlin/
+
+# ===== Local machine config (SDK path etc. — never portable, never shared) =====
+local.properties
+
+# ===== Android Studio / IntelliJ =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+*.hprof
+local.history/
+
+# ===== Other editors =====
+.vscode/
+
+# ===== OS files =====
+*.log
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== Signing / keystores (never commit real signing material) =====
+*.jks
+*.keystore
+key.properties
+keystore.properties
+
+# ===== Secrets / environment files =====
+# Deliberately specific, not a broad "*secret*"/"*credential*" glob — this app will have
+# real Login/Register/Credentials screens and files named like that are legitimate source.
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+google-services.json
+secrets.properties
+
+# ===== AI assistant / agent local config — machine + session specific, may hold =====
+# ===== tokens, personal chat history, or local permission grants. Never push. =====
+.claude/
+.claude/settings.local.json
+.mcp.json
+.remember/
+.cursor/
+.windsurf/
+.aider*
+.cline/
+CLAUDE.local.md
+ANDROID_CLAUDE.md
+
