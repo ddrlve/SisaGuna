@@ -1,5 +1,6 @@
 package com.sisaguna.android.feature.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,33 +19,34 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Pets
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sisaguna.android.R
+import com.sisaguna.android.feature.address.LocationPickerSheet
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
@@ -52,6 +54,7 @@ import com.sisaguna.android.data.model.MerchantStatus
 import com.sisaguna.android.ui.components.SgSearchField
 import com.sisaguna.android.ui.domain.ListingCard
 import com.sisaguna.android.ui.theme.SgColor
+import com.sisaguna.android.ui.theme.SgTextStyle
 import com.sisaguna.android.ui.theme.SisaGunaTheme
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -62,34 +65,48 @@ fun HomeScreen(
     onListingClick: (Listing) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var addressLabel by remember { mutableStateOf("Rumah") }
+    var showLocationSheet by remember { mutableStateOf(false) }
+
     HomeScreenContent(
         uiState = uiState,
+        addressLabel = addressLabel,
+        onAddressClick = { showLocationSheet = true },
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onRetry = viewModel::retry,
         onListingClick = onListingClick,
     )
+
+    if (showLocationSheet) {
+        LocationPickerSheet(
+            onDismiss = { showLocationSheet = false },
+            onLocationResolved = { label ->
+                addressLabel = label
+                showLocationSheet = false
+            },
+        )
+    }
 }
 
 @Composable
 private fun HomeScreenContent(
     uiState: HomeUiState,
+    addressLabel: String,
+    onAddressClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onRetry: () -> Unit,
     onListingClick: (Listing) -> Unit,
 ) {
-    Scaffold(containerColor = SgColor.Neutral50) { padding ->
+    Box(modifier = Modifier.fillMaxSize().background(SgColor.Neutral100)) {
         when (uiState) {
-            is HomeUiState.Loading -> LoadingState(modifier = Modifier.padding(padding))
-            is HomeUiState.Error -> ErrorState(
-                message = uiState.message,
-                onRetry = onRetry,
-                modifier = Modifier.padding(padding),
-            )
+            is HomeUiState.Loading -> LoadingState()
+            is HomeUiState.Error -> ErrorState(message = uiState.message, onRetry = onRetry)
             is HomeUiState.Success -> HomeFeedList(
                 state = uiState,
+                addressLabel = addressLabel,
+                onAddressClick = onAddressClick,
                 onSearchQueryChange = onSearchQueryChange,
                 onListingClick = onListingClick,
-                modifier = Modifier.padding(padding),
             )
         }
     }
@@ -106,11 +123,7 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = SgColor.Neutral500,
-            )
+            Text(text = message, style = MaterialTheme.typography.bodyMedium, color = SgColor.Neutral500)
             Spacer(modifier = Modifier.height(12.dp))
             Button(onClick = onRetry) { Text("Coba lagi") }
         }
@@ -120,6 +133,8 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
 @Composable
 private fun HomeFeedList(
     state: HomeUiState.Success,
+    addressLabel: String,
+    onAddressClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onListingClick: (Listing) -> Unit,
     modifier: Modifier = Modifier,
@@ -137,102 +152,203 @@ private fun HomeFeedList(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
-        // Location selector, wishlist and notifications belong to Alamat & Preferensi /
-        // Profile, neither built yet — the bar is here for visual fidelity, the two icon
-        // buttons are inert.
-        item { HomeTopBar(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) }
         item {
-            SgSearchField(
-                value = state.searchQuery,
-                onValueChange = onSearchQueryChange,
-                placeholder = stringResource(R.string.home_search_placeholder),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            HomeTopBar(
+                addressLabel = addressLabel,
+                onAddressClick = onAddressClick,
+                modifier = Modifier.padding(horizontal = 23.dp, vertical = 16.dp),
             )
         }
-        item { PromoBanner(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
         item {
-            Text(
-                text = stringResource(R.string.home_category_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = SgColor.Neutral800,
-                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
-            )
+            Column(
+                modifier = Modifier.padding(horizontal = 23.dp),
+                verticalArrangement = Arrangement.spacedBy(15.dp),
+            ) {
+                SgSearchField(
+                    value = state.searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    placeholder = stringResource(R.string.home_search_placeholder),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                PromoBanner()
+            }
         }
-        item { TierShortcutRow(modifier = Modifier.padding(horizontal = 16.dp)) }
-        item { Spacer(modifier = Modifier.height(8.dp)) }
+        item {
+            Column(
+                modifier = Modifier.padding(horizontal = 23.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.home_category_title),
+                    style = SgTextStyle.TextLgSemibold,
+                    color = SgColor.Neutral800,
+                )
+                CategoryRow()
+            }
+        }
 
         if (state.isEmpty) {
             item { EmptySearchState(modifier = Modifier.padding(24.dp)) }
         } else {
-            listingRail(
-                title = nearbyTitle,
-                subtitle = nearbySubtitle,
-                trailing = { RadiusTag() },
-                listings = state.nearby,
-                now = state.now,
-                onListingClick = onListingClick,
+            listingRail(nearbyTitle, nearbySubtitle, { RadiusTag() }, state.nearby, state.now, onListingClick)
+            listingRail(dealsTitle, dealsSubtitle, { SeeAllLink() }, state.deals, state.now, onListingClick)
+            listingRail(animalFeedTitle, animalFeedSubtitle, { SeeAllLink() }, state.animalFeed, state.now, onListingClick)
+            listingRail(compostTitle, compostSubtitle, { SeeAllLink() }, state.compost, state.now, onListingClick)
+        }
+    }
+}
+
+/** Figma node 40:6216 top row: "Rumah" location chip (opens LocationPickerSheet) + "Upload" CTA (85:3039). */
+@Composable
+private fun HomeTopBar(addressLabel: String, onAddressClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(SgColor.BaseWhite, RoundedCornerShape(30.dp))
+                .clickableNoRipple(onAddressClick)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(SgColor.Green100, CircleShape)
+                    .padding(4.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_location_chip),
+                    contentDescription = null,
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            Text(
+                text = addressLabel,
+                style = SgTextStyle.TextSmMedium,
+                color = SgColor.Neutral800,
+                modifier = Modifier.padding(start = 8.dp),
             )
-            listingRail(
-                title = dealsTitle,
-                subtitle = dealsSubtitle,
-                trailing = { SeeAllLink() },
-                listings = state.deals,
-                now = state.now,
-                onListingClick = onListingClick,
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(SgColor.Brand500, RoundedCornerShape(30.dp))
+                // Opens the create-listing flow — merchant/Activity-jual screens aren't
+                // built yet this session.
+                .clickableNoRipple()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_upload),
+                contentDescription = null,
+                tint = SgColor.BaseWhite,
+                modifier = Modifier.size(20.dp),
             )
-            listingRail(
-                title = animalFeedTitle,
-                subtitle = animalFeedSubtitle,
-                trailing = { SeeAllLink() },
-                listings = state.animalFeed,
-                now = state.now,
-                onListingClick = onListingClick,
-            )
-            listingRail(
-                title = compostTitle,
-                subtitle = compostSubtitle,
-                trailing = { SeeAllLink() },
-                listings = state.compost,
-                now = state.now,
-                onListingClick = onListingClick,
+            Text(
+                text = stringResource(R.string.home_upload_cta),
+                style = SgTextStyle.TextSmMedium,
+                color = SgColor.BaseWhite,
+                modifier = Modifier.padding(start = 8.dp),
             )
         }
     }
 }
 
+/** Figma node 43:6293 promo banner. Decorative stars/ellipses simplified to a flat brand
+ * background — the food illustration and copy are the real Figma asset/text. */
 @Composable
-private fun HomeTopBar(modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+private fun PromoBanner(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(SgColor.Brand100),
+    ) {
+        Image(
+            painter = painterResource(R.drawable.banner_food),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
-                .background(SgColor.Brand200, RoundedCornerShape(50))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                // Opens the "Pilih Lokasi" sheet (figma/HomeCollection.jpeg) once Alamat &
-                // Preferensi is built — inert for now.
-                .clickable(onClick = {}),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Home,
-                contentDescription = null,
-                tint = SgColor.Brand700,
-                modifier = Modifier.size(16.dp),
+                .align(Alignment.CenterEnd)
+                .size(190.dp)
+                .padding(end = 4.dp),
+        )
+        Column(modifier = Modifier.padding(start = 16.dp, top = 20.dp)) {
+            Text(
+                text = stringResource(R.string.home_promo_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Black,
+                color = SgColor.Brand700,
             )
             Text(
-                text = stringResource(R.string.home_default_address_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = SgColor.Brand800,
-                modifier = Modifier.padding(start = 6.dp),
+                text = stringResource(R.string.home_promo_subtitle),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Black,
+                color = SgColor.Neutral50,
+            )
+            Text(
+                text = stringResource(R.string.home_promo_free),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Black,
+                fontStyle = FontStyle.Italic,
+                color = SgColor.Neutral50,
             )
         }
-        Spacer(modifier = Modifier.weight(1f))
-        IconButton(onClick = {}) {
-            Icon(Icons.Filled.FavoriteBorder, contentDescription = stringResource(R.string.home_wishlist_cd), tint = SgColor.Rose500)
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
+            Box(Modifier.width(12.dp).height(4.dp).background(SgColor.BaseWhite, RoundedCornerShape(50)))
+            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
+            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
         }
-        IconButton(onClick = {}) {
-            Icon(Icons.Filled.Notifications, contentDescription = stringResource(R.string.home_notifications_cd), tint = SgColor.Yellow500)
+    }
+}
+
+/** Figma node 33:5316: three tier tiles. Tapping opens Category List filtered by tier —
+ * not built yet this session. */
+@Composable
+private fun CategoryRow(modifier: Modifier = Modifier) {
+    val tiles = listOf(
+        Triple(ListingTier.HUMAN, R.string.tier_human, R.drawable.category_human to SgColor.Green100),
+        Triple(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, R.drawable.category_animal to SgColor.Orange100),
+        Triple(ListingTier.COMPOST, R.string.tier_compost, R.drawable.category_compost to SgColor.Sky100),
+    )
+    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        tiles.forEach { (tier, labelRes, imageAndBg) ->
+            val (image, bg) = imageAndBg
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+                modifier = Modifier
+                    .background(SgColor.BaseWhite, RoundedCornerShape(20.dp))
+                    .clickableNoRipple(onClick = { /* tier -> Category List, not built yet */ })
+                    .padding(16.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .background(bg, RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(image),
+                        contentDescription = stringResource(labelRes),
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(48.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(labelRes),
+                    style = SgTextStyle.TextSmRegular,
+                    color = SgColor.LabelsPrimary,
+                )
+            }
+            tier.let { } // tier reserved for Category List navigation once that screen exists
         }
     }
 }
@@ -251,12 +367,12 @@ private fun LazyListScope.listingRail(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+                .padding(start = 23.dp, end = 23.dp, top = 16.dp, bottom = 4.dp),
             verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium, color = SgColor.Neutral800)
-                Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = SgColor.Neutral500)
+                Text(text = title, style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
+                Text(text = subtitle, fontSize = 12.sp, color = SgColor.Neutral400)
             }
             trailing()
         }
@@ -264,14 +380,14 @@ private fun LazyListScope.listingRail(
     item {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            contentPadding = PaddingValues(horizontal = 23.dp, vertical = 8.dp),
         ) {
-            items(listings, key = { it.listing.id }) { item ->
+            items(listings, key = { it.listing.id }) { entry ->
                 ListingCard(
-                    listing = item.listing,
-                    merchant = item.merchant,
+                    listing = entry.listing,
+                    merchant = entry.merchant,
                     now = now,
-                    onClick = { onListingClick(item.listing) },
+                    onClick = { onListingClick(entry.listing) },
                 )
             }
         }
@@ -282,8 +398,11 @@ private fun LazyListScope.listingRail(
 private fun RadiusTag() {
     Text(
         text = stringResource(R.string.home_radius_tag),
-        style = MaterialTheme.typography.labelMedium,
+        style = SgTextStyle.TextXsMedium,
         color = SgColor.Brand700,
+        modifier = Modifier
+            .background(SgColor.Green100, RoundedCornerShape(30.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
 
@@ -292,119 +411,22 @@ private fun SeeAllLink() {
     // Would open Category List filtered accordingly — not built yet this session.
     Text(
         text = stringResource(R.string.home_see_all),
-        style = MaterialTheme.typography.labelMedium,
-        color = SgColor.Brand700,
-        modifier = Modifier.clickable(onClick = {}),
+        style = SgTextStyle.TextXsMedium,
+        color = SgColor.Brand600,
+        modifier = Modifier.clickableNoRipple(),
     )
-}
-
-@Composable
-private fun PromoBanner(modifier: Modifier = Modifier) {
-    // [Guessing] Static copy placeholder — swap for the real promo banner content/image once
-    // that's confirmed from Figma; this app has no CMS for banners yet.
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .background(SgColor.Brand500, RoundedCornerShape(20.dp)),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(
-                text = stringResource(R.string.home_promo_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = SgColor.BaseWhite,
-            )
-            Text(
-                text = stringResource(R.string.home_promo_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = SgColor.Brand200,
-            )
-        }
-    }
-}
-
-// Tapping a tier is meant to open Category List pre-filtered by that tier; that screen isn't
-// built yet this session, so onTierClick is exposed but not wired from HomeScreen's caller.
-@Composable
-private fun TierShortcutRow(
-    modifier: Modifier = Modifier,
-    onTierClick: (ListingTier) -> Unit = {},
-) {
-    val shortcuts = listOf(
-        Triple(ListingTier.HUMAN, R.string.tier_human, Icons.Filled.Restaurant),
-        Triple(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, Icons.Filled.Pets),
-        Triple(ListingTier.COMPOST, R.string.tier_compost, Icons.Filled.Spa),
-    )
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        shortcuts.forEach { (tier, labelRes, icon) ->
-            TierShortcut(
-                label = stringResource(labelRes),
-                icon = icon,
-                tier = tier,
-                onClick = { onTierClick(tier) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun TierShortcut(
-    label: String,
-    icon: ImageVector,
-    tier: ListingTier,
-    onClick: () -> Unit,
-) {
-    // [Guessing] Background/icon colors approximate the green/peach/blue tiles in
-    // figma/HomePage.jpeg; exact hex still needs Figma Inspect (see ui/theme/Color.kt).
-    val (background, iconTint) = when (tier) {
-        ListingTier.HUMAN -> SgColor.Brand200 to SgColor.Brand700
-        ListingTier.ANIMAL_FEED -> SgColor.Orange100 to SgColor.Yellow500
-        ListingTier.COMPOST -> SgColor.Sky100 to SgColor.Brand700
-    }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .width(96.dp)
-            .clickable(onClick = onClick),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .background(background, RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(imageVector = icon, contentDescription = null, tint = iconTint)
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = SgColor.Neutral800,
-            modifier = Modifier.padding(top = 6.dp),
-        )
-    }
 }
 
 @Composable
 private fun EmptySearchState(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.home_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = SgColor.Neutral800,
-        )
-        Text(
-            text = stringResource(R.string.home_empty_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = SgColor.Neutral500,
-        )
+    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = stringResource(R.string.home_empty_title), style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
+        Text(text = stringResource(R.string.home_empty_subtitle), style = SgTextStyle.TextSmRegular, color = SgColor.Neutral500)
     }
 }
+
+private fun Modifier.clickableNoRipple(onClick: () -> Unit = {}): Modifier =
+    this.clickable(onClick = onClick)
 
 // ---- Preview: static layout with mock data, no ViewModel/Hilt involved ----
 
@@ -421,31 +443,20 @@ private fun mockUiState(): HomeUiState.Success {
     return HomeUiState.Success(
         nearby = listOf(
             listing("p1", "Ayam olie", ListingTier.HUMAN, 34000, 11000, false, 2, 0.4),
-            listing("p2", "Nasi Kuning Sisa Katering", ListingTier.HUMAN, 25000, 8000, false, 3, 1.2),
+            listing("p2", "Ayam olie", ListingTier.HUMAN, 34000, 11000, false, 3, 0.4),
         ),
-        deals = listOf(
-            listing("p3", "Nasi Box Rapat Berlebih", ListingTier.HUMAN, 20000, null, true, 1, 0.5),
-        ),
-        animalFeed = listOf(
-            listing("p4", "Sisa Sayur untuk Pakan Ternak", ListingTier.ANIMAL_FEED, 10000, 2000, false, 6, 5.4),
-        ),
-        compost = listOf(
-            listing("p5", "Sisa Sayur untuk Kompos", ListingTier.COMPOST, null, null, true, 8, 3.1),
-        ),
+        deals = listOf(listing("p3", "Ayam olie", ListingTier.HUMAN, 34000, null, true, 1, 0.4)),
+        animalFeed = listOf(listing("p4", "Ayam olie", ListingTier.ANIMAL_FEED, 34000, null, true, 6, 0.4)),
+        compost = listOf(listing("p5", "Ayam olie", ListingTier.COMPOST, 34000, null, true, 8, 0.4)),
         now = now,
     )
 }
 
-@Preview(showBackground = true, heightDp = 900)
+@Preview(showBackground = true, heightDp = 1400)
 @Composable
 private fun HomeScreenPreview() {
     SisaGunaTheme {
-        HomeScreenContent(
-            uiState = mockUiState(),
-            onSearchQueryChange = {},
-            onRetry = {},
-            onListingClick = {},
-        )
+        HomeScreenContent(uiState = mockUiState(), addressLabel = "Rumah", onAddressClick = {}, onSearchQueryChange = {}, onRetry = {}, onListingClick = {})
     }
 }
 
@@ -453,7 +464,7 @@ private fun HomeScreenPreview() {
 @Composable
 private fun HomeScreenLoadingPreview() {
     SisaGunaTheme {
-        HomeScreenContent(uiState = HomeUiState.Loading, onSearchQueryChange = {}, onRetry = {}, onListingClick = {})
+        HomeScreenContent(uiState = HomeUiState.Loading, addressLabel = "Rumah", onAddressClick = {}, onSearchQueryChange = {}, onRetry = {}, onListingClick = {})
     }
 }
 
@@ -463,19 +474,8 @@ private fun HomeScreenErrorPreview() {
     SisaGunaTheme {
         HomeScreenContent(
             uiState = HomeUiState.Error("Gagal memuat data. Periksa koneksi internet dan coba lagi."),
-            onSearchQueryChange = {},
-            onRetry = {},
-            onListingClick = {},
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenEmptyPreview() {
-    SisaGunaTheme {
-        HomeScreenContent(
-            uiState = HomeUiState.Success(searchQuery = "xyz tidak ada"),
+            addressLabel = "Rumah",
+            onAddressClick = {},
             onSearchQueryChange = {},
             onRetry = {},
             onListingClick = {},

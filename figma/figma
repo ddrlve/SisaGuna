@@ -924,6 +924,57 @@ android:strokeColor="#E5E5E5"
 </group>
 </vector>
 
+ICON APP
+/* logo 1 */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: flex-start;
+padding: 8px;
+gap: 10px;
+
+position: relative;
+width: 40px;
+height: 40px;
+
+background: #FFFFFF;
+border-radius: 8px;
+
+
+/* Group 7 */
+
+width: 24px;
+height: 24px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Vector 4 */
+
+position: absolute;
+width: 17.39px;
+height: 15.03px;
+left: 8px;
+top: 8px;
+
+background: #55B931;
+
+
+/* Vector 5 */
+
+position: absolute;
+width: 17.39px;
+height: 15.03px;
+left: 14.61px;
+top: 16.97px;
+
+background: #55B931;
+transform: rotate(180deg);
 
 Home Page
 <RelativeLayout

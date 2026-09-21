@@ -4,11 +4,11 @@
 
     <!-- Home -->
     <string name="home_default_address_label">Rumah</string>
-    <string name="home_wishlist_cd">Favorit</string>
-    <string name="home_notifications_cd">Notifikasi</string>
+    <string name="home_upload_cta">Upload</string>
     <string name="home_search_placeholder">Cari makanan</string>
-    <string name="home_promo_title">Nikmati makanan GRATIIISSS</string>
-    <string name="home_promo_subtitle">Selamatkan makanan sisa dari mitra sekitarmu</string>
+    <string name="home_promo_title">Nikmati</string>
+    <string name="home_promo_subtitle">makanan</string>
+    <string name="home_promo_free">GRAATIIISSS</string>
     <string name="home_category_title">Kategori</string>
     <string name="home_radius_tag">Radius &lt; 2km</string>
     <string name="home_see_all">Lihat Semua</string>

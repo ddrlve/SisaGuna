@@ -4,11 +4,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
-// [Guessing] Radii not confirmed from Figma Inspect yet.
+// Corner radii read off the Home frame in Figma: search bar/chips/pills use full pill radius
+// (30dp+), category tiles 20dp, listing cards 25dp.
 val SgShapes = Shapes(
-    extraSmall = RoundedCornerShape(6.dp),
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(16.dp),
-    large = RoundedCornerShape(24.dp),
-    extraLarge = RoundedCornerShape(32.dp),
+    extraSmall = RoundedCornerShape(13.dp),
+    small = RoundedCornerShape(17.dp),
+    medium = RoundedCornerShape(20.dp),
+    large = RoundedCornerShape(25.dp),
+    extraLarge = RoundedCornerShape(30.dp),
 )
