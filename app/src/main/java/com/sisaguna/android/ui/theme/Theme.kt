@@ -5,35 +5,39 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
-// Figma design shows a single light theme (see figma/figma export). Dark scheme reuses
-// the same brand tokens so it doesn't crash on dark-mode devices, not a designed dark mode.
+// The Figma file only designs a single light theme. Dark scheme below reuses the same brand
+// tokens purely so the app doesn't look broken on a dark-mode device — it is not a designed
+// dark mode and has no Figma source.
+private val UndesignedError = Color(0xFFDC2626) // No error/destructive state exists in Figma yet.
+
 private val SgLightColorScheme = lightColorScheme(
     primary = SgColor.Brand500,
     onPrimary = SgColor.BaseWhite,
-    primaryContainer = SgColor.Brand200,
-    onPrimaryContainer = SgColor.Brand800,
-    secondary = SgColor.Yellow500,
+    primaryContainer = SgColor.Brand100,
+    onPrimaryContainer = SgColor.Brand700,
+    secondary = SgColor.Green600,
     onSecondary = SgColor.BaseWhite,
-    error = SgColor.Red500,
+    error = UndesignedError,
     onError = SgColor.BaseWhite,
-    background = SgColor.Neutral50,
+    background = SgColor.Neutral100,
     onBackground = SgColor.Neutral800,
     surface = SgColor.BaseWhite,
     onSurface = SgColor.Neutral800,
     surfaceVariant = SgColor.Neutral100,
     onSurfaceVariant = SgColor.Neutral500,
-    outline = SgColor.Neutral400,
+    outline = SgColor.Neutral300,
 )
 
 private val SgDarkColorScheme = darkColorScheme(
     primary = SgColor.Brand500,
     onPrimary = SgColor.BaseWhite,
-    primaryContainer = SgColor.Brand800,
-    onPrimaryContainer = SgColor.Brand200,
-    secondary = SgColor.Yellow500,
+    primaryContainer = SgColor.Brand700,
+    onPrimaryContainer = SgColor.Brand100,
+    secondary = SgColor.Green600,
     onSecondary = SgColor.Neutral800,
-    error = SgColor.Red500,
+    error = UndesignedError,
     onError = SgColor.BaseWhite,
     background = SgColor.Neutral800,
     onBackground = SgColor.Neutral50,

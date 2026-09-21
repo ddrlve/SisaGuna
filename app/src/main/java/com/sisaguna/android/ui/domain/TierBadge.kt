@@ -1,6 +1,7 @@
 package com.sisaguna.android.ui.domain
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,20 +13,21 @@ import androidx.compose.ui.unit.sp
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.ui.theme.SgColor
 
-/** Outlined tier pill on listing cards (see figma/HomePage.jpeg, figma/products.jpeg). */
+/** Tier pill on listing cards (Figma node 36:5541 on Home 29:93): light-green fill + border. */
 @Composable
 fun TierBadge(tier: ListingTier, modifier: Modifier = Modifier) {
-    val (label, color) = when (tier) {
-        ListingTier.HUMAN -> "Untuk manusia" to SgColor.Brand700
-        ListingTier.ANIMAL_FEED -> "Untuk ternak" to SgColor.Yellow500
-        ListingTier.COMPOST -> "Untuk kompos" to SgColor.Brand700
+    val label = when (tier) {
+        ListingTier.HUMAN -> "untuk manusia"
+        ListingTier.ANIMAL_FEED -> "untuk ternak"
+        ListingTier.COMPOST -> "untuk kompos"
     }
     Text(
         text = label,
-        color = color,
-        fontSize = 11.sp,
+        color = SgColor.Green600,
+        fontSize = 10.sp,
         modifier = modifier
-            .border(BorderStroke(1.dp, color), RoundedCornerShape(50))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .background(SgColor.Green50, RoundedCornerShape(30.dp))
+            .border(BorderStroke(1.dp, SgColor.Green600), RoundedCornerShape(30.dp))
+            .padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
