@@ -1,6 +1,6 @@
 # SisaGuna
 
-Aplikasi mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum menjadi sampah, pembeli di sekitar membeli atau mengambilnya langsung di tempat lewat app, bayar di lokasi saat ambil.
+Aplikasi dan ui mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum menjadi sampah, pembeli di sekitar membeli atau mengambilnya langsung di tempat lewat app, bayar di lokasi saat ambil.
 
 Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack, dan aturan kerja ada di `ANDROID_CLAUDE.md`.
 
