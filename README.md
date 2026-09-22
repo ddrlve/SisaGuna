@@ -21,7 +21,7 @@ Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node
 
 ## Status Pengerjaan
 
-Layar Home sudah dibangun dengan data mock (belum tersambung ke Supabase). Layar lain (login, register, category list, checkout, order, address, profile, merchant, admin) belum dikerjakan.
+Layar Home sudah dibuat dengan data mock (belum tersambung ke Supabase). Layar lain (login, register, category list, checkout, order, address, profile, merchant, admin) belum dibuat.
 
 ## Tech Stack
 
