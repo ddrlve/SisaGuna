@@ -14,7 +14,6 @@ Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node
 
 Front End = https://github.com/ddrlve/SisaGuna 
 
-Back End = https://github.com/FadhRach/sisaguna-be
 
 ## Contributors
 
