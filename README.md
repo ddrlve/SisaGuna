@@ -12,6 +12,8 @@ Canva: [PPT](https://canva.link/d403zux6vbz05gn)
 
 Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
 
+Front End = 
+
 ## Contributors
 
 - Fadhlan Nur Rachman (2802491690)
