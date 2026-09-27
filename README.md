@@ -4,7 +4,7 @@ Aplikasi dan ui mobile redistribusi makanan berlebih atau sisa makanan untuk mit
 
 Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack, dan aturan kerja ada di `ANDROID_CLAUDE.md`.
 
-Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
+Lecture Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
 
 Link Terkait:
 
