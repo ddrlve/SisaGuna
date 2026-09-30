@@ -2,6 +2,7 @@ package com.sisaguna.android.navigation
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,6 +30,7 @@ import com.sisaguna.android.feature.category.CategoryListScreen
 import com.sisaguna.android.feature.home.HomeScreen
 import com.sisaguna.android.feature.splash.SplashScreen
 import com.sisaguna.android.ui.components.ComingSoonScreen
+import com.sisaguna.android.ui.theme.SgColor
 
 /** Routes that require an authenticated session — a guest tapping one of these sees
  * [GuestGateSheet] instead of navigating. Upload is gated the same way but isn't a route (it's
@@ -60,8 +62,24 @@ fun SgNavGraph(navController: NavHostController) {
         }
     }
 
+    // Login/Register can be reached either from Landing (Landing still on the back stack) or
+    // from the guest gate opened on top of Home (Landing already popped, Home is what's on the
+    // stack instead) — popUpTo(Screen.Landing.route) only clears the first path. Clearing the
+    // whole graph unconditionally handles both without leaving a stale Login/Register entry
+    // that "Back" from the new Home would reopen.
+    fun navigateHomeAfterAuth() {
+        navController.navigate(Screen.Home.route) {
+            popUpTo(navController.graph.id) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        // Splash is full-bleed Brand500 (see SplashScreen) — without this, the top status-bar
+        // inset applied below is filled by the Scaffold's default container color instead
+        // (MaterialTheme.colorScheme.background), showing as a grey band above the green.
+        containerColor = if (currentRoute == Screen.Splash.route) SgColor.Brand500 else MaterialTheme.colorScheme.background,
         bottomBar = {
             if (showBottomNav) {
                 SgBottomNav(
@@ -104,9 +122,7 @@ fun SgNavGraph(navController: NavHostController) {
                 LoginScreen(
                     onLoginSuccess = {
                         sessionViewModel.login()
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Landing.route) { inclusive = true }
-                        }
+                        navigateHomeAfterAuth()
                     },
                     onRegisterClick = { navController.navigate(Screen.Register.route) },
                 )
@@ -115,9 +131,7 @@ fun SgNavGraph(navController: NavHostController) {
                 RegisterScreen(
                     onRegisterComplete = {
                         sessionViewModel.login()
-                        navController.navigate(Screen.Home.route) {
-                            popUpTo(Screen.Landing.route) { inclusive = true }
-                        }
+                        navigateHomeAfterAuth()
                     },
                 )
             }

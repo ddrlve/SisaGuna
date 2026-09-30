@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -134,8 +137,8 @@ private fun DetailsStep(
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Column(modifier = modifier.fillMaxSize().background(SgColor.BaseWhite)) {
-        Column(modifier = Modifier.weight(1f)) {
+    Column(modifier = modifier.fillMaxSize().background(SgColor.BaseWhite).imePadding()) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
             Column(
                 modifier = Modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),

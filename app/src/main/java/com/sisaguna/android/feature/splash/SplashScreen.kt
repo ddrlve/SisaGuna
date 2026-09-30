@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.sisaguna.android.ui.components.SgLogo
 import com.sisaguna.android.ui.theme.SgColor
@@ -35,7 +34,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
         SgLogo(
             markSize = 40,
             textSize = 28,
-            markTint = Color.Unspecified,
+            markTint = SgColor.BaseWhite,
             textColor = SgColor.BaseWhite,
         )
     }
