@@ -27,9 +27,6 @@ object SgColor {
     val Neutral500 = Color(0xFF737373)
     val Neutral800 = Color(0xFF262626)
 
-    // Splash-only fill from Landing Page's "Brand Opening Motion" node — distinct from Brand500.
-    val SplashGreen = Color(0xFF49C22E)
-
     // Activity status colors (Activity-ambil, node 78:13801 variable defs).
     val YellowStatus = Color(0xFFCA8A04)
     val RedStatus = Color(0xFFDC2626)
