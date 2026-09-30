@@ -184,27 +184,39 @@ private fun HomeFeedList(
                 PromoBanner()
             }
         }
-        item {
-            Column(
-                modifier = Modifier.padding(horizontal = 23.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.home_category_title),
-                    style = SgTextStyle.TextLgSemibold,
-                    color = SgColor.Neutral800,
-                )
-                CategoryRow(onTierClick = onCategoryClick)
-            }
-        }
+        item { SiapSantapHeaderAndTile(onTierClick = onCategoryClick) }
 
         if (state.isEmpty) {
+            item {
+                PakanTernakSection(
+                    animalFeedTitle = animalFeedTitle,
+                    animalFeedSubtitle = animalFeedSubtitle,
+                    animalFeed = emptyList(),
+                    compostTitle = compostTitle,
+                    compostSubtitle = compostSubtitle,
+                    compost = emptyList(),
+                    now = state.now,
+                    onListingClick = onListingClick,
+                    onTierClick = onCategoryClick,
+                )
+            }
             item { EmptySearchState(modifier = Modifier.padding(24.dp)) }
         } else {
             listingRail(nearbyTitle, nearbySubtitle, { RadiusTag() }, state.nearby, state.now, onListingClick)
             listingRail(dealsTitle, dealsSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.HUMAN) }) }, state.deals, state.now, onListingClick)
-            listingRail(animalFeedTitle, animalFeedSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.ANIMAL_FEED) }) }, state.animalFeed, state.now, onListingClick)
-            listingRail(compostTitle, compostSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.COMPOST) }) }, state.compost, state.now, onListingClick)
+            item {
+                PakanTernakSection(
+                    animalFeedTitle = animalFeedTitle,
+                    animalFeedSubtitle = animalFeedSubtitle,
+                    animalFeed = state.animalFeed,
+                    compostTitle = compostTitle,
+                    compostSubtitle = compostSubtitle,
+                    compost = state.compost,
+                    now = state.now,
+                    onListingClick = onListingClick,
+                    onTierClick = onCategoryClick,
+                )
+            }
         }
     }
 }
@@ -344,42 +356,152 @@ private fun PromoBanner(modifier: Modifier = Modifier) {
     }
 }
 
-/** Figma node 33:5316: three tier tiles. Tapping opens Category List filtered by tier. */
+/** One tier tile (Figma node 259:10226-259:10237 pattern, reused per-section after the
+ * section split). Tapping opens Category List filtered by tier. */
 @Composable
-private fun CategoryRow(onTierClick: (ListingTier) -> Unit, modifier: Modifier = Modifier) {
-    val tiles = listOf(
-        Triple(ListingTier.HUMAN, R.string.tier_human, R.drawable.category_human to SgColor.Green100),
-        Triple(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, R.drawable.category_animal to SgColor.Orange100),
-        Triple(ListingTier.COMPOST, R.string.tier_compost, R.drawable.category_compost to SgColor.Sky100),
-    )
-    Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        tiles.forEach { (tier, labelRes, imageAndBg) ->
-            val (image, bg) = imageAndBg
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(7.dp),
-                modifier = Modifier
-                    .background(SgColor.BaseWhite, RoundedCornerShape(20.dp))
-                    .clickableNoRipple(onClick = { onTierClick(tier) })
-                    .padding(16.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .background(bg, RoundedCornerShape(14.dp)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(image),
-                        contentDescription = stringResource(labelRes),
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.size(48.dp),
-                    )
-                }
-                Text(
-                    text = stringResource(labelRes),
-                    style = SgTextStyle.TextSmRegular,
-                    color = SgColor.LabelsPrimary,
+private fun CategoryTile(
+    tier: ListingTier,
+    labelRes: Int,
+    image: Int,
+    bg: Color,
+    onClick: (ListingTier) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+        modifier = modifier
+            .background(SgColor.BaseWhite, RoundedCornerShape(20.dp))
+            .clickableNoRipple(onClick = { onClick(tier) })
+            .padding(16.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(bg, RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                painter = painterResource(image),
+                contentDescription = stringResource(labelRes),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(48.dp),
+            )
+        }
+        Text(
+            text = stringResource(labelRes),
+            style = SgTextStyle.TextSmRegular,
+            color = SgColor.LabelsPrimary,
+        )
+    }
+}
+
+/** Section 1 — human food. No tint (matches the page background), single tile. */
+@Composable
+private fun SiapSantapHeaderAndTile(onTierClick: (ListingTier) -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = 23.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = stringResource(R.string.home_section_human_title),
+                style = SgTextStyle.TextLgSemibold,
+                color = SgColor.Neutral800,
+            )
+            Text(
+                text = stringResource(R.string.home_section_human_subtitle),
+                fontSize = 12.sp,
+                color = SgColor.Neutral400,
+            )
+        }
+        CategoryTile(
+            tier = ListingTier.HUMAN,
+            labelRes = R.string.tier_human,
+            image = R.drawable.category_human,
+            bg = SgColor.Green100,
+            onClick = onTierClick,
+        )
+    }
+}
+
+/** Section 2 — animal feed + compost. Tinted Neutral50 container (no Figma source for this
+ * grouping — see spec) holding its own two tiles and both its rails, so the tint stays
+ * continuous behind all of it as a single LazyColumn item. */
+@Composable
+private fun PakanTernakSection(
+    animalFeedTitle: String,
+    animalFeedSubtitle: String,
+    animalFeed: List<HomeListingUi>,
+    compostTitle: String,
+    compostSubtitle: String,
+    compost: List<HomeListingUi>,
+    now: Instant,
+    onListingClick: (Listing) -> Unit,
+    onTierClick: (ListingTier) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .padding(horizontal = 23.dp)
+            .background(SgColor.Neutral50, RoundedCornerShape(20.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = stringResource(R.string.home_section_farm_title),
+                style = SgTextStyle.TextLgSemibold,
+                color = SgColor.Neutral800,
+            )
+            Text(
+                text = stringResource(R.string.home_section_farm_subtitle),
+                fontSize = 12.sp,
+                color = SgColor.Neutral400,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            CategoryTile(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, R.drawable.category_animal, SgColor.Orange100, onTierClick)
+            CategoryTile(ListingTier.COMPOST, R.string.tier_compost, R.drawable.category_compost, SgColor.Sky100, onTierClick)
+        }
+        RailBlock(animalFeedTitle, animalFeedSubtitle, { SeeAllLink(onClick = { onTierClick(ListingTier.ANIMAL_FEED) }) }, animalFeed, now, onListingClick)
+        RailBlock(compostTitle, compostSubtitle, { SeeAllLink(onClick = { onTierClick(ListingTier.COMPOST) }) }, compost, now, onListingClick)
+    }
+}
+
+/** Non-lazy counterpart of [listingRail] — used inside [PakanTernakSection] so both its rails
+ * render as part of one LazyColumn item (keeping the tinted background continuous), rather
+ * than as separate lazy items the way Section 1's rails still do. Renders nothing when empty,
+ * same as [listingRail]. */
+@Composable
+private fun RailBlock(
+    title: String,
+    subtitle: String,
+    trailing: @Composable () -> Unit,
+    listings: List<HomeListingUi>,
+    now: Instant,
+    onListingClick: (Listing) -> Unit,
+) {
+    if (listings.isEmpty()) return
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
+                Text(text = subtitle, fontSize = 12.sp, color = SgColor.Neutral400)
+            }
+            trailing()
+        }
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
+        ) {
+            items(listings, key = { it.listing.id }) { entry ->
+                ListingCard(
+                    listing = entry.listing,
+                    merchant = entry.merchant,
+                    now = now,
+                    onClick = { onListingClick(entry.listing) },
                 )
             }
         }
