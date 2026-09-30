@@ -58,4 +58,15 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             merchantsById = merchants.associateBy { it.id },
         )
     }
+
+    override suspend fun getListingsByTier(tier: ListingTier): CategoryFeed {
+        delay(600) // simulate network round trip so the loading state is visible in preview
+
+        val visible = listings.filter { it.pickupEnd.isAfter(now) && it.tier == tier }
+
+        return CategoryFeed(
+            listings = visible,
+            merchantsById = merchants.associateBy { it.id },
+        )
+    }
 }

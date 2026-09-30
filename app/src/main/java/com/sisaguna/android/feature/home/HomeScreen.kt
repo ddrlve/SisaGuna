@@ -63,6 +63,7 @@ import java.time.temporal.ChronoUnit
 fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onListingClick: (Listing) -> Unit = {},
+    onCategoryClick: (ListingTier) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var addressLabel by remember { mutableStateOf("Rumah") }
@@ -75,6 +76,7 @@ fun HomeScreen(
         onSearchQueryChange = viewModel::onSearchQueryChange,
         onRetry = viewModel::retry,
         onListingClick = onListingClick,
+        onCategoryClick = onCategoryClick,
     )
 
     if (showLocationSheet) {
@@ -96,6 +98,7 @@ private fun HomeScreenContent(
     onSearchQueryChange: (String) -> Unit,
     onRetry: () -> Unit,
     onListingClick: (Listing) -> Unit,
+    onCategoryClick: (ListingTier) -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize().background(SgColor.Neutral100)) {
         when (uiState) {
@@ -107,6 +110,7 @@ private fun HomeScreenContent(
                 onAddressClick = onAddressClick,
                 onSearchQueryChange = onSearchQueryChange,
                 onListingClick = onListingClick,
+                onCategoryClick = onCategoryClick,
             )
         }
     }
@@ -137,6 +141,7 @@ private fun HomeFeedList(
     onAddressClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onListingClick: (Listing) -> Unit,
+    onCategoryClick: (ListingTier) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val nearbyTitle = stringResource(R.string.home_rail_nearby)
@@ -183,7 +188,7 @@ private fun HomeFeedList(
                     style = SgTextStyle.TextLgSemibold,
                     color = SgColor.Neutral800,
                 )
-                CategoryRow()
+                CategoryRow(onTierClick = onCategoryClick)
             }
         }
 
@@ -191,14 +196,15 @@ private fun HomeFeedList(
             item { EmptySearchState(modifier = Modifier.padding(24.dp)) }
         } else {
             listingRail(nearbyTitle, nearbySubtitle, { RadiusTag() }, state.nearby, state.now, onListingClick)
-            listingRail(dealsTitle, dealsSubtitle, { SeeAllLink() }, state.deals, state.now, onListingClick)
-            listingRail(animalFeedTitle, animalFeedSubtitle, { SeeAllLink() }, state.animalFeed, state.now, onListingClick)
-            listingRail(compostTitle, compostSubtitle, { SeeAllLink() }, state.compost, state.now, onListingClick)
+            listingRail(dealsTitle, dealsSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.HUMAN) }) }, state.deals, state.now, onListingClick)
+            listingRail(animalFeedTitle, animalFeedSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.ANIMAL_FEED) }) }, state.animalFeed, state.now, onListingClick)
+            listingRail(compostTitle, compostSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.COMPOST) }) }, state.compost, state.now, onListingClick)
         }
     }
 }
 
-/** Figma node 40:6216 top row: "Rumah" location chip (opens LocationPickerSheet) + "Upload" CTA (85:3039). */
+/** Figma node 40:6216 top row: "Rumah" location chip (opens LocationPickerSheet) + "Upload" CTA
+ * (85:3039) + notification bell (104:6511). */
 @Composable
 private fun HomeTopBar(addressLabel: String, onAddressClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -230,25 +236,45 @@ private fun HomeTopBar(addressLabel: String, onAddressClick: () -> Unit, modifie
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .background(SgColor.Brand500, RoundedCornerShape(30.dp))
-                // Opens the create-listing flow — merchant/Activity-jual screens aren't
-                // built yet this session.
-                .clickableNoRipple()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_upload),
-                contentDescription = null,
-                tint = SgColor.BaseWhite,
-                modifier = Modifier.size(20.dp),
-            )
-            Text(
-                text = stringResource(R.string.home_upload_cta),
-                style = SgTextStyle.TextSmMedium,
-                color = SgColor.BaseWhite,
-                modifier = Modifier.padding(start = 8.dp),
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .background(SgColor.Brand500, RoundedCornerShape(30.dp))
+                    // Opens the create-listing flow — merchant/Activity-jual screens aren't
+                    // built yet this session.
+                    .clickableNoRipple()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_upload),
+                    contentDescription = null,
+                    tint = SgColor.BaseWhite,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(R.string.home_upload_cta),
+                    style = SgTextStyle.TextSmMedium,
+                    color = SgColor.BaseWhite,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .background(SgColor.BaseWhite, CircleShape)
+                    // Opens the notification list — not built yet this session.
+                    .clickableNoRipple(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_notification_bell),
+                    contentDescription = stringResource(R.string.home_notifications_cd),
+                    tint = SgColor.Neutral800,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
     }
 }
@@ -309,10 +335,9 @@ private fun PromoBanner(modifier: Modifier = Modifier) {
     }
 }
 
-/** Figma node 33:5316: three tier tiles. Tapping opens Category List filtered by tier —
- * not built yet this session. */
+/** Figma node 33:5316: three tier tiles. Tapping opens Category List filtered by tier. */
 @Composable
-private fun CategoryRow(modifier: Modifier = Modifier) {
+private fun CategoryRow(onTierClick: (ListingTier) -> Unit, modifier: Modifier = Modifier) {
     val tiles = listOf(
         Triple(ListingTier.HUMAN, R.string.tier_human, R.drawable.category_human to SgColor.Green100),
         Triple(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, R.drawable.category_animal to SgColor.Orange100),
@@ -326,7 +351,7 @@ private fun CategoryRow(modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(7.dp),
                 modifier = Modifier
                     .background(SgColor.BaseWhite, RoundedCornerShape(20.dp))
-                    .clickableNoRipple(onClick = { /* tier -> Category List, not built yet */ })
+                    .clickableNoRipple(onClick = { onTierClick(tier) })
                     .padding(16.dp),
             ) {
                 Box(
@@ -348,7 +373,6 @@ private fun CategoryRow(modifier: Modifier = Modifier) {
                     color = SgColor.LabelsPrimary,
                 )
             }
-            tier.let { } // tier reserved for Category List navigation once that screen exists
         }
     }
 }
@@ -407,13 +431,12 @@ private fun RadiusTag() {
 }
 
 @Composable
-private fun SeeAllLink() {
-    // Would open Category List filtered accordingly — not built yet this session.
+private fun SeeAllLink(onClick: () -> Unit) {
     Text(
         text = stringResource(R.string.home_see_all),
         style = SgTextStyle.TextXsMedium,
         color = SgColor.Brand600,
-        modifier = Modifier.clickableNoRipple(),
+        modifier = Modifier.clickableNoRipple(onClick = onClick),
     )
 }
 

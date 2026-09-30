@@ -144,7 +144,7 @@ fun ListingCard(
 }
 
 @Composable
-private fun SellerLine(name: String, verified: Boolean) {
+fun SellerLine(name: String, verified: Boolean) {
     val text = buildAnnotatedString {
         withStyle(SpanStyle(color = SgColor.Neutral800)) { append(name) }
         if (verified) {
@@ -158,7 +158,7 @@ private fun SellerLine(name: String, verified: Boolean) {
 }
 
 @Composable
-private fun PriceLabel(listing: Listing) {
+fun PriceLabel(listing: Listing) {
     when {
         listing.isFree -> Text(
             text = "Gratis",
@@ -191,5 +191,5 @@ private fun formatRupiah(amount: Int): String {
     return "Rp. $grouped"
 }
 
-private fun formatDistance(km: Double): String =
+fun formatDistance(km: Double): String =
     if (km < 1.0) "${(km * 1000).toInt()} m" else "%.1f km".format(km)

@@ -5,6 +5,11 @@
     <!-- Home -->
     <string name="home_default_address_label">Rumah</string>
     <string name="home_upload_cta">Upload</string>
+    <string name="home_notifications_cd">Notifikasi</string>
+
+    <!-- Category List -->
+    <string name="category_back_cd">Kembali</string>
+    <string name="category_empty_title">Belum ada listing untuk kategori ini</string>
     <string name="home_search_placeholder">Cari makanan</string>
     <string name="home_promo_title">Nikmati</string>
     <string name="home_promo_subtitle">makanan</string>

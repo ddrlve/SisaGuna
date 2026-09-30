@@ -31,12 +31,13 @@ fun SgSearchField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     modifier: Modifier = Modifier,
+    containerColor: Color = SgColor.BaseWhite,
     onFilterClick: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
             .height(46.dp)
-            .background(SgColor.BaseWhite, RoundedCornerShape(30.dp))
+            .background(containerColor, RoundedCornerShape(30.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

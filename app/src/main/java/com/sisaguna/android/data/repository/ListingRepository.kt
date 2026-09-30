@@ -16,6 +16,13 @@ data class HomeFeed(
     val merchantsById: Map<String, Merchant>,
 )
 
+/** Everything Category List needs for one tier: the matching listings plus the merchants they
+ * belong to (looked up by [Listing.merchantId]). */
+data class CategoryFeed(
+    val listings: List<Listing>,
+    val merchantsById: Map<String, Merchant>,
+)
+
 /**
  * Composable never calls Supabase directly (see ANDROID_CLAUDE.md) — everything goes through
  * this interface. [SupabaseListingRepository] (Supabase-backed) will implement this once the
@@ -23,4 +30,5 @@ data class HomeFeed(
  */
 interface ListingRepository {
     suspend fun getHomeFeed(focusTier: ListingTier = ListingTier.HUMAN): HomeFeed
+    suspend fun getListingsByTier(tier: ListingTier): CategoryFeed
 }
