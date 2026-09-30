@@ -3,6 +3,7 @@ package com.sisaguna.android.navigation
 import com.sisaguna.android.data.model.ListingTier
 
 sealed class Screen(val route: String) {
+    data object Splash : Screen("splash")
     data object Landing : Screen("landing")
     data object Login : Screen("login")
     data object Register : Screen("register")
