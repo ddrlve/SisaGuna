@@ -64,6 +64,7 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onListingClick: (Listing) -> Unit = {},
     onCategoryClick: (ListingTier) -> Unit = {},
+    onUploadClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var addressLabel by remember { mutableStateOf("Rumah") }
@@ -77,6 +78,7 @@ fun HomeScreen(
         onRetry = viewModel::retry,
         onListingClick = onListingClick,
         onCategoryClick = onCategoryClick,
+        onUploadClick = onUploadClick,
     )
 
     if (showLocationSheet) {
@@ -99,6 +101,7 @@ private fun HomeScreenContent(
     onRetry: () -> Unit,
     onListingClick: (Listing) -> Unit,
     onCategoryClick: (ListingTier) -> Unit = {},
+    onUploadClick: () -> Unit = {},
 ) {
     Box(modifier = Modifier.fillMaxSize().background(SgColor.Neutral100)) {
         when (uiState) {
@@ -111,6 +114,7 @@ private fun HomeScreenContent(
                 onSearchQueryChange = onSearchQueryChange,
                 onListingClick = onListingClick,
                 onCategoryClick = onCategoryClick,
+                onUploadClick = onUploadClick,
             )
         }
     }
@@ -142,6 +146,7 @@ private fun HomeFeedList(
     onSearchQueryChange: (String) -> Unit,
     onListingClick: (Listing) -> Unit,
     onCategoryClick: (ListingTier) -> Unit,
+    onUploadClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val nearbyTitle = stringResource(R.string.home_rail_nearby)
@@ -161,6 +166,7 @@ private fun HomeFeedList(
             HomeTopBar(
                 addressLabel = addressLabel,
                 onAddressClick = onAddressClick,
+                onUploadClick = onUploadClick,
                 modifier = Modifier.padding(horizontal = 23.dp, vertical = 16.dp),
             )
         }
@@ -206,7 +212,12 @@ private fun HomeFeedList(
 /** Figma node 40:6216 top row: "Rumah" location chip (opens LocationPickerSheet) + "Upload" CTA
  * (85:3039) + notification bell (104:6511). */
 @Composable
-private fun HomeTopBar(addressLabel: String, onAddressClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun HomeTopBar(
+    addressLabel: String,
+    onAddressClick: () -> Unit,
+    onUploadClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -242,9 +253,7 @@ private fun HomeTopBar(addressLabel: String, onAddressClick: () -> Unit, modifie
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .background(SgColor.Brand500, RoundedCornerShape(30.dp))
-                    // Opens the create-listing flow — merchant/Activity-jual screens aren't
-                    // built yet this session.
-                    .clickableNoRipple()
+                    .clickableNoRipple(onUploadClick)
                     .padding(horizontal = 10.dp, vertical = 8.dp),
             ) {
                 Icon(
