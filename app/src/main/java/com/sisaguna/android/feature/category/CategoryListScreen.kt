@@ -204,7 +204,7 @@ private fun CategoryHeader(
         )
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            item { CategoryFilterChip(label = "Untuk manusia", selected = tier == ListingTier.HUMAN, onClick = { onTierChange(ListingTier.HUMAN) }) }
+            item { CategoryFilterChip(label = "Siap Santap", selected = tier == ListingTier.HUMAN, onClick = { onTierChange(ListingTier.HUMAN) }) }
             item { CategoryFilterChip(label = "Untuk Ternak", selected = tier == ListingTier.ANIMAL_FEED, onClick = { onTierChange(ListingTier.ANIMAL_FEED) }) }
             item { CategoryFilterChip(label = "Untuk kompos", selected = tier == ListingTier.COMPOST, onClick = { onTierChange(ListingTier.COMPOST) }) }
             item { CategoryFilterChip(label = "Terdekat", selected = nearestFirst, onClick = onToggleNearest) }

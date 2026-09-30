@@ -25,9 +25,13 @@
     <string name="home_rail_animal_feed_subtitle">Temukan sisa makanan untuk ternakmu</string>
     <string name="home_rail_compost">Kompos</string>
     <string name="home_rail_compost_subtitle">Manfaatkan sisa makanan menjadi kompos</string>
+    <string name="home_section_human_title">Siap Santap</string>
+    <string name="home_section_human_subtitle">Makanan sisa yang masih layak dikonsumsi</string>
+    <string name="home_section_farm_title">Pakan Ternak &amp; Kompos</string>
+    <string name="home_section_farm_subtitle">Sisa makanan untuk hewan ternak &amp; bahan kompos</string>
     <string name="home_empty_title">Tidak ada hasil</string>
     <string name="home_empty_subtitle">Coba kata kunci lain atau hapus pencarian</string>
-    <string name="tier_human">Untuk manusia</string>
+    <string name="tier_human">Siap Santap</string>
     <string name="tier_animal_feed">Pakan Hewan</string>
     <string name="tier_compost">Untuk Kompos</string>
 </resources>

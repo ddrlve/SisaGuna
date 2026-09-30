@@ -78,7 +78,7 @@ private val mockAmbil = listOf(
 fun ActivityScreen(modifier: Modifier = Modifier) {
     var tab by remember { mutableStateOf(ActivityTab.AMBIL) }
     var selectedFilter by remember { mutableStateOf(0) }
-    val filters = listOf("Untuk manusia", "Untuk Ternak", "Untuk kompos", "Terdekat", "Gratis")
+    val filters = listOf("Siap Santap", "Untuk Ternak", "Untuk kompos", "Terdekat", "Gratis")
 
     Column(modifier = modifier.fillMaxSize().background(SgColor.Neutral100)) {
         Column(
