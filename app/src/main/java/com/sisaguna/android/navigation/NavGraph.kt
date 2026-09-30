@@ -50,7 +50,10 @@ fun SgNavGraph(navController: NavHostController) {
         NavHost(
             navController = navController,
             startDestination = Screen.Landing.route,
-            modifier = Modifier.padding(bottom = if (showBottomNav) padding.calculateBottomPadding() else 0.dp),
+            modifier = Modifier.padding(
+                top = padding.calculateTopPadding(),
+                bottom = if (showBottomNav) padding.calculateBottomPadding() else 0.dp,
+            ),
         ) {
             composable(Screen.Landing.route) {
                 LandingScreen(
