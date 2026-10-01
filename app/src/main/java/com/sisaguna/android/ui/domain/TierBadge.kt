@@ -17,7 +17,7 @@ import com.sisaguna.android.ui.theme.SgColor
 @Composable
 fun TierBadge(tier: ListingTier, modifier: Modifier = Modifier) {
     val label = when (tier) {
-        ListingTier.HUMAN -> "untuk manusia"
+        ListingTier.HUMAN -> "siap santap"
         ListingTier.ANIMAL_FEED -> "untuk ternak"
         ListingTier.COMPOST -> "untuk kompos"
     }
