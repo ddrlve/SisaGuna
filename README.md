@@ -2,7 +2,7 @@
 
 Aplikasi & ui mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum menjadi sampah, pembeli di sekitar membeli atau mengambilnya langsung di tempat lewat app, bayar di lokasi saat ambil.
 
-Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack, dan aturan kerja ada di `ANDROID_CLAUDE.md`.
+Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack.
 
 Lecture Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
 
@@ -86,7 +86,6 @@ SisaGuna/
 │   ├── libs.versions.toml            Version catalog semua dependency
 │   └── wrapper/                      Gradle wrapper (jar dan properties)
 │
-├── ANDROID_CLAUDE.md                 Konteks produk, stack, dan aturan kerja untuk Claude Code
 ├── build.gradle.kts                  Konfigurasi plugin level root
 ├── settings.gradle.kts               Daftar module Gradle
 ├── gradle.properties                 Konfigurasi JVM dan flag Gradle / AndroidX
@@ -94,7 +93,7 @@ SisaGuna/
 └── README.md                         Dokumen ini
 ```
 
-Aturan penempatan file mengikuti `ANDROID_CLAUDE.md`: Composable tidak pernah memanggil Supabase langsung, semua lewat Repository lalu ViewModel lalu StateFlow lalu Composable collect.
+Composable tidak pernah memanggil Supabase langsung, semua lewat Repository lalu ViewModel lalu StateFlow lalu Composable collect.
 
 ## Setup Lokal
 
@@ -113,7 +112,7 @@ Atau lewat terminal:
 
 ## Deploy Production
 
-Belum ada build production. Backend Supabase dikerjakan di repo terpisah oleh anggota tim lain, disambungkan ke app ini begitu keputusan project (lihat `ANDROID_CLAUDE.md`) dikonfirmasi, lalu distribusi lewat Play Store internal testing untuk kebutuhan demo.
+Belum ada build production. Backend Supabase dikerjakan di repo terpisah oleh anggota tim lain, disambungkan ke app ini begitu keputusan project dikonfirmasi, lalu distribusi lewat Play Store internal testing untuk kebutuhan demo.
 
 ## Catatan
 
