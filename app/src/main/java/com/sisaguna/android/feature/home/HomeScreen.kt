@@ -443,7 +443,7 @@ private fun PakanTernakSection(
 ) {
     Column(
         modifier = modifier
-            .padding(horizontal = 23.dp)
+            .padding(start = 23.dp, end = 23.dp, top = 16.dp)
             .background(SgColor.Neutral50, RoundedCornerShape(20.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
