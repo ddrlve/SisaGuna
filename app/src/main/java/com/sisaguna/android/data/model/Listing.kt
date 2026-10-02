@@ -15,4 +15,13 @@ data class Listing(
     val pickupEnd: Instant, // listing lewat waktu ini tidak tampil di feed
     val imageUrl: String,
     val distanceKm: Double?,
-)
+    val description: String = "",
+    val stock: Int = 5,
+    val pickupStart: Instant? = null,
+) {
+    /** What one unit costs at checkout: 0 when free. */
+    val unitPrice: Int get() = if (isFree) 0 else priceDiscounted ?: priceOriginal ?: 0
+
+    /** What one unit would cost at normal retail price, for the "you saved" line. */
+    val unitOriginalPrice: Int get() = priceOriginal ?: unitPrice
+}
