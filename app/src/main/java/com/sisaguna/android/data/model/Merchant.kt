@@ -8,4 +8,5 @@ data class Merchant(
     val isVerified: Boolean,
     val status: MerchantStatus,
     val location: String,
+    val rating: Double? = null, // null = no ratings yet; UI hides the star row
 )

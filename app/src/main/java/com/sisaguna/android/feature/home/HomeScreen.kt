@@ -1,31 +1,65 @@
 package com.sisaguna.android.feature.home
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.graphicsLayer
+import com.sisaguna.android.data.repository.Voucher
+import com.sisaguna.android.ui.domain.VoucherTicket
+import kotlinx.coroutines.launch
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,26 +68,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sisaguna.android.R
-import com.sisaguna.android.feature.address.LocationPickerSheet
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.data.model.MerchantStatus
+import com.sisaguna.android.ui.components.SgEaseOut
+import com.sisaguna.android.ui.components.SgEmptyState
 import com.sisaguna.android.ui.components.SgSearchField
+import com.sisaguna.android.ui.components.pressable
 import com.sisaguna.android.ui.domain.ListingCard
 import com.sisaguna.android.ui.theme.SgColor
+import com.sisaguna.android.ui.theme.SgRadius
+import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 import com.sisaguna.android.ui.theme.SisaGunaTheme
 import java.time.Instant
@@ -65,29 +108,72 @@ fun HomeScreen(
     onListingClick: (Listing) -> Unit = {},
     onCategoryClick: (ListingTier) -> Unit = {},
     onUploadClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    showNotificationBadge: Boolean = false,
+    addressLabel: String = "Rumah",
+    onAddressClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var addressLabel by remember { mutableStateOf("Rumah") }
-    var showLocationSheet by remember { mutableStateOf(false) }
+    val unread by viewModel.unreadNotifications.collectAsStateWithLifecycle()
+    val vouchers by viewModel.vouchers.collectAsStateWithLifecycle()
+    var showFilter by remember { mutableStateOf(false) }
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
-    HomeScreenContent(
-        uiState = uiState,
-        addressLabel = addressLabel,
-        onAddressClick = { showLocationSheet = true },
-        onSearchQueryChange = viewModel::onSearchQueryChange,
-        onRetry = viewModel::retry,
-        onListingClick = onListingClick,
-        onCategoryClick = onCategoryClick,
-        onUploadClick = onUploadClick,
-    )
+    fun toast(message: String) {
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            snackbar.showSnackbar(message)
+        }
+    }
 
-    if (showLocationSheet) {
-        LocationPickerSheet(
-            onDismiss = { showLocationSheet = false },
-            onLocationResolved = { label ->
-                addressLabel = label
-                showLocationSheet = false
+    Box(Modifier.fillMaxSize()) {
+        HomeScreenContent(
+            uiState = uiState,
+            addressLabel = addressLabel,
+            unreadNotifications = if (showNotificationBadge) unread else 0,
+            vouchers = vouchers,
+            onAddressClick = onAddressClick,
+            onSearchQueryChange = viewModel::onSearchQueryChange,
+            onFilterClick = { showFilter = true },
+            onTabSelected = viewModel::onTabSelected,
+            onRetry = viewModel::retry,
+            onListingClick = onListingClick,
+            onCategoryClick = onCategoryClick,
+            onUploadClick = onUploadClick,
+            onNotificationsClick = onNotificationsClick,
+            onClaimVoucher = { code ->
+                viewModel.claimVoucher(code)
+                toast("Voucher diklaim. Pakai saat checkout ya!")
             },
+            onBanner = { action ->
+                when (action) {
+                    BannerAction.BROWSE_FREE -> {
+                        viewModel.onTabSelected(HomeTab.SIAP_SANTAP)
+                        val current = (uiState as? HomeUiState.Success)?.filter ?: HomeFilter()
+                        viewModel.onFilterChange(current.copy(freeOnly = true))
+                        toast("Menampilkan makanan gratis")
+                    }
+                    BannerAction.CLAIM_FIRST_ORDER -> {
+                        viewModel.claimVoucher("PERTAMA")
+                        toast("Voucher PERTAMA diklaim: diskon 50% pesanan pertama")
+                    }
+                    BannerAction.OPEN_FARM_TAB -> viewModel.onTabSelected(HomeTab.TERNAK_KOMPOS)
+                    BannerAction.UPLOAD -> onUploadClick()
+                }
+            },
+        )
+        SnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (showFilter) {
+        HomeFilterSheet(
+            current = (uiState as? HomeUiState.Success)?.filter ?: HomeFilter(),
+            onApply = {
+                viewModel.onFilterChange(it)
+                showFilter = false
+            },
+            onDismiss = { showFilter = false },
         )
     }
 }
@@ -96,25 +182,39 @@ fun HomeScreen(
 private fun HomeScreenContent(
     uiState: HomeUiState,
     addressLabel: String,
+    unreadNotifications: Int,
+    vouchers: List<Pair<Voucher, Boolean>>,
     onAddressClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
+    onFilterClick: () -> Unit,
+    onTabSelected: (HomeTab) -> Unit,
     onRetry: () -> Unit,
     onListingClick: (Listing) -> Unit,
     onCategoryClick: (ListingTier) -> Unit = {},
     onUploadClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
+    onClaimVoucher: (String) -> Unit = {},
+    onBanner: (BannerAction) -> Unit = {},
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(SgColor.Neutral100)) {
+    Box(modifier = Modifier.fillMaxSize().background(SgColor.Page)) {
         when (uiState) {
             is HomeUiState.Loading -> LoadingState()
             is HomeUiState.Error -> ErrorState(message = uiState.message, onRetry = onRetry)
             is HomeUiState.Success -> HomeFeedList(
                 state = uiState,
                 addressLabel = addressLabel,
+                unreadNotifications = unreadNotifications,
+                vouchers = vouchers,
                 onAddressClick = onAddressClick,
                 onSearchQueryChange = onSearchQueryChange,
+                onFilterClick = onFilterClick,
+                onTabSelected = onTabSelected,
                 onListingClick = onListingClick,
                 onCategoryClick = onCategoryClick,
                 onUploadClick = onUploadClick,
+                onNotificationsClick = onNotificationsClick,
+                onClaimVoucher = onClaimVoucher,
+                onBanner = onBanner,
             )
         }
     }
@@ -131,111 +231,264 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = message, style = MaterialTheme.typography.bodyMedium, color = SgColor.Neutral500)
+            Text(text = message, style = SgTextStyle.Body)
             Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = onRetry) { Text("Coba lagi") }
+            Button(onClick = onRetry) { Text(stringResource(R.string.common_retry)) }
         }
     }
 }
 
+/**
+ * Spec §2 layout plus the round-2 polish: banner carousel above a sticky segmented switch.
+ * Once the switch reaches the top it stays pinned on a frosted (translucent white + hairline)
+ * strip so the user can change tabs without scrolling back up.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeFeedList(
     state: HomeUiState.Success,
     addressLabel: String,
+    unreadNotifications: Int,
+    vouchers: List<Pair<Voucher, Boolean>>,
     onAddressClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
+    onFilterClick: () -> Unit,
+    onTabSelected: (HomeTab) -> Unit,
     onListingClick: (Listing) -> Unit,
     onCategoryClick: (ListingTier) -> Unit,
     onUploadClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
+    onClaimVoucher: (String) -> Unit,
+    onBanner: (BannerAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val nearbyTitle = stringResource(R.string.home_rail_nearby)
-    val nearbySubtitle = stringResource(R.string.home_rail_nearby_subtitle)
-    val dealsTitle = stringResource(R.string.home_rail_deals)
-    val dealsSubtitle = stringResource(R.string.home_rail_deals_subtitle)
-    val animalFeedTitle = stringResource(R.string.home_rail_animal_feed)
-    val animalFeedSubtitle = stringResource(R.string.home_rail_animal_feed_subtitle)
-    val compostTitle = stringResource(R.string.home_rail_compost)
-    val compostSubtitle = stringResource(R.string.home_rail_compost_subtitle)
+    val listState = rememberLazyListState()
+    val pinned by remember { derivedStateOf { listState.firstVisibleItemIndex >= 3 } }
+    val stripAlpha by animateFloatAsState(if (pinned) 1f else 0f, tween(180), label = "stickyGlass")
 
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
+        contentPadding = PaddingValues(bottom = SgSpacing.Xl),
     ) {
         item {
             HomeTopBar(
                 addressLabel = addressLabel,
+                unreadNotifications = unreadNotifications,
                 onAddressClick = onAddressClick,
                 onUploadClick = onUploadClick,
-                modifier = Modifier.padding(horizontal = 23.dp, vertical = 16.dp),
+                onNotificationsClick = onNotificationsClick,
+                modifier = Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Md),
             )
         }
         item {
+            SgSearchField(
+                value = state.searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = stringResource(R.string.home_search_placeholder),
+                onFilterClick = onFilterClick,
+                activeFilterCount = state.filter.activeCount,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg),
+            )
+        }
+        item {
+            BannerCarousel(onAction = onBanner, modifier = Modifier.padding(top = SgSpacing.Lg))
+        }
+        stickyHeader(key = "switch") {
             Column(
-                modifier = Modifier.padding(horizontal = 23.dp),
-                verticalArrangement = Arrangement.spacedBy(15.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(SgColor.Page.copy(alpha = 0.6f + 0.32f * stripAlpha))
+                    .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Md, bottom = SgSpacing.Sm),
             ) {
-                SgSearchField(
-                    value = state.searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    placeholder = stringResource(R.string.home_search_placeholder),
-                    modifier = Modifier.fillMaxWidth(),
+                SegmentedSwitch(
+                    options = listOf(stringResource(R.string.tier_human), stringResource(R.string.home_tab_farm)),
+                    selectedIndex = state.selectedTab.ordinal,
+                    onSelect = { onTabSelected(HomeTab.entries[it]) },
                 )
-                PromoBanner()
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).graphicsLayer { alpha = stripAlpha }.background(SgColor.Hairline))
+        }
+        if (state.filter.activeCount > 0) {
+            item(key = "active-filter") {
+                ActiveFilterBar(state.filter, onClick = onFilterClick)
             }
         }
-        item { SiapSantapHeaderAndTile(onTierClick = onCategoryClick) }
-
-        if (state.isEmpty) {
-            item {
-                PakanTernakSection(
-                    animalFeedTitle = animalFeedTitle,
-                    animalFeedSubtitle = animalFeedSubtitle,
-                    animalFeed = emptyList(),
-                    compostTitle = compostTitle,
-                    compostSubtitle = compostSubtitle,
-                    compost = emptyList(),
-                    now = state.now,
-                    onListingClick = onListingClick,
-                    onTierClick = onCategoryClick,
-                )
-            }
-            item { EmptySearchState(modifier = Modifier.padding(24.dp)) }
-        } else {
-            listingRail(nearbyTitle, nearbySubtitle, { RadiusTag() }, state.nearby, state.now, onListingClick)
-            listingRail(dealsTitle, dealsSubtitle, { SeeAllLink(onClick = { onCategoryClick(ListingTier.HUMAN) }) }, state.deals, state.now, onListingClick)
-            item {
-                PakanTernakSection(
-                    animalFeedTitle = animalFeedTitle,
-                    animalFeedSubtitle = animalFeedSubtitle,
-                    animalFeed = state.animalFeed,
-                    compostTitle = compostTitle,
-                    compostSubtitle = compostSubtitle,
-                    compost = state.compost,
-                    now = state.now,
-                    onListingClick = onListingClick,
-                    onTierClick = onCategoryClick,
-                )
+        item(key = "tab-content") {
+            AnimatedContent(
+                targetState = state.selectedTab,
+                transitionSpec = {
+                    val forward = targetState.ordinal > initialState.ordinal
+                    (fadeIn(tween(200, easing = SgEaseOut)) + slideInHorizontally(tween(260, easing = SgEaseOut)) { if (forward) it / 8 else -it / 8 }) togetherWith
+                        fadeOut(tween(120))
+                },
+                label = "homeTab",
+            ) { tab ->
+                Column {
+                    when (tab) {
+                        HomeTab.SIAP_SANTAP -> SiapSantapTab(state, vouchers, onListingClick, onCategoryClick, onClaimVoucher)
+                        HomeTab.TERNAK_KOMPOS -> TernakKomposTab(state, onListingClick, onCategoryClick)
+                    }
+                    if (state.activeTabIsEmpty) {
+                        if (state.otherTabMatchCount > 0) {
+                            val otherTab = if (tab == HomeTab.SIAP_SANTAP) HomeTab.TERNAK_KOMPOS else HomeTab.SIAP_SANTAP
+                            OtherTabHint(
+                                count = state.otherTabMatchCount,
+                                tabName = stringResource(if (otherTab == HomeTab.SIAP_SANTAP) R.string.tier_human else R.string.home_tab_farm),
+                                onClick = { onTabSelected(otherTab) },
+                            )
+                        } else {
+                            SgEmptyState(
+                                icon = Icons.Rounded.SearchOff,
+                                title = stringResource(R.string.home_empty_title),
+                                body = stringResource(R.string.home_empty_subtitle),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+@Composable
+private fun ActiveFilterBar(filter: HomeFilter, onClick: () -> Unit) {
+    val parts = buildList {
+        if (filter.sort != HomeSort.RELEVANT) add(filter.sort.label)
+        filter.maxDistanceKm?.let { add("< ${it.toInt()} km") }
+        if (filter.freeOnly) add("Gratis")
+    }
+    Row(
+        modifier = Modifier
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Sm)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.Mint)
+            .pressable(onClick)
+            .padding(horizontal = SgSpacing.Lg, vertical = SgSpacing.Sm),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text("Filter: " + parts.joinToString(" · "), style = SgTextStyle.TextXsMedium, color = SgColor.Brand700, modifier = Modifier.weight(1f))
+        Text("Ubah", style = SgTextStyle.TextXsMedium, color = SgColor.Brand600)
+    }
+}
+
+@Composable
+private fun SiapSantapTab(
+    state: HomeUiState.Success,
+    vouchers: List<Pair<Voucher, Boolean>>,
+    onListingClick: (Listing) -> Unit,
+    onCategoryClick: (ListingTier) -> Unit,
+    onClaimVoucher: (String) -> Unit,
+) {
+    Rail(
+        title = stringResource(R.string.home_rail_nearby),
+        subtitle = stringResource(R.string.home_rail_nearby_subtitle),
+        trailing = { RadiusTag() },
+        listings = state.nearby,
+        now = state.now,
+        onListingClick = onListingClick,
+    )
+    if (vouchers.isNotEmpty() && state.searchQuery.isBlank()) {
+        Text(
+            "Voucher untuk kamu",
+            style = SgTextStyle.Title,
+            modifier = Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl),
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
+            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+        ) {
+            items(vouchers, key = { it.first.code }) { (v, claimed) ->
+                VoucherTicket(
+                    title = v.title,
+                    subtitle = v.description,
+                    trailing = if (claimed) "Sudah diklaim ✓" else "Ketuk untuk klaim",
+                    trailingColor = if (claimed) SgColor.InkMuted else SgColor.Brand700,
+                    selected = claimed,
+                    onClick = { if (!claimed) onClaimVoucher(v.code) },
+                    modifier = Modifier.width(272.dp),
+                )
+            }
+        }
+    }
+    Rail(
+        title = stringResource(R.string.home_rail_deals),
+        subtitle = stringResource(R.string.home_rail_deals_subtitle),
+        trailing = { SeeAllLink(onClick = { onCategoryClick(ListingTier.HUMAN) }) },
+        listings = state.deals,
+        now = state.now,
+        onListingClick = onListingClick,
+    )
+}
+
+@Composable
+private fun TernakKomposTab(
+    state: HomeUiState.Success,
+    onListingClick: (Listing) -> Unit,
+    onCategoryClick: (ListingTier) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg),
+        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+    ) {
+        WideTile(
+            image = R.drawable.category_animal,
+            label = stringResource(R.string.tier_animal_feed),
+            count = state.animalFeed.size,
+            tint = SgColor.Farm,
+            modifier = Modifier.weight(1f),
+            onClick = { onCategoryClick(ListingTier.ANIMAL_FEED) },
+        )
+        WideTile(
+            image = R.drawable.category_compost,
+            label = stringResource(R.string.tier_compost),
+            count = state.compost.size,
+            tint = SgColor.Compost,
+            modifier = Modifier.weight(1f),
+            onClick = { onCategoryClick(ListingTier.COMPOST) },
+        )
+    }
+    Rail(
+        title = stringResource(R.string.home_rail_animal_feed),
+        subtitle = stringResource(R.string.home_rail_animal_feed_subtitle),
+        trailing = { SeeAllLink(onClick = { onCategoryClick(ListingTier.ANIMAL_FEED) }) },
+        listings = state.animalFeed,
+        now = state.now,
+        onListingClick = onListingClick,
+    )
+    Rail(
+        title = stringResource(R.string.home_rail_compost),
+        subtitle = stringResource(R.string.home_rail_compost_subtitle),
+        trailing = { SeeAllLink(onClick = { onCategoryClick(ListingTier.COMPOST) }) },
+        listings = state.compost,
+        now = state.now,
+        onListingClick = onListingClick,
+    )
+}
+
 /** Figma node 40:6216 top row: "Rumah" location chip (opens LocationPickerSheet) + "Upload" CTA
- * (85:3039) + notification bell (104:6511). */
+ * (85:3039) + notification bell (104:6511) with an unread badge. */
 @Composable
 private fun HomeTopBar(
     addressLabel: String,
+    unreadNotifications: Int,
     onAddressClick: () -> Unit,
     onUploadClick: () -> Unit,
+    onNotificationsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(SgColor.BaseWhite, RoundedCornerShape(30.dp))
-                .clickableNoRipple(onAddressClick)
+                .clip(RoundedCornerShape(SgRadius.Pill))
+                .background(SgColor.BaseWhite)
+                .pressable(onAddressClick)
                 .padding(horizontal = 10.dp, vertical = 8.dp),
         ) {
             Box(
@@ -252,9 +505,10 @@ private fun HomeTopBar(
             }
             Text(
                 text = addressLabel,
-                style = SgTextStyle.TextSmMedium,
-                color = SgColor.Neutral800,
-                modifier = Modifier.padding(start = 8.dp),
+                style = SgTextStyle.Label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 8.dp).widthIn(max = 132.dp),
             )
         }
         Row(
@@ -264,9 +518,10 @@ private fun HomeTopBar(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .background(SgColor.Brand500, RoundedCornerShape(30.dp))
-                    .clickableNoRipple(onUploadClick)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .clip(RoundedCornerShape(SgRadius.Pill))
+                    .background(SgColor.Brand500)
+                    .pressable(onUploadClick)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_upload),
@@ -276,206 +531,193 @@ private fun HomeTopBar(
                 )
                 Text(
                     text = stringResource(R.string.home_upload_cta),
-                    style = SgTextStyle.TextSmMedium,
+                    style = SgTextStyle.Label,
                     color = SgColor.BaseWhite,
-                    modifier = Modifier.padding(start = 8.dp),
+                    modifier = Modifier.padding(start = 6.dp),
                 )
             }
+            NotificationBell(unread = unreadNotifications, onClick = onNotificationsClick)
+        }
+    }
+}
+
+@Composable
+private fun NotificationBell(unread: Int, onClick: () -> Unit) {
+    val cd = if (unread > 0) {
+        stringResource(R.string.home_notifications_unread_cd, unread)
+    } else {
+        stringResource(R.string.home_notifications_cd)
+    }
+    Box(modifier = Modifier.size(40.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(CircleShape)
+                .background(SgColor.BaseWhite)
+                .pressable(onClick, pressedScale = 0.92f)
+                .semantics { contentDescription = cd },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_notification_bell),
+                contentDescription = null,
+                tint = SgColor.Ink,
+                modifier = Modifier.size(22.dp),
+            )
+        }
+        AnimatedVisibility(
+            visible = unread > 0,
+            enter = scaleIn(initialScale = 0.6f, animationSpec = spring(dampingRatio = 0.6f)) + fadeIn(),
+            exit = scaleOut(targetScale = 0.6f, animationSpec = tween(120)) + fadeOut(tween(120)),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = 4.dp, y = (-2).dp),
+        ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .background(SgColor.BaseWhite, CircleShape)
-                    // Opens the notification list — not built yet this session.
-                    .clickableNoRipple(),
+                    .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
+                    .border(2.dp, SgColor.Page, CircleShape)
+                    .padding(2.dp)
+                    .background(SgColor.RedStatus, CircleShape)
+                    .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_notification_bell),
-                    contentDescription = stringResource(R.string.home_notifications_cd),
-                    tint = SgColor.Neutral800,
-                    modifier = Modifier.size(24.dp),
+                Text(
+                    text = if (unread > 9) "9+" else unread.toString(),
+                    color = SgColor.BaseWhite,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 14.sp,
                 )
             }
         }
     }
 }
 
-/** Figma node 43:6293 promo banner. Decorative stars/ellipses simplified to a flat brand
- * background — the food illustration and copy are the real Figma asset/text. */
+/**
+ * Pill track in [SgColor.Hairline] with a white thumb that slides under the selected label.
+ * The thumb moves on a spring so a quick double-tap retargets mid-flight instead of
+ * restarting.
+ */
 @Composable
-private fun PromoBanner(modifier: Modifier = Modifier) {
-    Box(
+private fun SegmentedSwitch(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(160.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(SgColor.Brand100),
+            .height(44.dp)
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.Hairline)
+            .padding(4.dp),
     ) {
-        Image(
-            painter = painterResource(R.drawable.banner_food),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(190.dp)
-                .padding(end = 4.dp),
+        val segmentWidth = maxWidth / options.size
+        val thumbOffset by animateDpAsState(
+            targetValue = segmentWidth * selectedIndex,
+            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+            label = "segmentThumb",
         )
-        Column(modifier = Modifier.padding(start = 16.dp, top = 20.dp)) {
-            Text(
-                text = stringResource(R.string.home_promo_title),
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Black,
-                color = SgColor.Brand700,
-            )
-            Text(
-                text = stringResource(R.string.home_promo_subtitle),
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Black,
-                color = SgColor.Neutral50,
-            )
-            Text(
-                text = stringResource(R.string.home_promo_free),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Black,
-                fontStyle = FontStyle.Italic,
-                color = SgColor.Neutral50,
-            )
-        }
-        Row(
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
-            Box(Modifier.width(12.dp).height(4.dp).background(SgColor.BaseWhite, RoundedCornerShape(50)))
-            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
-            Box(Modifier.size(4.dp).background(SgColor.BaseWhite, CircleShape))
+                .offset(x = thumbOffset)
+                .width(segmentWidth)
+                .fillMaxHeight()
+                .shadow(2.dp, RoundedCornerShape(SgRadius.Pill))
+                .background(SgColor.BaseWhite, RoundedCornerShape(SgRadius.Pill)),
+        )
+        Row(modifier = Modifier.fillMaxSize().selectableGroup()) {
+            options.forEachIndexed { index, label ->
+                val selected = index == selectedIndex
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(SgRadius.Pill))
+                        .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(index) }),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        style = SgTextStyle.Label,
+                        color = if (selected) SgColor.Ink else SgColor.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                }
+            }
         }
     }
 }
 
-/** One tier tile (Figma node 259:10226-259:10237 pattern, reused per-section after the
- * section split). Tapping opens Category List filtered by tier. */
+/** Ternak & Kompos entry tile (spec §2): tinted icon square left, label + count right. */
 @Composable
-private fun CategoryTile(
-    tier: ListingTier,
-    labelRes: Int,
+private fun WideTile(
     image: Int,
-    bg: Color,
-    onClick: (ListingTier) -> Unit,
+    label: String,
+    count: Int,
+    tint: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+    Row(
         modifier = modifier
-            .background(SgColor.BaseWhite, RoundedCornerShape(20.dp))
-            .clickableNoRipple(onClick = { onClick(tier) })
-            .padding(16.dp),
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile))
+            .pressable(onClick)
+            .padding(SgSpacing.Md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(72.dp)
-                .background(bg, RoundedCornerShape(14.dp)),
+                .size(44.dp)
+                .background(tint, RoundedCornerShape(SgRadius.Thumb)),
             contentAlignment = Alignment.Center,
         ) {
             Image(
                 painter = painterResource(image),
-                contentDescription = stringResource(labelRes),
+                contentDescription = null,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.size(48.dp),
+                modifier = Modifier.size(32.dp),
             )
         }
-        Text(
-            text = stringResource(labelRes),
-            style = SgTextStyle.TextSmRegular,
-            color = SgColor.LabelsPrimary,
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text = stringResource(R.string.home_available_count, count), style = SgTextStyle.Body, maxLines = 1)
+        }
     }
 }
 
-/** Section 1 — human food. No tint (matches the page background), single tile. */
 @Composable
-private fun SiapSantapHeaderAndTile(onTierClick: (ListingTier) -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(horizontal = 23.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = stringResource(R.string.home_section_human_title),
-                style = SgTextStyle.TextLgSemibold,
-                color = SgColor.Neutral800,
-            )
-            Text(
-                text = stringResource(R.string.home_section_human_subtitle),
-                fontSize = 12.sp,
-                color = SgColor.Neutral400,
-            )
-        }
-        CategoryTile(
-            tier = ListingTier.HUMAN,
-            labelRes = R.string.tier_human,
-            image = R.drawable.category_human,
-            bg = SgColor.Green100,
-            onClick = onTierClick,
-        )
-    }
-}
-
-/** Section 2 — animal feed + compost. Tinted Neutral50 container (no Figma source for this
- * grouping — see spec) holding its own two tiles and both its rails, so the tint stays
- * continuous behind all of it as a single LazyColumn item. */
-@Composable
-private fun PakanTernakSection(
-    animalFeedTitle: String,
-    animalFeedSubtitle: String,
-    animalFeed: List<HomeListingUi>,
-    compostTitle: String,
-    compostSubtitle: String,
-    compost: List<HomeListingUi>,
-    now: Instant,
-    onListingClick: (Listing) -> Unit,
-    onTierClick: (ListingTier) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
+private fun OtherTabHint(count: Int, tabName: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 23.dp, end = 23.dp, top = 16.dp)
-            .background(SgColor.Neutral50, RoundedCornerShape(20.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl)
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(SgColor.Mint)
+            .padding(start = SgSpacing.Lg, end = SgSpacing.Xs),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = stringResource(R.string.home_section_farm_title),
-                style = SgTextStyle.TextLgSemibold,
-                color = SgColor.Neutral800,
-            )
-            Text(
-                text = stringResource(R.string.home_section_farm_subtitle),
-                fontSize = 12.sp,
-                color = SgColor.Neutral400,
-            )
+        Text(
+            text = stringResource(R.string.home_other_tab_hint, count, tabName),
+            style = SgTextStyle.Label,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onClick) {
+            Text(text = stringResource(R.string.home_other_tab_action), style = SgTextStyle.Label, color = SgColor.Brand600)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            CategoryTile(ListingTier.ANIMAL_FEED, R.string.tier_animal_feed, R.drawable.category_animal, SgColor.Orange100, onTierClick)
-            CategoryTile(ListingTier.COMPOST, R.string.tier_compost, R.drawable.category_compost, SgColor.Sky100, onTierClick)
-        }
-        RailBlock(animalFeedTitle, animalFeedSubtitle, { SeeAllLink(onClick = { onTierClick(ListingTier.ANIMAL_FEED) }) }, animalFeed, now, onListingClick)
-        RailBlock(compostTitle, compostSubtitle, { SeeAllLink(onClick = { onTierClick(ListingTier.COMPOST) }) }, compost, now, onListingClick)
     }
 }
 
-/** Non-lazy counterpart of [listingRail] — used inside [PakanTernakSection] so both its rails
- * render as part of one LazyColumn item (keeping the tinted background continuous), rather
- * than as separate lazy items the way Section 1's rails still do. Renders nothing when empty,
- * same as [listingRail]. */
+/** Heading on the gutter; cards scroll edge to edge but rest on the gutter (spec §1.2). */
 @Composable
-private fun RailBlock(
+private fun Rail(
     title: String,
     subtitle: String,
     trailing: @Composable () -> Unit,
@@ -485,67 +727,29 @@ private fun RailBlock(
 ) {
     if (listings.isEmpty()) return
 
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
-                Text(text = subtitle, fontSize = 12.sp, color = SgColor.Neutral400)
-            }
-            trailing()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = title, style = SgTextStyle.Title)
+            Text(text = subtitle, style = SgTextStyle.Caption)
         }
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
-        ) {
-            items(listings, key = { it.listing.id }) { entry ->
-                ListingCard(
-                    listing = entry.listing,
-                    merchant = entry.merchant,
-                    now = now,
-                    onClick = { onListingClick(entry.listing) },
-                )
-            }
-        }
+        trailing()
     }
-}
-
-private fun LazyListScope.listingRail(
-    title: String,
-    subtitle: String,
-    trailing: @Composable () -> Unit,
-    listings: List<HomeListingUi>,
-    now: Instant,
-    onListingClick: (Listing) -> Unit,
-) {
-    if (listings.isEmpty()) return
-
-    item {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 23.dp, end = 23.dp, top = 16.dp, bottom = 4.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
-                Text(text = subtitle, fontSize = 12.sp, color = SgColor.Neutral400)
-            }
-            trailing()
-        }
-    }
-    item {
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 23.dp, vertical = 8.dp),
-        ) {
-            items(listings, key = { it.listing.id }) { entry ->
-                ListingCard(
-                    listing = entry.listing,
-                    merchant = entry.merchant,
-                    now = now,
-                    onClick = { onListingClick(entry.listing) },
-                )
-            }
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+        contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
+    ) {
+        items(listings, key = { it.listing.id }) { entry ->
+            ListingCard(
+                listing = entry.listing,
+                merchant = entry.merchant,
+                now = now,
+                onClick = { onListingClick(entry.listing) },
+            )
         }
     }
 }
@@ -557,35 +761,36 @@ private fun RadiusTag() {
         style = SgTextStyle.TextXsMedium,
         color = SgColor.Brand700,
         modifier = Modifier
-            .background(SgColor.Green100, RoundedCornerShape(30.dp))
+            .background(SgColor.Green100, RoundedCornerShape(SgRadius.Pill))
             .padding(horizontal = 8.dp, vertical = 2.dp),
     )
 }
 
+/** "Lihat semua" pill: 36dp tall with an arrow so it reads as a button, not a footnote. */
 @Composable
 private fun SeeAllLink(onClick: () -> Unit) {
-    Text(
-        text = stringResource(R.string.home_see_all),
-        style = SgTextStyle.TextXsMedium,
-        color = SgColor.Brand600,
-        modifier = Modifier.clickableNoRipple(onClick = onClick),
-    )
-}
-
-@Composable
-private fun EmptySearchState(modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = stringResource(R.string.home_empty_title), style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
-        Text(text = stringResource(R.string.home_empty_subtitle), style = SgTextStyle.TextSmRegular, color = SgColor.Neutral500)
+    Row(
+        modifier = Modifier
+            .height(36.dp)
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.Mint)
+            .pressable(onClick)
+            .padding(start = 14.dp, end = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.home_see_all), style = SgTextStyle.Label, color = SgColor.Brand700)
+        Icon(
+            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+            contentDescription = null,
+            tint = SgColor.Brand700,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
-private fun Modifier.clickableNoRipple(onClick: () -> Unit = {}): Modifier =
-    this.clickable(onClick = onClick)
-
 // ---- Preview: static layout with mock data, no ViewModel/Hilt involved ----
 
-private fun mockUiState(): HomeUiState.Success {
+private fun mockUiState(tab: HomeTab = HomeTab.SIAP_SANTAP): HomeUiState.Success {
     val now = Instant.now()
     val merchant = Merchant("m1", "fadlhan", isVerified = true, status = MerchantStatus.APPROVED, location = "Alam Sutera")
 
@@ -603,35 +808,43 @@ private fun mockUiState(): HomeUiState.Success {
         deals = listOf(listing("p3", "Ayam olie", ListingTier.HUMAN, 34000, null, true, 1, 0.4)),
         animalFeed = listOf(listing("p4", "Ayam olie", ListingTier.ANIMAL_FEED, 34000, null, true, 6, 0.4)),
         compost = listOf(listing("p5", "Ayam olie", ListingTier.COMPOST, 34000, null, true, 8, 0.4)),
+        selectedTab = tab,
         now = now,
     )
 }
 
-@Preview(showBackground = true, heightDp = 1400)
+@Preview(showBackground = true, heightDp = 1000)
 @Composable
 private fun HomeScreenPreview() {
     SisaGunaTheme {
-        HomeScreenContent(uiState = mockUiState(), addressLabel = "Rumah", onAddressClick = {}, onSearchQueryChange = {}, onRetry = {}, onListingClick = {})
+        HomeScreenContent(
+            uiState = mockUiState(),
+            addressLabel = "Rumah",
+            unreadNotifications = 3,
+            vouchers = emptyList(),
+            onAddressClick = {},
+            onFilterClick = {},
+            onSearchQueryChange = {},
+            onTabSelected = {},
+            onRetry = {},
+            onListingClick = {},
+        )
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 1000)
 @Composable
-private fun HomeScreenLoadingPreview() {
-    SisaGunaTheme {
-        HomeScreenContent(uiState = HomeUiState.Loading, addressLabel = "Rumah", onAddressClick = {}, onSearchQueryChange = {}, onRetry = {}, onListingClick = {})
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenErrorPreview() {
+private fun HomeScreenFarmTabPreview() {
     SisaGunaTheme {
         HomeScreenContent(
-            uiState = HomeUiState.Error("Gagal memuat data. Periksa koneksi internet dan coba lagi."),
+            uiState = mockUiState(HomeTab.TERNAK_KOMPOS),
             addressLabel = "Rumah",
+            unreadNotifications = 0,
+            vouchers = emptyList(),
             onAddressClick = {},
+            onFilterClick = {},
             onSearchQueryChange = {},
+            onTabSelected = {},
             onRetry = {},
             onListingClick = {},
         )

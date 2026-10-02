@@ -7,12 +7,19 @@ import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.data.repository.HomeFeed
 import com.sisaguna.android.data.repository.ListingRepository
+import com.sisaguna.android.data.repository.NotificationRepository
+import com.sisaguna.android.data.repository.Voucher
+import com.sisaguna.android.data.repository.VoucherRepository
+import kotlinx.coroutines.flow.combine
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -21,23 +28,32 @@ import kotlinx.coroutines.launch
  *
  * State handling:
  * - Loading: shown on first load and on [retry].
- * - Empty: [HomeUiState.Success.isEmpty] — same Success shape, zero items in every rail.
+ * - Empty: per tab, via [HomeUiState.Success.activeTabIsEmpty].
  * - Error: any thrown exception (e.g. lost connection mid-fetch) surfaces here with a retry
  *   action; nothing partially renders.
+ *
+ * The selected tab and search query live here rather than in the composable so they survive
+ * opening Category List and coming back, and a [retry].
  */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: ListingRepository,
+    notificationRepository: NotificationRepository,
+    private val voucherRepository: VoucherRepository,
 ) : ViewModel() {
 
-    // Phase 0 always focuses the HUMAN tier feed (ANDROID_CLAUDE.md); the tier chips on this
-    // screen are entry points into Category List (filtered by tier), not a Home refetch —
-    // Category List isn't built yet, so HomeScreen accepts the callback and does nothing with
-    // it for now.
     private var rawFeed: HomeFeed? = null
+    private var query: String = ""
+    private var tab: HomeTab = HomeTab.SIAP_SANTAP
+    private var filter: HomeFilter = HomeFilter()
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    /** Drives the bell badge. */
+    val unreadNotifications: StateFlow<Int> = notificationRepository.notifications
+        .map { list -> list.count { !it.isRead } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     init {
         loadHomeFeed()
@@ -46,18 +62,39 @@ class HomeViewModel @Inject constructor(
     fun retry() = loadHomeFeed()
 
     fun onSearchQueryChange(query: String) {
+        this.query = query
+        render()
+    }
+
+    fun onTabSelected(tab: HomeTab) {
+        this.tab = tab
+        render()
+    }
+
+    fun onFilterChange(filter: HomeFilter) {
+        this.filter = filter
+        render()
+    }
+
+    /** Vouchers for the Home strip, with whether each is already claimed. */
+    val vouchers: StateFlow<List<Pair<Voucher, Boolean>>> =
+        combine(voucherRepository.vouchers, voucherRepository.claimed) { all, claimed ->
+            all.map { it to (it.code in claimed) }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun claimVoucher(code: String) = voucherRepository.claim(code)
+
+    private fun render() {
         val feed = rawFeed ?: return
-        _uiState.value = feed.toUiState(query)
+        _uiState.value = feed.toUiState()
     }
 
     private fun loadHomeFeed() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                val feed = repository.getHomeFeed(ListingTier.HUMAN)
-                rawFeed = feed
-                val previousQuery = (_uiState.value as? HomeUiState.Success)?.searchQuery.orEmpty()
-                _uiState.value = feed.toUiState(previousQuery)
+                rawFeed = repository.getHomeFeed(ListingTier.HUMAN)
+                render()
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(
                     e.message ?: "Gagal memuat data. Periksa koneksi internet dan coba lagi.",
@@ -66,16 +103,43 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun HomeFeed.toUiState(query: String): HomeUiState.Success {
-        val matches: (Listing) -> Boolean = { query.isBlank() || it.title.contains(query, ignoreCase = true) }
+    private fun HomeFeed.toUiState(): HomeUiState.Success {
+        val matches: (Listing) -> Boolean = { l ->
+            (query.isBlank() || l.title.contains(query.trim(), ignoreCase = true)) &&
+                (!filter.freeOnly || l.isFree) &&
+                (filter.maxDistanceKm == null || (l.distanceKm ?: Double.MAX_VALUE) <= filter.maxDistanceKm!!)
+        }
+        val nearbyHits = nearby.filter(matches).sortedForFilter()
+        val dealsHits = deals.filter(matches).sortedForFilter()
+        val animalHits = animalFeed.filter(matches).sortedForFilter()
+        val compostHits = compost.filter(matches).sortedForFilter()
+
+        val humanCount = (nearbyHits + dealsHits).distinctBy { it.id }.size
+        val farmCount = (animalHits + compostHits).distinctBy { it.id }.size
+        val activeCount = if (tab == HomeTab.SIAP_SANTAP) humanCount else farmCount
+        val otherCount = if (tab == HomeTab.SIAP_SANTAP) farmCount else humanCount
+
         return HomeUiState.Success(
             searchQuery = query,
-            nearby = nearby.filter(matches).toUi(merchantsById),
-            deals = deals.filter(matches).toUi(merchantsById),
-            animalFeed = animalFeed.filter(matches).toUi(merchantsById),
-            compost = compost.filter(matches).toUi(merchantsById),
+            nearby = nearbyHits.toUi(merchantsById),
+            deals = dealsHits.toUi(merchantsById),
+            animalFeed = animalHits.toUi(merchantsById),
+            compost = compostHits.toUi(merchantsById),
+            selectedTab = tab,
+            otherTabMatchCount = if ((query.isNotBlank() || filter.activeCount > 0) && activeCount == 0) otherCount else 0,
+            filter = filter,
             now = Instant.now(),
         )
+    }
+
+    private fun List<Listing>.sortedForFilter(): List<Listing> = when (filter.sort) {
+        HomeSort.RELEVANT -> this
+        HomeSort.NEAREST -> sortedBy { it.distanceKm ?: Double.MAX_VALUE }
+        HomeSort.CHEAPEST -> sortedBy { it.unitPrice }
+        HomeSort.BIGGEST_DISCOUNT -> sortedByDescending { l ->
+            if (l.isFree) 1.0 else 1.0 - l.unitPrice.toDouble() / (l.priceOriginal ?: l.unitPrice).coerceAtLeast(1)
+        }
+        HomeSort.ENDING_SOON -> sortedBy { it.pickupEnd }
     }
 
     private fun List<Listing>.toUi(merchants: Map<String, Merchant>) = map { listing ->

@@ -2,30 +2,46 @@ package com.sisaguna.android.feature.address
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.BorderStroke
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Map
+import androidx.compose.material.icons.rounded.MyLocation
+import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.RadioButtonChecked
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,229 +49,280 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import com.sisaguna.android.R
+import com.sisaguna.android.data.model.Address
+import com.sisaguna.android.ui.components.SgButton
+import com.sisaguna.android.ui.components.SgButtonStyle
+import com.sisaguna.android.ui.components.SgSearchField
+import com.sisaguna.android.ui.components.pressable
 import com.sisaguna.android.ui.theme.SgColor
+import com.sisaguna.android.ui.theme.SgRadius
+import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class SavedAddress(val label: String, val fullAddress: String)
+/** Fallback map centre (Tangerang) when there's no address or GPS fix yet. */
+private const val DEFAULT_LAT = -6.2275
+private const val DEFAULT_LNG = 106.6544
 
-private val mockSavedAddresses = listOf(
-    SavedAddress("Rumah", "Jl. Sutera Onyx XII No.30, RT.003/RW.010, Kunciran, Kec. Pinang, Kota Tangerang, Banten 15144"),
-    SavedAddress("Apartement mecca", "Komplek Business Park Kebon Jeruk Ruko AB-6, RT.1/RW.5, Meruya Utara, Kec. Kembangan, Kota Jakarta Barat, Daerah Khusus Ibukota Jakarta 11620"),
-)
-
-/** Matches Figma node 43:6960 "Select location". "Lokasi saat ini" does a real GPS fetch +
- * reverse geocode (see LocationFetcher.kt) — everything else here is UI only (no backend to
- * persist a chosen address to yet). */
+/**
+ * Home's location sheet (Figma 43:6960, rebuilt after device feedback). Light scrim — the
+ * screen behind is blurred by the caller instead of blacked out — real address search, a GPS
+ * action that reports progress and errors inline, an in-app map picker, and saved addresses
+ * with a clear selected state.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LocationPickerSheet(
+    state: AddressUiState,
+    onSelectAddress: (String) -> Unit,
+    onUseCurrentLocation: (String) -> Unit,
+    onSaveAddress: (existingId: String?, label: String, place: Place, note: String) -> Unit,
+    onDeleteAddress: (String) -> Unit,
     onDismiss: () -> Unit,
-    onLocationResolved: (String) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        LocationPickerContent(onLocationResolved = onLocationResolved)
-    }
-}
-
-@Composable
-private fun LocationPickerContent(onLocationResolved: (String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var isFetching by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf<List<Place>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+    var gpsBusy by remember { mutableStateOf(false) }
+    var gpsError by remember { mutableStateOf<String?>(null) }
+    var mapFor by remember { mutableStateOf<Address?>(null) }
+    var showMap by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Pair<Address?, Place>?>(null) }
 
-    fun startFetch() {
-        isFetching = true
-        errorMessage = null
+    LaunchedEffect(query) {
+        if (query.length < 3) {
+            results = emptyList()
+            return@LaunchedEffect
+        }
+        searching = true
+        delay(500)
+        results = searchPlaces(context, query)
+        searching = false
+    }
+
+    fun fetchGps() {
+        gpsBusy = true
+        gpsError = null
         scope.launch {
-            try {
-                val location = fetchCurrentLocation(context)
-                val label = reverseGeocodeLabel(context, location)
-                onLocationResolved(label)
-            } catch (e: Exception) {
-                errorMessage = e.message ?: "Gagal mengambil lokasi. Coba lagi."
-            } finally {
-                isFetching = false
-            }
+            runCatching {
+                val loc = fetchCurrentLocation(context)
+                reverseGeocode(context, loc.latitude, loc.longitude)
+            }.onSuccess { onUseCurrentLocation(it.shortLabel) }
+                .onFailure { gpsError = it.message ?: "Gagal mengambil lokasi." }
+            gpsBusy = false
         }
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startFetch() else errorMessage = "Izin lokasi ditolak."
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        if (grants.values.any { it }) fetchGps() else gpsError = "Izin lokasi ditolak. Kamu tetap bisa pilih lewat peta."
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 21.dp),
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = SgColor.BaseWhite,
+        scrimColor = SgColor.Ink.copy(alpha = 0.18f),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 23.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Text(text = "Pilih Lokasi", style = SgTextStyle.TextLgSemibold, color = SgColor.Neutral800)
-
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(SgColor.Neutral100, RoundedCornerShape(30.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_location_card),
-                        contentDescription = null,
-                        tint = SgColor.Neutral500,
-                        modifier = Modifier.width(20.dp),
-                    )
-                    Text(
-                        text = "Cari alamat",
-                        style = SgTextStyle.TextXsRegular,
-                        color = SgColor.Neutral500,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(SgColor.Neutral100, RoundedCornerShape(30.dp))
-                            .clickable {
-                                val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                                if (granted) startFetch() else permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                            }
-                            .padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
-                    ) {
-                        if (isFetching) {
-                            CircularProgressIndicator(modifier = Modifier.width(16.dp), strokeWidth = 2.dp, color = SgColor.Brand500)
-                        } else {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_my_location),
-                                contentDescription = null,
-                                tint = Color.Unspecified,
-                                modifier = Modifier.width(16.dp),
-                            )
-                        }
-                        Text(
-                            text = "Lokasi saat ini",
-                            style = SgTextStyle.TextXsRegular,
-                            color = SgColor.Neutral800,
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .background(SgColor.Neutral100, RoundedCornerShape(30.dp))
-                            .clickable {
-                                val uri = Uri.parse("geo:0,0?q=lokasi")
-                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                            }
-                            .padding(start = 10.dp, end = 14.dp, top = 8.dp, bottom = 8.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_map_search),
-                            contentDescription = null,
-                            tint = Color.Unspecified,
-                            modifier = Modifier.width(16.dp),
-                        )
-                        Text(
-                            text = "pilih di maps",
-                            style = SgTextStyle.TextXsRegular,
-                            color = SgColor.Neutral800,
-                            modifier = Modifier.padding(start = 8.dp),
-                        )
-                    }
-                }
-                errorMessage?.let {
-                    Text(text = it, fontSize = 11.sp, color = SgColor.RedStatus)
-                }
-            }
-            Box(Modifier.fillMaxWidth().height(1.dp).background(SgColor.Neutral100))
-        }
-
-        Spacer(modifier = Modifier.height(17.dp))
-        Text(
-            text = "Alamat tersimpan",
-            style = SgTextStyle.TextSmSemibold,
-            color = SgColor.Neutral500,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 23.dp),
-        )
-        Spacer(modifier = Modifier.height(17.dp))
-
-        Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(17.dp),
-        ) {
-            mockSavedAddresses.forEach { address ->
-                SavedAddressCard(address = address, onClick = { onLocationResolved(address.label) })
-            }
-        }
-
-        Spacer(modifier = Modifier.height(21.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .background(SgColor.Brand500, RoundedCornerShape(50.dp))
-                .clickable { /* Tambah alamat baru — not built yet this session */ }
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(horizontal = SgSpacing.Gutter)
+                .padding(bottom = SgSpacing.Lg),
+            verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
-            Icon(painter = painterResource(R.drawable.ic_add_circle), contentDescription = null, tint = Color.Unspecified)
-            Text(text = "Tambah alamat baru", style = SgTextStyle.TextSmSemibold, color = SgColor.Neutral50)
+            Column {
+                Text("Pilih lokasi", style = SgTextStyle.Title)
+                Text("Makanan di sekitar lokasi ini yang akan ditampilkan.", style = SgTextStyle.Body)
+            }
+            SgSearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = "Cari jalan, kelurahan, atau gedung",
+                containerColor = SgColor.Page,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            AnimatedVisibility(
+                visible = query.length >= 3,
+                enter = fadeIn(tween(150)) + expandVertically(tween(180)),
+                exit = fadeOut(tween(100)) + shrinkVertically(tween(150)),
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Xs)) {
+                    when {
+                        searching -> Text("Mencari…", style = SgTextStyle.Caption)
+                        results.isEmpty() -> Text("Alamat tidak ditemukan. Coba kata lain atau pilih lewat peta.", style = SgTextStyle.Caption)
+                    }
+                    results.forEach { place ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(SgRadius.Thumb))
+                                .pressable({ onUseCurrentLocation(place.shortLabel) })
+                                .padding(vertical = SgSpacing.Sm, horizontal = SgSpacing.Xs),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+                        ) {
+                            Icon(Icons.Rounded.Place, contentDescription = null, tint = SgColor.InkMuted)
+                            Column(Modifier.weight(1f)) {
+                                Text(place.shortLabel, style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(place.fullAddress, style = SgTextStyle.Caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                        }
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+                ActionTile(
+                    icon = Icons.Rounded.MyLocation,
+                    title = "Lokasi saat ini",
+                    subtitle = when {
+                        gpsBusy -> "Mencari sinyal…"
+                        state.currentLocationLabel != null -> state.currentLocationLabel
+                        else -> "Pakai GPS"
+                    },
+                    busy = gpsBusy,
+                    selected = state.currentLocationLabel != null,
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        if (gpsBusy) return@ActionTile
+                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                        if (granted) fetchGps() else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    },
+                )
+                ActionTile(
+                    icon = Icons.Rounded.Map,
+                    title = "Pilih di peta",
+                    subtitle = "Geser titik sendiri",
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        mapFor = null
+                        showMap = true
+                    },
+                )
+            }
+            gpsError?.let { Text(it, style = SgTextStyle.Caption, color = SgColor.RedStatus) }
+
+            Text("Alamat tersimpan", style = SgTextStyle.Label, modifier = Modifier.padding(top = SgSpacing.Sm))
+            state.addresses.forEach { address ->
+                SavedAddressRow(
+                    address = address,
+                    selected = state.currentLocationLabel == null && address.id == state.selectedId,
+                    onSelect = { onSelectAddress(address.id) },
+                    onEdit = { editing = address to Place(address.label, address.fullAddress, address.latitude, address.longitude) },
+                )
+            }
+            SgButton(
+                "Tambah alamat baru",
+                onClick = {
+                    mapFor = null
+                    showMap = true
+                },
+                style = SgButtonStyle.Secondary,
+                modifier = Modifier.fillMaxWidth(),
+                leading = { Icon(Icons.Rounded.Add, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp)) },
+            )
         }
+    }
+
+    if (showMap) {
+        val start = mapFor ?: state.selected
+        MapPickerDialog(
+            initialLatitude = start?.latitude ?: DEFAULT_LAT,
+            initialLongitude = start?.longitude ?: DEFAULT_LNG,
+            onPicked = { place ->
+                showMap = false
+                editing = mapFor to place
+            },
+            onDismiss = { showMap = false },
+        )
+    }
+
+    editing?.let { (existing, place) ->
+        AddressEditorSheet(
+            place = place,
+            initialLabel = existing?.label ?: "",
+            initialNote = existing?.note ?: "",
+            onChangeLocation = {
+                mapFor = existing ?: Address("tmp", "", place.fullAddress, place.latitude, place.longitude)
+                editing = null
+                showMap = true
+            },
+            onSave = { label, note ->
+                onSaveAddress(existing?.id, label, place, note)
+                editing = null
+            },
+            onDismiss = { editing = null },
+            onDelete = existing?.let { e -> { onDeleteAddress(e.id); editing = null } },
+        )
     }
 }
 
 @Composable
-private fun SavedAddressCard(address: SavedAddress, onClick: () -> Unit) {
+private fun ActionTile(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    busy: Boolean = false,
+    selected: Boolean = false,
+) {
+    val border by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Hairline, tween(150), label = "tileBorder")
     Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(if (selected) SgColor.Mint else SgColor.Page)
+            .border(1.dp, border, RoundedCornerShape(SgRadius.Tile))
+            .pressable(onClick)
+            .padding(SgSpacing.Md),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(Modifier.size(36.dp).background(SgColor.BaseWhite, CircleShape), contentAlignment = Alignment.Center) {
+            if (busy) CircularProgressIndicator(strokeWidth = 2.dp, color = SgColor.Brand500, modifier = Modifier.size(18.dp))
+            else Icon(icon, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp))
+        }
+        Text(title, style = SgTextStyle.Label)
+        Text(subtitle, style = SgTextStyle.Caption, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun SavedAddressRow(address: Address, selected: Boolean, onSelect: () -> Unit, onEdit: () -> Unit) {
+    val border by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Hairline, tween(150), label = "addrBorder")
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(SgColor.BaseWhite, RoundedCornerShape(16.dp))
-            .border(BorderStroke(1.dp, SgColor.Neutral100), RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(if (selected) SgColor.Mint else SgColor.BaseWhite)
+            .border(if (selected) 1.5.dp else 1.dp, border, RoundedCornerShape(SgRadius.Tile))
+            .pressable(onSelect)
+            .padding(start = SgSpacing.Md, top = SgSpacing.Md, bottom = SgSpacing.Md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_bookmark_fill),
-                    contentDescription = null,
-                    tint = SgColor.Neutral800,
-                    modifier = Modifier.width(14.dp),
-                )
-                Text(
-                    text = address.label,
-                    style = SgTextStyle.TextXsMedium,
-                    color = SgColor.Neutral800,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-            Icon(
-                painter = painterResource(R.drawable.ic_more_horiz),
-                contentDescription = "Opsi lainnya",
-                tint = SgColor.Neutral800,
-                modifier = Modifier.width(20.dp),
-            )
+        Icon(
+            if (selected) Icons.Rounded.RadioButtonChecked else Icons.Rounded.RadioButtonUnchecked,
+            contentDescription = if (selected) "Dipilih" else null,
+            tint = if (selected) SgColor.Brand500 else SgColor.InkMuted,
+        )
+        Column(Modifier.weight(1f)) {
+            Text(address.label, style = SgTextStyle.Label)
+            Text(address.fullAddress, style = SgTextStyle.Caption, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (address.note.isNotBlank()) Text(address.note, style = SgTextStyle.Caption, color = SgColor.Brand700, maxLines = 1)
         }
-        Text(text = address.fullAddress, fontSize = 10.sp, color = SgColor.Neutral500)
+        IconButton(onClick = onEdit) {
+            Icon(Icons.Rounded.Edit, contentDescription = "Ubah ${address.label}", tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
+        }
     }
 }

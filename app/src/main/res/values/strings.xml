@@ -33,4 +33,118 @@
     <string name="tier_human">Siap Santap</string>
     <string name="tier_animal_feed">Pakan Hewan</string>
     <string name="tier_compost">Untuk Kompos</string>
+
+    <!-- Common -->
+    <string name="common_back_cd">Kembali</string>
+    <string name="common_cancel">Batal</string>
+    <string name="common_undo">Batalkan</string>
+    <string name="common_coming_soon">Segera hadir</string>
+    <string name="common_retry">Coba lagi</string>
+
+    <!-- Home tabs (3a) -->
+    <string name="home_tab_farm">Ternak &amp; Kompos</string>
+    <string name="home_available_count">%1$d tersedia</string>
+    <string name="home_other_tab_hint">Ada %1$d hasil di %2$s</string>
+    <string name="home_other_tab_action">Lihat</string>
+    <string name="home_notifications_unread_cd">Notifikasi, %1$d belum dibaca</string>
+
+    <!-- Saved -->
+    <string name="saved_title">Disimpan</string>
+    <string name="saved_section_merchants">Penyedia</string>
+    <string name="saved_verified">Verified</string>
+    <string name="saved_unsave_cd">Hapus %1$s dari tersimpan</string>
+    <string name="saved_save_cd">Simpan %1$s</string>
+    <string name="saved_removed">Penyedia dihapus</string>
+    <string name="saved_restored">Penyedia disimpan lagi</string>
+    <string name="saved_empty_title">Belum ada penyedia disimpan</string>
+    <string name="saved_empty_body">Penyedia yang kamu simpan akan muncul di sini.</string>
+    <string name="saved_empty_action">Jelajahi makanan</string>
+    <string name="merchant_search_placeholder">Cari di penyedia ini</string>
+    <string name="merchant_not_found">Penyedia tidak ditemukan</string>
+    <string name="merchant_not_found_body">Penyedia ini mungkin sudah tidak aktif.</string>
+    <string name="merchant_no_listings">Belum ada makanan yang cocok</string>
+    <string name="merchant_no_listings_body">Coba kata kunci atau kategori lain.</string>
+    <string name="tier_animal_feed_chip">Untuk Ternak</string>
+    <string name="tier_compost_chip">Untuk kompos</string>
+    <string name="merchant_listing_count">%1$d makanan tersedia</string>
+
+    <!-- Profile -->
+    <string name="profile_member_since">Anggota aktif sejak %1$s</string>
+    <string name="profile_edit_cd">Ubah profil</string>
+    <string name="profile_impact_title">Dampak Penyelamatan Anda</string>
+    <string name="profile_impact_portions_unit">Porsi</string>
+    <string name="profile_impact_portions_label">Makanan</string>
+    <string name="profile_impact_compost_label">Kompos</string>
+    <string name="profile_impact_carbon_label">Karbon Dicegah</string>
+    <string name="profile_saved_money">Anda menghemat %1$s</string>
+    <string name="profile_saved_money_body">Dibandingkan harga normal produk retail</string>
+    <string name="profile_catalog_title">Katalog saya</string>
+    <string name="profile_section_account">Pengaturan Akun</string>
+    <string name="profile_section_support">Dukungan dan Hukum</string>
+    <string name="profile_row_address">Alamat</string>
+    <string name="profile_row_address_hint">Ubah</string>
+    <string name="profile_row_history">Riwayat Penyelamatan</string>
+    <string name="profile_row_history_hint">Lihat semua</string>
+    <string name="profile_row_payment">Metode Pembayaran</string>
+    <string name="profile_row_payment_hint">1 aktif</string>
+    <string name="profile_row_password">Ganti Password</string>
+    <string name="profile_row_password_hint">Ubah</string>
+    <string name="profile_row_notifications">Notifikasi Aplikasi</string>
+    <string name="profile_row_on">Aktif</string>
+    <string name="profile_row_off">Nonaktif</string>
+    <string name="profile_row_help">Pusat Bantuan</string>
+    <string name="profile_row_help_hint">Tanya jawab</string>
+    <string name="profile_row_privacy">Kebijakan Privasi</string>
+    <string name="profile_row_privacy_hint">Syarat ketentuan</string>
+    <string name="profile_logout">Keluar dari Akun</string>
+    <string name="profile_logout_title">Keluar dari akun?</string>
+    <string name="profile_logout_body">Kamu bisa masuk lagi kapan saja.</string>
+    <string name="profile_logout_confirm">Keluar</string>
+    <string name="profile_updated">Profil diperbarui</string>
+
+    <!-- Edit Profile -->
+    <string name="edit_profile_title">Profil</string>
+    <string name="edit_profile_change_photo">Ubah Foto Profile</string>
+    <string name="edit_profile_name">Nama</string>
+    <string name="edit_profile_email">Email</string>
+    <string name="edit_profile_phone">Nomor</string>
+    <string name="edit_profile_save">Simpan perubahan</string>
+    <string name="edit_profile_discard_title">Buang perubahan?</string>
+    <string name="edit_profile_discard_body">Perubahan yang belum disimpan akan hilang.</string>
+    <string name="edit_profile_discard_confirm">Buang</string>
+
+    <!-- Notifications -->
+    <string name="notif_title">Notifikasi</string>
+    <string name="notif_mark_all">Tandai dibaca</string>
+    <string name="notif_filter_all">Semua</string>
+    <string name="notif_filter_orders">Pesanan</string>
+    <string name="notif_filter_merchants">Penyedia</string>
+    <string name="notif_filter_promos">Promo</string>
+    <string name="notif_group_today">Hari ini</string>
+    <string name="notif_group_yesterday">Kemarin</string>
+    <string name="notif_group_week">Minggu ini</string>
+    <string name="notif_group_earlier">Sebelumnya</string>
+    <string name="notif_deleted">Notifikasi dihapus</string>
+    <string name="notif_all_read">Semua notifikasi sudah dibaca</string>
+    <string name="notif_empty_title">Belum ada notifikasi</string>
+    <string name="notif_empty_body">Kabar soal pesanan dan penyedia favoritmu akan muncul di sini.</string>
+    <string name="notif_unread_cd">Belum dibaca</string>
+    <string name="notif_settings_cd">Pengaturan notifikasi</string>
+
+    <!-- Notification settings -->
+    <string name="notif_settings_title">Notifikasi Aplikasi</string>
+    <string name="notif_settings_master">Izinkan notifikasi</string>
+    <string name="notif_settings_master_body">Matikan untuk berhenti menerima semua notifikasi SisaGuna.</string>
+    <string name="notif_settings_section">Jenis notifikasi</string>
+    <string name="notif_pref_pickup">Pengingat pickup</string>
+    <string name="notif_pref_pickup_body">30 menit sebelum waktu ambil berakhir</string>
+    <string name="notif_pref_order">Status pesanan</string>
+    <string name="notif_pref_order_body">Saat pesanan siap diambil atau selesai</string>
+    <string name="notif_pref_merchant">Menu baru dari penyedia tersimpan</string>
+    <string name="notif_pref_merchant_body">Saat penyedia yang kamu simpan upload makanan</string>
+    <string name="notif_pref_promo">Promo &amp; diskon</string>
+    <string name="notif_pref_promo_body">Penawaran hemat dari penyedia di sekitarmu</string>
+    <string name="notif_pref_impact">Ringkasan dampak mingguan</string>
+    <string name="notif_pref_impact_body">Setiap Senin pagi</string>
+    <string name="notif_settings_off_note">Notifikasi sedang nonaktif. Pilihanmu tetap tersimpan.</string>
 </resources>

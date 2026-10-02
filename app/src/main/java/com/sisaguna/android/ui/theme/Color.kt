@@ -37,4 +37,18 @@ object SgColor {
 
     val BaseWhite = Color(0xFFFFFFFF)
     val LabelsPrimary = Color(0xFF000000)
+
+    // 3a tokens (spec §1.2) — no Figma variable source; chosen for the Home/Saved/Profile
+    // polish pass and approved in the spec.
+    val Ink = Color(0xFF1F2A1C)
+    val InkMuted = Color(0xFF6B7466)
+    val Page = Color(0xFFF6F7F4)
+    val Hairline = Color(0xFFE6E8E3)
+    val Mint = Color(0xFFEAF7E4)
+    val Farm = Color(0xFFFFF1E2)
+    val FarmInk = Color(0xFFB4570B)
+    val Compost = Color(0xFFE6F2FB)
+    val CompostInk = Color(0xFF1D6FA5)
+    val PromoTint = Color(0xFFFCEFF3)
+    val PromoInk = Color(0xFFC0306A)
 }

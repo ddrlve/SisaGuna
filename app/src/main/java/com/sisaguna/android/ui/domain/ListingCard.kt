@@ -66,24 +66,12 @@ fun ListingCard(
                     .height(108.dp)
                     .clip(RoundedCornerShape(17.dp)),
             ) {
-                if (listing.imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = listing.imageUrl,
-                        contentDescription = listing.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(108.dp),
-                    )
-                } else {
-                    Image(
-                        painter = painterResource(R.drawable.listing_ayam_olie),
-                        contentDescription = listing.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(108.dp)
-                            .background(SgColor.Neutral300),
-                    )
-                }
+                ListingImage(
+                    imageUrl = listing.imageUrl,
+                    tier = listing.tier,
+                    contentDescription = listing.title,
+                    modifier = Modifier.fillMaxWidth().height(108.dp),
+                )
                 CountdownPill(
                     pickupEnd = listing.pickupEnd,
                     now = now,
@@ -184,11 +172,6 @@ fun PriceLabel(listing: Listing) {
             color = SgColor.Neutral800,
         )
     }
-}
-
-private fun formatRupiah(amount: Int): String {
-    val grouped = amount.toString().reversed().chunked(3).joinToString(".").reversed()
-    return "Rp. $grouped"
 }
 
 fun formatDistance(km: Double): String =
