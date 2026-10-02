@@ -48,7 +48,7 @@ fun CategoryListingCard(
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier.width(168.dp),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(25.dp),
         colors = CardDefaults.cardColors(containerColor = SgColor.BaseWhite),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -64,24 +64,12 @@ fun CategoryListingCard(
                         .height(146.dp)
                         .clip(RoundedCornerShape(17.dp)),
                 ) {
-                    if (listing.imageUrl.isNotBlank()) {
-                        AsyncImage(
-                            model = listing.imageUrl,
-                            contentDescription = listing.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxWidth().height(146.dp),
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(R.drawable.listing_ayam_olie),
-                            contentDescription = listing.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(146.dp)
-                                .background(SgColor.Neutral300),
-                        )
-                    }
+                    ListingImage(
+                        imageUrl = listing.imageUrl,
+                        tier = listing.tier,
+                        contentDescription = listing.title,
+                        modifier = Modifier.fillMaxWidth().height(146.dp),
+                    )
                     CountdownPill(
                         pickupEnd = listing.pickupEnd,
                         now = now,
