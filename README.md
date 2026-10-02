@@ -1,20 +1,18 @@
 # SisaGuna
 
-Aplikasi & ui mobile redistribusi makanan berlebih atau sisa makanan untuk mitra FnB seperti UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum menjadi sampah, pembeli di sekitar membeli atau mengambilnya langsung di tempat lewat app, bayar di lokasi saat ambil.
+Aplikasi mobile redistribusi makanan berlebih untuk mitra FnB, khususnya UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum terbuang. Pembeli di sekitar memesan lewat app, lalu mengambil dan membayar langsung di lokasi.
 
-Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend, backend dikerjakan terpisah oleh anggota tim lain. Konteks lengkap keputusan produk, stack.
+Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend. Backend Supabase dikerjakan terpisah oleh anggota tim lain.
 
 Lecture Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
 
-Link Terkait:
+## Link Terkait
 
-Canva: [PPT](https://canva.link/d403zux6vbz05gn)
-
-Figma: [Figma](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
-
-Front End = https://github.com/ddrlve/SisaGuna
-
-Back End = https://github.com/FadhRach/sisaguna-be
+- Canva: [PPT](https://canva.link/d403zux6vbz05gn)
+- Figma: [Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
+- Figma: [Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1)
+- Front End: https://github.com/ddrlve/SisaGuna
+- Back End: https://github.com/FadhRach/sisaguna-be
 
 ## Contributors
 
@@ -25,75 +23,76 @@ Back End = https://github.com/FadhRach/sisaguna-be
 
 ## Status Pengerjaan
 
-Layar Home sudah dibuat dengan data mock (belum tersambung ke Supabase). Layar lain (login, register, category list, checkout, order, address, profile, merchant, admin) belum dibuat.
+Alur utama pembeli sudah bisa dicoba end to end: splash, landing, login, home, detail produk, checkout, status pesanan, aktivitas, notifikasi, tersimpan, dan profil. Semua data masih dari repository mock (in-memory). App belum tersambung ke Supabase.
+
+Belum dikerjakan: integrasi backend, dashboard mitra penuh, dan panel admin.
 
 ## Tech Stack
 
 | Layer | Teknologi | Catatan |
 |---|---|---|
-| UI | Jetpack Compose + Material3 | Satu satunya jalan dapat animasi halus yang diminta desain |
-| Bahasa | Kotlin | Wajib untuk Compose |
-| Navigasi | Navigation Compose | Type safe nav dengan sealed class routes |
-| Async / DI | Kotlin Coroutines + Flow, Hilt | Standar Android modern |
-| Backend | Supabase (supabase kt) | Dikerjakan terpisah oleh anggota tim lain, repo ini masih pakai mock repository |
-| Image loading | Coil | Ringan, native Compose support |
-| Local state | ViewModel + StateFlow | Bukan LiveData |
-| Build | Gradle 8.9, AGP 8.5.2, compileSdk 34, minSdk 26 | |
+| UI | Jetpack Compose + Material3 (BOM 2024.09.02) | Animasi halus sesuai desain |
+| Bahasa | Kotlin 2.0.21 | |
+| Navigasi | Navigation Compose 2.8.0 | Route dalam sealed class `Screen` |
+| Async / DI | Coroutines + Flow, Hilt 2.51.1 | |
+| State | ViewModel + StateFlow | Bukan LiveData |
+| Image loading | Coil 2.7.0 | |
+| Peta | osmdroid 6.1.20 | Peta OpenStreetMap untuk pilih alamat, tanpa API key |
+| Backend | Supabase | Repo terpisah, app ini masih pakai mock repository |
+| Build | Gradle 8.9, AGP 8.5.2, JDK 17, compileSdk 34, minSdk 26 | |
 
 ## Halaman
 
 | Layar | Status | Deskripsi |
 |---|---|---|
-| Landing / Splash | Belum dikerjakan | Logo, warna brand hijau |
-| Login | Belum dikerjakan | Email / HP, password, lupa kata sandi |
-| Register + role picker | Belum dikerjakan | Pengguna biasa vs mitra restoran |
-| Home / Feed | Sudah dibangun (mock data) | Search, banner promo, kategori 3 tier, rail terdekat / hemat / ternak / kompos |
-| Category list | Belum dikerjakan | Filter chip 3 tier, grid 2 kolom |
-| Alamat & Preferensi | Belum dikerjakan | Multi alamat dengan status aktif, toggle notifikasi per kategori |
-| Status Pesanan | Belum dikerjakan | Timeline status, kode pickup, lokasi & kontak mitra, metode bayar |
+| Splash & Landing | Selesai | Animasi logo, hero mengambang, CTA |
+| Login & Register | Selesai (mock) | Email / HP, password, pilih peran pengguna atau mitra |
+| Mode tamu | Selesai | Bisa jelajah tanpa login, aksi tertentu minta login lewat sheet |
+| Home | Selesai (mock) | Pilih lokasi, carousel banner, strip voucher, filter, tab sticky, seksi Siap Santap dan Pakan Ternak & Kompos |
+| Category list | Selesai (mock) | Filter chip 3 tier, grid 2 kolom |
+| Detail produk & toko | Selesai (mock) | Info produk, keranjang, profil merchant |
+| Checkout | Selesai (mock) | Pilih voucher, ringkasan potongan, metode bayar |
+| Aktivitas & detail pesanan | Selesai (mock) | Riwayat pesanan, timeline status, QR kode pickup |
+| Tersimpan | Selesai (mock) | Daftar merchant favorit |
+| Notifikasi | Selesai (mock) | Daftar notifikasi dan pengaturan per kategori |
+| Profil | Selesai (mock) | Edit profil, alamat, riwayat penyelamatan, metode bayar, ubah password, bantuan, privasi, katalog saya |
+| Alamat | Selesai | Multi alamat, cari lokasi, GPS, pin di peta |
+| Upload (mitra) | Selesai (mock) | Form posting makanan berlebih |
 
 ## Struktur Project
 
 ```
 SisaGuna/
-├── app/                              Module aplikasi utama (Kotlin + Jetpack Compose)
-│   ├── build.gradle.kts              Konfigurasi module: dependency, compileSdk, minSdk
-│   ├── proguard-rules.pro            Aturan ProGuard untuk build release
-│   └── src/main/
-│       ├── AndroidManifest.xml
-│       ├── java/com/sisaguna/android/
+├── app/
+│   ├── build.gradle.kts              Konfigurasi module: dependency, SDK
+│   └── src/
+│       ├── main/java/com/sisaguna/android/
 │       │   ├── MainActivity.kt       Entry point, memasang tema dan NavGraph
-│       │   ├── SisaGunaApp.kt        Application class, entry point Hilt
+│       │   ├── SisaGunaApp.kt        Application class Hilt
+│       │   ├── core/session/         Sesi login dan guest gate
 │       │   ├── data/
-│       │   │   ├── model/            Listing, Merchant, enum tier (domain model)
-│       │   │   └── repository/       Interface repository + FakeListingRepository (mock)
-│       │   ├── di/                   Module Hilt, mengikat interface repository ke implementasinya
-│       │   ├── navigation/           Screen (sealed class) dan NavGraph (Navigation Compose)
-│       │   ├── feature/
-│       │   │   └── home/             HomeScreen, HomeViewModel, HomeUiState
+│       │   │   ├── model/            Domain model: Listing, Merchant, Commerce, UserProfile, AppNotification
+│       │   │   └── repository/       Interface repository + implementasi mock
+│       │   ├── di/                   Module Hilt, binding repository
+│       │   ├── navigation/           Screen, NavGraph, SgBottomNav
+│       │   ├── feature/              Satu folder per fitur (Screen + ViewModel)
+│       │   │   ├── splash/  auth/  home/  category/  listing/
+│       │   │   ├── checkout/  activity/  saved/  notifications/
+│       │   │   └── profile/  address/  upload/
 │       │   └── ui/
-│       │       ├── theme/            Color, Type, Shape, Theme (Material3 + token brand)
-│       │       ├── components/       Komponen primitif lintas layar: SgChip, SgBadge, SgInput
-│       │       └── domain/           Komponen komposit domain: ListingCard, TierBadge, CountdownPill
-│       └── res/
-│           ├── values/               strings.xml, colors.xml, themes.xml
-│           ├── drawable/             Aset vector
-│           └── mipmap-anydpi-v26/    Ikon launcher adaptif
+│       │       ├── theme/            Color, Type, Shape, Spacing, Theme
+│       │       ├── components/       Komponen primitif: SgButtons, SgChip, SgInput, SgBadge, SgMotion
+│       │       └── domain/           Komponen domain: ListingCard, VoucherTicket, CartBar, TierBadge
+│       ├── main/res/                 strings, font Inter, drawable, ikon launcher
+│       └── test/                     Unit test ViewModel dan repository
 │
-├── figma/                            Referensi visual Figma (screenshot layar, bukan sumber data)
-│
-├── gradle/
-│   ├── libs.versions.toml            Version catalog semua dependency
-│   └── wrapper/                      Gradle wrapper (jar dan properties)
-│
-├── build.gradle.kts                  Konfigurasi plugin level root
-├── settings.gradle.kts               Daftar module Gradle
-├── gradle.properties                 Konfigurasi JVM dan flag Gradle / AndroidX
-├── gradlew, gradlew.bat              Launcher Gradle wrapper
-└── README.md                         Dokumen ini
+├── docs/superpowers/                 Spec desain dan rencana implementasi
+├── figma/                            Screenshot referensi Figma
+├── gradle/libs.versions.toml         Version catalog dependency
+└── build.gradle.kts, settings.gradle.kts, gradle.properties
 ```
 
-Composable tidak pernah memanggil Supabase langsung, semua lewat Repository lalu ViewModel lalu StateFlow lalu Composable collect.
+Alur data: Repository, lalu ViewModel, lalu StateFlow, lalu Composable collect. Composable tidak pernah memanggil backend langsung. Saat Supabase siap, cukup ganti implementasi repository di `di/RepositoryModule.kt`.
 
 ## Setup Lokal
 
@@ -102,7 +101,7 @@ git clone https://github.com/ddrlve/SisaGuna.git
 cd SisaGuna
 ```
 
-Buka folder project di Android Studio, tunggu Gradle sync selesai, sambungkan HP fisik (USB debugging aktif) atau siapkan emulator, lalu tekan tombol Run.
+Buka folder project di Android Studio dan tunggu Gradle sync selesai. Sambungkan HP fisik (USB debugging aktif) atau siapkan emulator, lalu tekan Run.
 
 Atau lewat terminal:
 
@@ -110,12 +109,19 @@ Atau lewat terminal:
 ./gradlew installDebug
 ```
 
+Jalankan unit test:
+
+```
+./gradlew testDebugUnitTest
+```
+
 ## Deploy Production
 
-Belum ada build production. Backend Supabase dikerjakan di repo terpisah oleh anggota tim lain, disambungkan ke app ini begitu keputusan project dikonfirmasi, lalu distribusi lewat Play Store internal testing untuk kebutuhan demo.
+Belum ada build production. Setelah backend Supabase tersambung, app didistribusikan lewat Play Store internal testing untuk kebutuhan demo.
 
 ## Catatan
 
-File `local.properties`, folder `.gradle/`, `app/build/`, dan seluruh config lokal tidak ikut masuk repo (lihat `.gitignore`). Warna dan tipografi di `ui/theme/` masih tanda `[Guessing]` sampai hex asli diambil dari Figma Inspect.
+- App dipaksa light mode. Warna diset eksplisit supaya tampilan tetap benar di HP yang memakai dark mode.
+- File `local.properties`, folder `.gradle/`, `app/build/`, dan config lokal lain tidak masuk repo (lihat `.gitignore`).
 
 Made with care by Group 4
