@@ -373,3 +373,72 @@ Each step builds, passes its tests, and is ready to commit. The user commits man
   other screens use the old ones. This is accepted and gets resolved in later sub-projects.
 - **Font fix side effects:** every screen gets heavier headings at once. A quick visual pass
   over Landing, Login, Register, Category, and Activity is part of step 1.
+
+## Addendum (2026-10-02): Notifications
+
+Added after the user tested the build on their phone and asked for complete notifications. The
+Figma MCP hit its Starter-plan call limit, so the user chose to let Claude design these screens
+from the 3a tokens and common food-rescue UX patterns, using Surplus as a loose reference.
+Approved in chat on 2026-10-02.
+
+### Data
+
+```kotlin
+// data/model/AppNotification.kt
+enum class NotificationType { PICKUP, ORDER, MERCHANT, PROMO, IMPACT }
+data class AppNotification(
+    val id: String, val type: NotificationType, val title: String, val body: String,
+    val createdAt: Instant, val isRead: Boolean,
+)
+data class NotificationPrefs(
+    val enabled: Boolean = true, val pickup: Boolean = true, val order: Boolean = true,
+    val merchant: Boolean = true, val promo: Boolean = false, val impact: Boolean = true,
+)
+
+interface NotificationRepository {
+    val notifications: StateFlow<List<AppNotification>>   // newest first
+    val prefs: StateFlow<NotificationPrefs>
+    fun markRead(id: String)
+    fun markAllRead()
+    fun delete(id: String)
+    fun restore(notification: AppNotification, index: Int) // Snackbar "Batalkan"
+    fun updatePrefs(prefs: NotificationPrefs)
+}
+```
+
+`FakeNotificationRepository` (`@Singleton`) is seeded with 8 items spread over today, yesterday,
+and earlier this week: pickup reminders, an order ready for pickup, a saved merchant posting new
+food, a promo, and a weekly impact summary. 3 are unread.
+
+### Inbox (`Screen.Notifications`, route `notifications`)
+
+- Opened from the Home bell. Guests see `GuestGateSheet` instead.
+- The bell shows a red count badge (`9+` cap) when unread > 0 and the user is authenticated.
+- Top bar: back, title "Notifikasi", trailing text action "Tandai dibaca" (hidden when
+  nothing is unread).
+- Filter chips: Semua · Pesanan (PICKUP + ORDER) · Penyedia (MERCHANT) · Promo (PROMO).
+  IMPACT shows under Semua only.
+- Groups: "Hari ini", "Kemarin", "Minggu ini" (2–6 days), "Sebelumnya".
+- Row: 40dp tinted circle icon per type, title (`Label`), body (`Body`, max 2 lines),
+  relative time ("Baru saja", "5 mnt lalu", "3 jam lalu", "Kemarin", "4 hari lalu"). Unread rows
+  have a `Mint` background and an 8dp brand dot. Tapping a row marks it read.
+- Swipe end-to-start deletes the row, then shows the Snackbar "Notifikasi dihapus" with
+  "Batalkan", which restores it at its old index.
+- Empty state (overall or per filter): "Belum ada notifikasi" / "Kabar soal pesanan dan
+  penyedia favoritmu akan muncul di sini."
+
+### Settings (`Screen.NotificationSettings`, route `profile/notifications`)
+
+- Opened from Profile, "Notifikasi Aplikasi". The row hint shows "Aktif" or "Nonaktif" from
+  `prefs.enabled`.
+- A master switch "Izinkan notifikasi". When off, the per-type switches are disabled (shown at
+  38% alpha) but keep their values.
+- Per-type switches with one-line descriptions: Pengingat pickup, Status pesanan, Menu baru dari
+  penyedia tersimpan, Promo & diskon, Ringkasan dampak mingguan.
+- Changes save immediately to the repository. There is no save button.
+
+### Tests
+
+- Grouping and relative-time formatting are pure functions with unit tests.
+- `NotificationsViewModel`: filters, mark read, mark all read, delete then restore at index.
+- `NotificationSettingsViewModel`: master off keeps child values; a toggle updates the repository.
