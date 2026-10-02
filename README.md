@@ -47,7 +47,7 @@ Belum dikerjakan: integrasi backend, dashboard mitra penuh, dan panel admin.
 |---|---|---|
 | Splash & Landing | Selesai | Animasi logo, hero mengambang, CTA |
 | Login & Register | Selesai (mock) | Email / HP, password, pilih peran pengguna atau mitra |
-| Mode tamu | Selesai | Bisa jelajah tanpa login, aksi tertentu minta login lewat sheet |
+| Guest Mode | Selesai | Bisa jelajah tanpa login, aksi tertentu minta login lewat sheet |
 | Home | Selesai (mock) | Pilih lokasi, carousel banner, strip voucher, filter, tab sticky, seksi Siap Santap dan Pakan Ternak & Kompos |
 | Category list | Selesai (mock) | Filter chip 3 tier, grid 2 kolom |
 | Detail produk & toko | Selesai (mock) | Info produk, keranjang, profil merchant |
