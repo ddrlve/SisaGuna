@@ -19,7 +19,61 @@ sealed class Screen(val route: String) {
         const val ARG_TIER = "tier"
         fun routeFor(tier: ListingTier) = "category/${tier.name}"
     }
+
+    /** Figma 273:12143 — one saved merchant's listings. Nested under "saved/" so the Saved tab
+     * stays lit. */
+    data object MerchantDetail : Screen("saved/merchant/{merchantId}") {
+        const val ARG_ID = "merchantId"
+        fun routeFor(id: String) = "saved/merchant/$id"
+    }
+
+    /** Figma 273:12569. */
+    data object EditProfile : Screen("profile/edit")
+
+    data object NotificationSettings : Screen("profile/notifications")
+
+    /** Inbox opened from the Home bell. Full-screen: no bottom nav. */
+    data object Notifications : Screen("notifications")
+
+    data object ListingDetail : Screen("listing/{listingId}") {
+        const val ARG_ID = "listingId"
+        fun routeFor(id: String) = "listing/$id"
+    }
+
+    /** A merchant's public catalog, opened from a listing's merchant row. */
+    data object Store : Screen("store/{merchantId}") {
+        fun routeFor(id: String) = "store/$id"
+    }
+
+    data object Checkout : Screen("checkout")
+
+    data object OrderDetail : Screen("order/{orderId}?justPlaced={justPlaced}") {
+        const val ARG_ID = "orderId"
+        const val ARG_JUST_PLACED = "justPlaced"
+        fun routeFor(id: String, justPlaced: Boolean = false) = "order/$id?justPlaced=$justPlaced"
+    }
+
+    data object Upload : Screen("upload")
+
+    // Profile sub-pages (3b). Nested under profile/ so the Profile tab stays lit.
+    data object Addresses : Screen("profile/addresses")
+    data object RescueHistory : Screen("profile/history")
+    data object PaymentMethods : Screen("profile/payments")
+    data object ChangePassword : Screen("profile/password")
+    data object Help : Screen("profile/help")
+    data object Privacy : Screen("profile/privacy")
+    data object MyCatalog : Screen("profile/catalog")
 }
 
-/** Routes that show the bottom nav bar. */
-val mainRoutes = setOf(Screen.Home.route, Screen.Activity.route, Screen.Saved.route, Screen.Profile.route)
+/** First path segment of every route that shows the bottom nav. Nested routes ("saved/…",
+ * "profile/…", "category/…") keep their parent tab lit. */
+private val bottomNavSegments = setOf("home", "activity", "saved", "profile", "category")
+
+fun showsBottomNav(route: String?): Boolean = route?.substringBefore('/') in bottomNavSegments
+
+/** The bottom-nav tab route to highlight for [route]; Category List belongs to Home. */
+fun bottomNavTabFor(route: String?): String? = when (val segment = route?.substringBefore('/')) {
+    "category" -> Screen.Home.route
+    null -> null
+    else -> segment
+}
