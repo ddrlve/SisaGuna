@@ -13,3 +13,11 @@ val SgShapes = Shapes(
     large = RoundedCornerShape(25.dp),
     extraLarge = RoundedCornerShape(30.dp),
 )
+
+/** 3a corner radii (spec §1.2). */
+object SgRadius {
+    val Card = 20.dp
+    val Tile = 16.dp
+    val Thumb = 12.dp
+    val Pill = 999.dp
+}

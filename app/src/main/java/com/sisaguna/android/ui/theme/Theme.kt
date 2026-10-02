@@ -1,6 +1,5 @@
 package com.sisaguna.android.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -48,9 +47,12 @@ private val SgDarkColorScheme = darkColorScheme(
     outline = SgColor.Neutral500,
 )
 
+/** Always light: the Figma file has no dark design, and following the system dark setting
+ * turned unselected chip labels light-on-light on the test device. [SgDarkColorScheme] stays
+ * for when a real dark design exists. */
 @Composable
 fun SisaGunaTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = if (darkTheme) SgDarkColorScheme else SgLightColorScheme
