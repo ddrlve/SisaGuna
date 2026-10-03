@@ -125,8 +125,10 @@ fun ListingCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
+            // Fixed height: a free item has one price line, a discounted one has two. Without
+            // this, cards in the same rail ended up different sizes.
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(36.dp),
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

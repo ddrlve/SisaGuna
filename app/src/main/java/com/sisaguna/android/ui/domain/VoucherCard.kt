@@ -185,12 +185,14 @@ fun VoucherDetailSheet(
             InfoRow(Icons.Rounded.Schedule, l("Berlaku sampai", "Valid until"), expiryFormat.format(voucher.expiresAt.atZone(ZoneId.systemDefault())))
             Text(l("Syarat & ketentuan", "Terms & conditions"), style = SgTextStyle.Title, modifier = Modifier.padding(top = SgSpacing.Lg, bottom = SgSpacing.Sm))
             voucher.terms.forEachIndexed { i, term ->
-                Row(Modifier.padding(vertical = 4.dp)) {
+                // Number and first text line share a baseline, so long terms that wrap still
+                // read as "1  text" instead of the badge floating above the line.
+                Row(Modifier.padding(vertical = 5.dp)) {
                     Box(
-                        Modifier.size(20.dp).background(SgColor.Mint, CircleShape),
+                        Modifier.alignByBaseline().size(22.dp).background(SgColor.Mint, CircleShape),
                         contentAlignment = Alignment.Center,
-                    ) { androidx.compose.material3.Text("${i + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SgColor.Brand700) }
-                    Text(term, style = SgTextStyle.Body.copy(color = SgColor.Ink), modifier = Modifier.padding(start = 10.dp))
+                    ) { androidx.compose.material3.Text("${i + 1}", fontSize = 11.sp, lineHeight = 11.sp, fontWeight = FontWeight.Bold, color = SgColor.Brand700) }
+                    Text(term, style = SgTextStyle.Body.copy(color = SgColor.Ink), modifier = Modifier.alignByBaseline().padding(start = 12.dp))
                 }
             }
             Spacer(Modifier.height(SgSpacing.Lg))

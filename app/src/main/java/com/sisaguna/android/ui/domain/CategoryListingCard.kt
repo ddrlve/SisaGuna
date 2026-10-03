@@ -113,16 +113,19 @@ fun CategoryListingCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                // Always one line (courier quote or "pickup only") so grid rows stay even.
                 if (merchant.deliveryAvailable) {
                     // Cheapest standard courier, same quote the "Ongkir termurah" sort uses.
                     val q = com.sisaguna.android.data.model.DeliveryPricing.quote(
                         com.sisaguna.android.data.model.Courier.GOSEND, com.sisaguna.android.data.model.DeliverySpeed.STANDARD,
                         listing.distanceKm ?: 5.0, listing.unitPrice, merchant.prepMinutes,
                     )
-                    Text("🛵 ${formatRupiah(q.payable)} · ${q.etaMinMinutes}–${q.etaMaxMinutes} mnt", fontSize = 10.sp, color = SgColor.Neutral500, maxLines = 1)
+                    Text("🛵 ${formatRupiah(q.payable)} · ${q.etaMinMinutes}-${q.etaMaxMinutes} mnt", fontSize = 10.sp, color = SgColor.Neutral500, maxLines = 1)
+                } else {
+                    Text(com.sisaguna.android.ui.i18n.l("Ambil sendiri saja", "Pickup only"), fontSize = 10.sp, color = SgColor.Neutral500, maxLines = 1)
                 }
                 TierBadge(tier = listing.tier)
-                PriceLabel(listing = listing)
+                Box(Modifier.height(36.dp), contentAlignment = Alignment.CenterStart) { PriceLabel(listing = listing) }
             }
         }
     }

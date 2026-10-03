@@ -139,7 +139,7 @@ private fun CategoryHeader(
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(15.dp),
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(
                     modifier = Modifier
@@ -182,27 +182,6 @@ private fun CategoryHeader(
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .background(SgColor.Brand500, RoundedCornerShape(30.dp))
-                    // Opens the create-listing flow — not built yet this session.
-                    .clickable(onClick = {})
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_upload),
-                    contentDescription = null,
-                    tint = SgColor.OnBrand,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = stringResource(R.string.home_upload_cta),
-                    style = SgTextStyle.TextSmMedium,
-                    color = SgColor.OnBrand,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
             }
         }
 
