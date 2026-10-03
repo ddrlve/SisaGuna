@@ -1,5 +1,16 @@
 package com.sisaguna.android.feature.category
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.Sort
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.clip
+import com.sisaguna.android.ui.components.pressable
+import com.sisaguna.android.ui.i18n.l
+import com.sisaguna.android.ui.theme.SgRadius
+import androidx.compose.foundation.lazy.items
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,7 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -63,7 +74,7 @@ fun CategoryListScreen(
         onBack = onBack,
         onTierChange = viewModel::onTierChange,
         onSearchQueryChange = viewModel::onSearchQueryChange,
-        onToggleNearest = viewModel::onToggleNearest,
+        onSortChange = viewModel::onSortChange,
         onToggleFree = viewModel::onToggleFree,
         onRetry = { viewModel.onTierChange((uiState as? CategoryListUiState.Success)?.tier ?: ListingTier.HUMAN) },
         onListingClick = onListingClick,
@@ -76,7 +87,7 @@ private fun CategoryListScreenContent(
     onBack: () -> Unit,
     onTierChange: (ListingTier) -> Unit,
     onSearchQueryChange: (String) -> Unit,
-    onToggleNearest: () -> Unit,
+    onSortChange: (CategorySort) -> Unit,
     onToggleFree: () -> Unit,
     onRetry: () -> Unit,
     onListingClick: (Listing) -> Unit,
@@ -84,18 +95,18 @@ private fun CategoryListScreenContent(
     Column(modifier = Modifier.fillMaxSize().background(SgColor.Neutral100)) {
         val headerTier = (uiState as? CategoryListUiState.Success)?.tier ?: ListingTier.HUMAN
         val searchQuery = (uiState as? CategoryListUiState.Success)?.searchQuery ?: ""
-        val nearestFirst = (uiState as? CategoryListUiState.Success)?.nearestFirst ?: false
+        val sort = (uiState as? CategoryListUiState.Success)?.sort ?: CategorySort.RECOMMENDED
         val freeOnly = (uiState as? CategoryListUiState.Success)?.freeOnly ?: false
 
         CategoryHeader(
             tier = headerTier,
             searchQuery = searchQuery,
-            nearestFirst = nearestFirst,
+            sort = sort,
             freeOnly = freeOnly,
             onBack = onBack,
             onTierChange = onTierChange,
             onSearchQueryChange = onSearchQueryChange,
-            onToggleNearest = onToggleNearest,
+            onSortChange = onSortChange,
             onToggleFree = onToggleFree,
         )
 
@@ -111,12 +122,12 @@ private fun CategoryListScreenContent(
 private fun CategoryHeader(
     tier: ListingTier,
     searchQuery: String,
-    nearestFirst: Boolean,
+    sort: CategorySort,
     freeOnly: Boolean,
     onBack: () -> Unit,
     onTierChange: (ListingTier) -> Unit,
     onSearchQueryChange: (String) -> Unit,
-    onToggleNearest: () -> Unit,
+    onSortChange: (CategorySort) -> Unit,
     onToggleFree: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -183,13 +194,13 @@ private fun CategoryHeader(
                 Icon(
                     painter = painterResource(R.drawable.ic_upload),
                     contentDescription = null,
-                    tint = SgColor.BaseWhite,
+                    tint = SgColor.OnBrand,
                     modifier = Modifier.size(20.dp),
                 )
                 Text(
                     text = stringResource(R.string.home_upload_cta),
                     style = SgTextStyle.TextSmMedium,
-                    color = SgColor.BaseWhite,
+                    color = SgColor.OnBrand,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -207,8 +218,35 @@ private fun CategoryHeader(
             item { CategoryFilterChip(label = "Siap Santap", selected = tier == ListingTier.HUMAN, onClick = { onTierChange(ListingTier.HUMAN) }) }
             item { CategoryFilterChip(label = "Untuk Ternak", selected = tier == ListingTier.ANIMAL_FEED, onClick = { onTierChange(ListingTier.ANIMAL_FEED) }) }
             item { CategoryFilterChip(label = "Untuk kompos", selected = tier == ListingTier.COMPOST, onClick = { onTierChange(ListingTier.COMPOST) }) }
-            item { CategoryFilterChip(label = "Terdekat", selected = nearestFirst, onClick = onToggleNearest) }
             item { CategoryFilterChip(label = "Gratis", selected = freeOnly, onClick = onToggleFree) }
+        }
+        SortRow(sort = sort, onSortChange = onSortChange)
+    }
+}
+
+/** "Urutkan" row: sort icon + one chip per [CategorySort]. Selected chip fills dark so the
+ * active sort is readable from across the room; the colour change is a 150ms crossfade. */
+@Composable
+private fun SortRow(sort: CategorySort, onSortChange: (CategorySort) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        item {
+            Icon(Icons.AutoMirrored.Rounded.Sort, contentDescription = l("Urutkan", "Sort"), tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
+        }
+        items(CategorySort.entries) { option ->
+            val selected = option == sort
+            val bg by animateColorAsState(if (selected) SgColor.Ink else SgColor.BaseWhite, tween(150), label = "sortBg")
+            val fg by animateColorAsState(if (selected) SgColor.BaseWhite else SgColor.Ink, tween(150), label = "sortFg")
+            Text(
+                l(option.label, option.labelEn),
+                style = SgTextStyle.TextXsMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = fg,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(SgRadius.Pill))
+                    .background(bg)
+                    .border(1.dp, if (selected) SgColor.Ink else SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
+                    .pressable({ onSortChange(option) }, pressedScale = 0.95f)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
         }
     }
 }
@@ -310,7 +348,7 @@ private fun CategoryListScreenPreview() {
             onBack = {},
             onTierChange = {},
             onSearchQueryChange = {},
-            onToggleNearest = {},
+            onSortChange = {},
             onToggleFree = {},
             onRetry = {},
             onListingClick = {},

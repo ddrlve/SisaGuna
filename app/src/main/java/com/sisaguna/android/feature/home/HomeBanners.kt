@@ -25,7 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +45,7 @@ import androidx.compose.ui.util.lerp
 import com.sisaguna.android.R
 import com.sisaguna.android.ui.components.SgEaseOut
 import com.sisaguna.android.ui.components.pressable
-import com.sisaguna.android.ui.theme.Inter
+import com.sisaguna.android.ui.theme.SgFont
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgRadius
 import com.sisaguna.android.ui.theme.SgSpacing
@@ -133,7 +133,7 @@ private fun BannerCard(banner: Banner, pager: PagerState, page: Int, onAction: (
             Text(banner.eyebrow, style = SgTextStyle.Label, color = banner.ink.copy(alpha = 0.85f))
             Text(
                 banner.title,
-                fontFamily = Inter,
+                fontFamily = SgFont,
                 fontWeight = FontWeight.Bold,
                 fontStyle = if (banner.action == BannerAction.BROWSE_FREE) FontStyle.Italic else FontStyle.Normal,
                 fontSize = 22.sp,

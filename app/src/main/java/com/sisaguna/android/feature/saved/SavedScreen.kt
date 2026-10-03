@@ -33,7 +33,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -111,7 +111,7 @@ fun SavedScreen(
                                 Button(
                                     onClick = onExploreClick,
                                     colors = ButtonDefaults.buttonColors(containerColor = SgColor.Brand500),
-                                ) { Text(stringResource(R.string.saved_empty_action), style = SgTextStyle.Label, color = SgColor.BaseWhite) }
+                                ) { Text(stringResource(R.string.saved_empty_action), style = SgTextStyle.Label, color = SgColor.OnBrand) }
                             },
                         )
                     }
@@ -178,11 +178,11 @@ private fun SavedSummary(merchantCount: Int, available: Int) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("$available makanan tersedia", style = SgTextStyle.Title, color = SgColor.BaseWhite)
-            Text("dari $merchantCount penyedia favoritmu hari ini", style = SgTextStyle.Caption, color = SgColor.BaseWhite.copy(alpha = 0.85f))
+            Text("$available makanan tersedia", style = SgTextStyle.Title, color = SgColor.OnBrand)
+            Text("dari $merchantCount penyedia favoritmu hari ini", style = SgTextStyle.Caption, color = SgColor.OnBrand.copy(alpha = 0.85f))
         }
-        Box(Modifier.size(44.dp).background(SgColor.BaseWhite.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Favorite, contentDescription = null, tint = SgColor.BaseWhite)
+        Box(Modifier.size(44.dp).background(SgColor.OnBrand.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.Favorite, contentDescription = null, tint = SgColor.OnBrand)
         }
     }
 }

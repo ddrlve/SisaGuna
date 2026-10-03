@@ -26,7 +26,7 @@ import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,7 +118,7 @@ fun SgSearchField(
                 if (activeFilterCount > 0) {
                     Text(
                         activeFilterCount.toString(),
-                        color = SgColor.BaseWhite,
+                        color = SgColor.OnBrand,
                         fontSize = 10.sp,
                         lineHeight = 12.sp,
                         modifier = Modifier

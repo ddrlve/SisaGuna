@@ -13,7 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisaguna.android.data.model.Merchant
-import com.sisaguna.android.ui.theme.Inter
+import com.sisaguna.android.ui.theme.SgFont
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgTextStyle
 
@@ -49,7 +49,7 @@ fun InitialAvatar(
         ) {
             Text(
                 text = initial.toString(),
-                fontFamily = Inter,
+                fontFamily = SgFont,
                 fontWeight = FontWeight.Bold,
                 fontSize = (size.value * 0.4f).sp,
                 color = textColor,
@@ -95,7 +95,7 @@ fun MerchantSummary(
             if (merchant.isVerified) {
                 Text(
                     text = verifiedLabel,
-                    fontFamily = Inter,
+                    fontFamily = SgFont,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 10.sp,
                     color = SgColor.Brand700,

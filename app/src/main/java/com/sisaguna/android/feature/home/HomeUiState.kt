@@ -10,6 +10,8 @@ data class HomeListingUi(
     val merchant: Merchant,
 )
 
+data class CartSummary(val itemCount: Int, val total: Int, val merchantName: String?)
+
 /** Home's segmented switch (spec §2, variant B chosen on device). */
 enum class HomeTab { SIAP_SANTAP, TERNAK_KOMPOS }
 
@@ -42,6 +44,9 @@ sealed interface HomeUiState {
         val deals: List<HomeListingUi> = emptyList(),
         val animalFeed: List<HomeListingUi> = emptyList(),
         val compost: List<HomeListingUi> = emptyList(),
+        val popular: List<HomeListingUi> = emptyList(),
+        /** Stores running a "today's offer", nearest first. */
+        val offerMerchants: List<Merchant> = emptyList(),
         val selectedTab: HomeTab = HomeTab.SIAP_SANTAP,
         /** > 0 only while searching, when the active tab has no match but the other one does. */
         val otherTabMatchCount: Int = 0,

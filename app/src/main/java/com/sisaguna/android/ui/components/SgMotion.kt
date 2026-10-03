@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +43,22 @@ import com.sisaguna.android.ui.theme.SgTextStyle
 /** Strong ease-out: starts fast so taps feel answered immediately. Used for every 3a UI
  * transition instead of Compose's default FastOutSlowIn, which feels soft on entry. */
 val SgEaseOut = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+
+/** Strong ease-in-out for things moving *across* the screen (segmented indicator, carousels). */
+val SgEaseInOut = CubicBezierEasing(0.77f, 0f, 0.175f, 1f)
+
+/**
+ * True when the user turned animations off (Developer options / Accessibility "Remove
+ * animations" sets the animator scale to 0). Compose already zeroes finite tweens then, but
+ * infinite decorative loops (floating hero cards) should stop entirely, so check this first.
+ */
+@Composable
+fun rememberReducedMotion(): Boolean {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return remember {
+        android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }
+}
 
 /**
  * Clickable that shrinks to 97% while pressed — pressed feedback for cards and tiles where a

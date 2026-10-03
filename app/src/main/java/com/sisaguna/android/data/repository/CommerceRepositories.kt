@@ -3,6 +3,9 @@ package com.sisaguna.android.data.repository
 import com.sisaguna.android.data.model.Address
 import com.sisaguna.android.data.model.AppNotification
 import com.sisaguna.android.data.model.Cart
+import com.sisaguna.android.data.model.Complaint
+import com.sisaguna.android.data.model.DeliveryQuote
+import com.sisaguna.android.data.model.Fulfillment
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
@@ -81,7 +84,13 @@ data class PlaceOrderRequest(
     val note: String,
     val voucherCode: String? = null,
     val voucherDiscount: Int = 0,
+    val fulfillment: Fulfillment = Fulfillment.PICKUP,
+    val delivery: DeliveryQuote? = null,
+    val deliveryAddress: Address? = null,
 )
+
+/** Pickup orders get this long to collect, unless the listing window closes first. */
+const val PICKUP_GRACE_MINUTES = 45L
 
 interface OrderRepository {
     /** Newest first. */
@@ -92,6 +101,7 @@ interface OrderRepository {
     fun markPickedUp(orderId: String)
     fun cancel(orderId: String)
     fun rate(orderId: String, rating: OrderRating)
+    fun complain(orderId: String, complaint: Complaint)
 }
 
 @Singleton
@@ -118,21 +128,21 @@ class FakeOrderRepository(
         listOf(
             Order(
                 id = "o4", pickupCode = "SG-4821", merchant = seedMerchant("m2"),
-                lines = listOf(OrderLine("l2", "Roti Tawar Lewat Best Before", ListingTier.HUMAN, "", 2, 5000, 18000)),
+                lines = listOf(OrderLine("l2", "Roti Tawar Lewat Best Before", ListingTier.HUMAN, seedImage("roti_tawar"), 2, 5000, 18000)),
                 payment = PaymentKind.QRIS, note = "", status = OrderStatus.READY,
                 createdAt = ago(55), pickupEnd = inMinutes(95),
             ),
             Order(
                 id = "o3", pickupCode = "SG-3307", merchant = seedMerchant("m2"),
-                lines = listOf(OrderLine("l5", "Donat Reject Bentuk", ListingTier.HUMAN, "", 1, 3000, 12000)),
+                lines = listOf(OrderLine("l5", "Donat Reject Bentuk", ListingTier.HUMAN, seedImage("donat"), 1, 3000, 12000)),
                 payment = PaymentKind.GOPAY, note = "", status = OrderStatus.COMPLETED,
                 createdAt = ago(30 * 60), pickupEnd = ago(27 * 60), completedAt = ago(29 * 60),
             ),
             Order(
                 id = "o2", pickupCode = "SG-2190", merchant = seedMerchant("m1"),
                 lines = listOf(
-                    OrderLine("l1", "Nasi Kuning Sisa Katering", ListingTier.HUMAN, "", 2, 8000, 25000),
-                    OrderLine("l4", "Sayur Sop Sisa Hari Ini", ListingTier.HUMAN, "", 1, 4000, 15000),
+                    OrderLine("l1", "Nasi Kuning Sisa Katering", ListingTier.HUMAN, seedImage("nasi_kuning"), 2, 8000, 25000),
+                    OrderLine("l4", "Sayur Sop Sisa Hari Ini", ListingTier.HUMAN, seedImage("sayur_sop"), 1, 4000, 15000),
                 ),
                 payment = PaymentKind.CASH, note = "", status = OrderStatus.COMPLETED,
                 createdAt = ago(4 * 24 * 60), pickupEnd = ago(4 * 24 * 60 - 120), completedAt = ago(4 * 24 * 60 - 40),
@@ -140,7 +150,7 @@ class FakeOrderRepository(
             ),
             Order(
                 id = "o1", pickupCode = "SG-1044", merchant = seedMerchant("m4"),
-                lines = listOf(OrderLine("l7", "Ampas Tahu Segar", ListingTier.ANIMAL_FEED, "", 1, 0, 0)),
+                lines = listOf(OrderLine("l7", "Ampas Tahu Segar", ListingTier.ANIMAL_FEED, seedImage("ampas_tahu"), 1, 0, 0)),
                 payment = PaymentKind.CASH, note = "", status = OrderStatus.CANCELLED,
                 createdAt = ago(6 * 24 * 60), pickupEnd = ago(6 * 24 * 60 - 120),
             ),
@@ -161,7 +171,7 @@ class FakeOrderRepository(
             pickupCode = "SG-" + (1000 + (now.toEpochMilli() % 9000)).toString(),
             merchant = merchant,
             lines = request.lines.map { (l, q) ->
-                OrderLine(l.id, l.title, l.tier, l.imageUrl, q, l.unitPrice, l.unitOriginalPrice)
+                OrderLine(l.id, l.title, l.tier, l.imageUrl, q, l.unitPrice, l.unitOriginalPrice, l.unit)
             },
             payment = request.payment,
             note = request.note.trim(),
@@ -170,6 +180,11 @@ class FakeOrderRepository(
             pickupEnd = request.lines.minOf { it.first.pickupEnd },
             voucherCode = request.voucherCode,
             voucherDiscount = request.voucherDiscount,
+            fulfillment = request.fulfillment,
+            delivery = request.delivery.takeIf { request.fulfillment == Fulfillment.DELIVERY },
+            deliveryAddress = request.deliveryAddress.takeIf { request.fulfillment == Fulfillment.DELIVERY },
+            pickupBy = minOf(now.plus(Duration.ofMinutes(PICKUP_GRACE_MINUTES)), request.lines.minOf { it.first.pickupEnd })
+                .takeIf { request.fulfillment == Fulfillment.PICKUP },
         )
         request.lines.forEach { (l, q) -> listingRepository.reduceStock(l.id, q) }
         _orders.value = listOf(order) + _orders.value
@@ -196,6 +211,19 @@ class FakeOrderRepository(
 
     override fun rate(orderId: String, rating: OrderRating) =
         update(orderId) { if (it.canRate) it.copy(rating = rating.copy(stars = rating.stars.coerceIn(1, 5))) else it }
+
+    override fun complain(orderId: String, complaint: Complaint) {
+        update(orderId) { if (it.canComplain) it.copy(complaint = complaint) else it }
+        val order = _orders.value.firstOrNull { it.id == orderId } ?: return
+        notificationRepository.push(
+            AppNotification(
+                id = "n-c-$orderId", type = NotificationType.ORDER,
+                title = "Komplain ${order.pickupCode} diterima",
+                body = "Tim SisaGuna meninjau laporanmu dalam 1×24 jam. Kalau terbukti, dana dikembalikan penuh.",
+                createdAt = clock(), isRead = false,
+            ),
+        )
+    }
 }
 
 // ---------------------------------------------------------------- Addresses

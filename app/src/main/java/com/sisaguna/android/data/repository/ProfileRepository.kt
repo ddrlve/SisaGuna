@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 interface ProfileRepository {
     val profile: StateFlow<UserProfile>
     fun update(name: String, email: String, phone: String)
+    fun setPhoto(uri: String?)
     suspend fun getImpact(): ImpactStats
     suspend fun getMyCatalog(): List<Listing>
 
@@ -43,6 +44,10 @@ class FakeProfileRepository @Inject constructor(
 
     override fun update(name: String, email: String, phone: String) {
         _profile.value = _profile.value.copy(name = name.trim(), email = email.trim(), phone = phone)
+    }
+
+    override fun setPhoto(uri: String?) {
+        _profile.value = _profile.value.copy(photoUri = uri)
     }
 
     override suspend fun getImpact(): ImpactStats {

@@ -1,5 +1,11 @@
 package com.sisaguna.android.feature.profile
 
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.foundation.layout.fillMaxSize
+import com.sisaguna.android.ui.i18n.l
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +44,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,7 +72,7 @@ import com.sisaguna.android.ui.domain.IdLocale
 import com.sisaguna.android.ui.domain.InitialAvatar
 import com.sisaguna.android.ui.domain.formatRupiah
 import com.sisaguna.android.ui.domain.ListingCard
-import com.sisaguna.android.ui.theme.Inter
+import com.sisaguna.android.ui.theme.SgFont
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgRadius
 import com.sisaguna.android.ui.theme.SgSpacing
@@ -88,6 +94,7 @@ fun ProfileScreen(
     onHelp: () -> Unit,
     onPrivacy: () -> Unit,
     onCatalog: () -> Unit,
+    onSettings: () -> Unit = {},
     onListingClick: (String) -> Unit,
     onLogout: () -> Unit,
     profileUpdated: Boolean,
@@ -125,7 +132,7 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = SgSpacing.Xl),
         ) {
-            item { ProfileHeader(state, onEditProfile) }
+            item { ProfileHeader(state, onEditProfile, onPhoto = viewModel::setPhoto) }
             item {
                 ImpactCard(
                     impact = state.impact,
@@ -180,6 +187,7 @@ fun ProfileScreen(
                 SettingsSection(
                     title = stringResource(R.string.profile_section_support),
                     rows = listOf(
+                        SettingRow(Icons.Rounded.Tune, l("Pengaturan", "Settings"), l("Bahasa, tema, mode", "Language, theme, mode"), onSettings),
                         SettingRow(Icons.AutoMirrored.Rounded.HelpOutline, stringResource(R.string.profile_row_help), stringResource(R.string.profile_row_help_hint), onHelp),
                         SettingRow(Icons.Rounded.Shield, stringResource(R.string.profile_row_privacy), stringResource(R.string.profile_row_privacy_hint), onPrivacy),
                     ),
@@ -228,7 +236,13 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit) {
+private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit, onPhoto: (String?) -> Unit) {
+    var choosing by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val media = com.sisaguna.android.ui.components.rememberMediaCapture(
+        onPhotos = { uris -> uris.firstOrNull()?.let { onPhoto(persistProfilePhoto(context, it)) } },
+        maxPick = 2,
+    )
     val memberSince = remember(state.profile.memberSince) {
         state.profile.memberSince.format(DateTimeFormatter.ofPattern("MMMM yyyy", IdLocale))
     }
@@ -240,14 +254,48 @@ private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Lg),
     ) {
-        InitialAvatar(
-            initial = state.profile.initial,
-            size = 64.dp,
-            verified = true,
-            fill = Color(0xFFFDECEC),
-            ring = Color(0xFFF7B4B4),
-            textColor = SgColor.RedStatus,
-        )
+        // Tap the avatar to take or pick a profile photo; a small camera badge says so.
+        Box(Modifier.size(72.dp).clip(CircleShape).pressable({ choosing = true }, pressedScale = 0.95f)) {
+            if (state.profile.photoUri != null) {
+                coil.compose.AsyncImage(
+                    state.profile.photoUri,
+                    contentDescription = l("Foto profil", "Profile photo"),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, SgColor.Brand300, CircleShape),
+                )
+            } else {
+                InitialAvatar(
+                    initial = state.profile.initial,
+                    size = 72.dp,
+                    verified = false,
+                    fill = SgColor.Mint,
+                    ring = SgColor.Brand300,
+                    textColor = SgColor.Brand700,
+                )
+            }
+            Box(
+                Modifier.align(Alignment.BottomEnd).size(24.dp).background(SgColor.Brand500, CircleShape).border(2.dp, SgColor.BaseWhite, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Rounded.PhotoCamera, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(13.dp)) }
+        }
+        if (choosing) {
+            AlertDialog(
+                onDismissRequest = { choosing = false },
+                title = { Text(l("Foto profil", "Profile photo"), style = SgTextStyle.Title) },
+                text = {
+                    Column {
+                        PhotoOption(Icons.Rounded.PhotoCamera, l("Ambil foto", "Take a photo")) { choosing = false; media.takePhoto() }
+                        PhotoOption(Icons.Rounded.PhotoLibrary, l("Pilih dari galeri", "Choose from gallery")) { choosing = false; media.pickPhotos() }
+                        if (state.profile.photoUri != null) {
+                            PhotoOption(Icons.Rounded.DeleteOutline, l("Hapus foto", "Remove photo"), destructive = true) { choosing = false; onPhoto(null) }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = { TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.common_cancel), style = SgTextStyle.Label, color = SgColor.Ink) } },
+                containerColor = SgColor.BaseWhite,
+            )
+        }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(state.profile.name, style = SgTextStyle.Display, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -288,7 +336,7 @@ private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(SgRadius.Tile))
-                .background(Color(0xFFFFF8E1))
+                .background(SgColor.Yellow50)
                 .padding(SgSpacing.Md),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
@@ -297,7 +345,7 @@ private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
                 modifier = Modifier.size(36.dp).background(SgColor.Yellow300, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Rp", fontFamily = Inter, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF854D0E))
+                Text("Rp", fontFamily = SgFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF854D0E))
             }
             Column {
                 Text(
@@ -371,3 +419,23 @@ private fun SettingsSection(title: String, rows: List<SettingRow>) {
         }
     }
 }
+
+
+@Composable
+private fun PhotoOption(icon: ImageVector, label: String, destructive: Boolean = false, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(SgRadius.Thumb)).pressable(onClick).padding(vertical = 12.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = if (destructive) SgColor.RedStatus else SgColor.Ink)
+        Text(label, style = SgTextStyle.Label, color = if (destructive) SgColor.RedStatus else SgColor.Ink, modifier = Modifier.padding(start = 12.dp))
+    }
+}
+
+/** Gallery URIs lose their read grant after a restart, so the chosen photo is copied into app
+ * storage and that file is what the profile points at. */
+private fun persistProfilePhoto(context: android.content.Context, uri: android.net.Uri): String? = runCatching {
+    val out = java.io.File(context.filesDir, "profile_${System.currentTimeMillis()}.jpg")
+    context.contentResolver.openInputStream(uri)?.use { input -> out.outputStream().use { input.copyTo(it) } }
+    android.net.Uri.fromFile(out).toString()
+}.getOrNull()

@@ -9,6 +9,8 @@ data class UserProfile(
     val phone: String,
     val location: String,
     val memberSince: YearMonth,
+    /** Local file/content URI of the profile photo; null shows the initial. */
+    val photoUri: String? = null,
 ) {
     val initial: Char get() = name.trim().firstOrNull()?.uppercaseChar() ?: '?'
 }

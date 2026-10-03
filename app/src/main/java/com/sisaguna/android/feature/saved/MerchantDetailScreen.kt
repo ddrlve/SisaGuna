@@ -1,5 +1,20 @@
 package com.sisaguna.android.feature.saved
 
+import androidx.compose.ui.unit.dp
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import com.sisaguna.android.ui.components.SgEaseOut
+import com.sisaguna.android.ui.components.pressable
+import com.sisaguna.android.ui.domain.ReviewCard
+import com.sisaguna.android.ui.i18n.l
+import com.sisaguna.android.ui.theme.SgRadius
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +42,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -63,6 +78,7 @@ fun MerchantDetailScreen(
     viewModel: MerchantDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var writingReview by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val removedMessage = stringResource(R.string.saved_removed)
@@ -102,7 +118,7 @@ fun MerchantDetailScreen(
                 modifier = Modifier.padding(padding),
                 action = {
                     Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = SgColor.Brand500)) {
-                        Text(stringResource(R.string.common_back_cd), style = SgTextStyle.Label, color = SgColor.BaseWhite)
+                        Text(stringResource(R.string.common_back_cd), style = SgTextStyle.Label, color = SgColor.OnBrand)
                     }
                 },
             )
@@ -114,22 +130,11 @@ fun MerchantDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
-                        SgSearchField(
-                            value = s.query,
-                            onValueChange = viewModel::onQueryChange,
-                            placeholder = stringResource(R.string.merchant_search_placeholder),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        TierChips(selected = s.tierFilter, onToggle = viewModel::onTierToggle)
-                    }
-                }
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    // Full-bleed band: undo the grid's gutter padding so the white reaches the
+                    // Full-bleed hero: undo the grid's gutter padding so the banner reaches the
                     // screen edges while its content stays on the gutter (spec §1.2).
-                    MerchantHeaderBand(
+                    StoreHero(
                         merchant = s.merchant,
-                        distanceKm = s.distanceKm,
+                        distanceKm = s.distanceKm ?: s.merchant.distanceKm,
                         listingCount = s.totalListings,
                         saved = s.isSaved,
                         onToggleSave = {
@@ -146,6 +151,37 @@ fun MerchantDetailScreen(
                         },
                         modifier = Modifier.layoutFullBleed(SgSpacing.Gutter),
                     )
+                }
+                s.merchant.todaysOffer?.let { offer ->
+                    item(span = { GridItemSpan(maxLineSpan) }) { TodaysOfferBanner(offer) }
+                }
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    StorePhotos(s.merchant.photos, Modifier.layoutFullBleed(SgSpacing.Gutter))
+                }
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    StoreInfoCard(s.merchant, s.allergenAcknowledged, viewModel::acknowledgeAllergens)
+                }
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    MenuReviewSwitch(showReviews = s.showReviews, reviewCount = s.reviews.size, onChange = viewModel::showReviews)
+                }
+                if (s.showReviews) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        ReviewSummary(s.merchant, s.reviews, onWrite = { writingReview = true })
+                    }
+                    items(s.reviews, key = { "rv-" + it.id }, span = { GridItemSpan(maxLineSpan) }) { r ->
+                        ReviewCard(r, Modifier.fillMaxWidth().animateItem(), maxLines = 8)
+                    }
+                } else {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+                        SgSearchField(
+                            value = s.query,
+                            onValueChange = viewModel::onQueryChange,
+                            placeholder = stringResource(R.string.merchant_search_placeholder),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        TierChips(selected = s.tierFilter, onToggle = viewModel::onTierToggle)
+                    }
                 }
                 if (s.listings.isEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
@@ -166,7 +202,47 @@ fun MerchantDetailScreen(
                         )
                     }
                 }
+                }
             }
+        }
+    }
+
+    val ok = state as? MerchantDetailUiState.Success
+    if (writingReview && ok != null) {
+        WriteReviewSheet(
+            storeName = ok.merchant.name,
+            onSubmit = { stars, comment, tags, photos ->
+                viewModel.addReview(stars, comment, tags, photos)
+                writingReview = false
+                scope.launch { snackbar.showSnackbar(l("Terima kasih! Ulasanmu sudah tampil.", "Thanks! Your review is live.")) }
+            },
+            onDismiss = { writingReview = false },
+        )
+    }
+}
+
+/** Menu | Ulasan tabs for the store page. */
+@Composable
+private fun MenuReviewSwitch(showReviews: Boolean, reviewCount: Int, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(SgRadius.Pill)).background(SgColor.BaseWhite).padding(4.dp),
+    ) {
+        listOf(false to l("Menu", "Menu"), true to l("Ulasan ($reviewCount)", "Reviews ($reviewCount)")).forEach { (rev, label) ->
+            val selected = rev == showReviews
+            val bg by animateColorAsState(if (selected) SgColor.Ink else Color.Transparent, tween(180, easing = SgEaseOut), label = "mrBg")
+            val fg by animateColorAsState(if (selected) SgColor.BaseWhite else SgColor.InkMuted, tween(180, easing = SgEaseOut), label = "mrFg")
+            Text(
+                label,
+                style = SgTextStyle.Label,
+                color = fg,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(SgRadius.Pill))
+                    .background(bg)
+                    .pressable({ onChange(rev) })
+                    .padding(vertical = 10.dp),
+            )
         }
     }
 }

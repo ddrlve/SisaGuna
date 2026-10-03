@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,15 +63,16 @@ fun ListingCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(108.dp)
+                    .height(120.dp)
                     .clip(RoundedCornerShape(17.dp)),
             ) {
                 ListingImage(
                     imageUrl = listing.imageUrl,
                     tier = listing.tier,
                     contentDescription = listing.title,
-                    modifier = Modifier.fillMaxWidth().height(108.dp),
+                    modifier = Modifier.fillMaxWidth().height(120.dp),
                 )
+                DiscountBadge(listing, Modifier.align(Alignment.TopEnd).padding(8.dp))
                 CountdownPill(
                     pickupEnd = listing.pickupEnd,
                     now = now,
@@ -93,7 +94,12 @@ fun ListingCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            SellerLine(name = merchant.name, verified = merchant.isVerified)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { SellerLine(name = merchant.name, verified = merchant.isVerified) }
+                merchant.rating?.let {
+                    Text("★ %.1f".format(it), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color(0xFFE59E0B))
+                }
+            }
 
             Spacer(modifier = Modifier.height(2.dp))
 
@@ -145,6 +151,26 @@ fun SellerLine(name: String, verified: Boolean) {
     Text(text = text, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
 }
 
+/** "-68%" / "GRATIS" sticker on the photo — the first thing a bargain hunter scans for. */
+@Composable
+fun DiscountBadge(listing: Listing, modifier: Modifier = Modifier) {
+    val pct = listing.discountPercent
+    if (pct < 10) return
+    Text(
+        text = if (listing.isFree) "GRATIS" else "-$pct%",
+        fontSize = 11.sp,
+        fontWeight = FontWeight.ExtraBold,
+        color = SgColor.OnBrand,
+        modifier = modifier
+            .background(if (listing.isFree) SgColor.Brand500 else Color(0xFFE5484D), RoundedCornerShape(8.dp))
+            .padding(horizontal = 7.dp, vertical = 2.dp),
+    )
+}
+
+/** "/kg" suffix for weight-priced feed and compost. */
+fun unitSuffix(listing: Listing): String =
+    if (listing.unit == com.sisaguna.android.data.model.QuantityUnit.KILOGRAM) "/kg" else ""
+
 @Composable
 fun PriceLabel(listing: Listing) {
     when {
@@ -155,8 +181,8 @@ fun PriceLabel(listing: Listing) {
         )
         listing.priceDiscounted != null && listing.priceOriginal != null -> Column {
             Text(
-                text = formatRupiah(listing.priceDiscounted),
-                style = SgTextStyle.TextSmSemibold,
+                text = formatRupiah(listing.priceDiscounted) + unitSuffix(listing),
+                style = SgTextStyle.TextSmSemibold.copy(fontWeight = FontWeight.ExtraBold),
                 color = SgColor.Neutral800,
             )
             Text(
@@ -167,7 +193,7 @@ fun PriceLabel(listing: Listing) {
             )
         }
         listing.priceOriginal != null -> Text(
-            text = formatRupiah(listing.priceOriginal),
+            text = formatRupiah(listing.priceOriginal) + unitSuffix(listing),
             style = SgTextStyle.TextSmSemibold,
             color = SgColor.Neutral800,
         )

@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,6 +75,7 @@ fun CategoryListingCard(
                         now = now,
                         modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
                     )
+                    DiscountBadge(listing, Modifier.align(Alignment.TopEnd).padding(8.dp))
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -85,7 +86,10 @@ fun CategoryListingCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    SellerLine(name = merchant.name, verified = merchant.isVerified)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.weight(1f)) { SellerLine(name = merchant.name, verified = merchant.isVerified) }
+                        merchant.rating?.let { Text("★ %.1f".format(it), fontSize = 10.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = Color(0xFFE59E0B)) }
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             painter = painterResource(R.drawable.ic_location_card),
@@ -109,6 +113,14 @@ fun CategoryListingCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                if (merchant.deliveryAvailable) {
+                    // Cheapest standard courier, same quote the "Ongkir termurah" sort uses.
+                    val q = com.sisaguna.android.data.model.DeliveryPricing.quote(
+                        com.sisaguna.android.data.model.Courier.GOSEND, com.sisaguna.android.data.model.DeliverySpeed.STANDARD,
+                        listing.distanceKm ?: 5.0, listing.unitPrice, merchant.prepMinutes,
+                    )
+                    Text("🛵 ${formatRupiah(q.payable)} · ${q.etaMinMinutes}–${q.etaMaxMinutes} mnt", fontSize = 10.sp, color = SgColor.Neutral500, maxLines = 1)
+                }
                 TierBadge(tier = listing.tier)
                 PriceLabel(listing = listing)
             }

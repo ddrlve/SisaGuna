@@ -1,5 +1,6 @@
 package com.sisaguna.android.feature.home
 
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.Listing
@@ -40,7 +41,27 @@ class HomeViewModel @Inject constructor(
     private val repository: ListingRepository,
     notificationRepository: NotificationRepository,
     private val voucherRepository: VoucherRepository,
+    cartRepository: com.sisaguna.android.data.repository.CartRepository,
+    private val settingsRepository: com.sisaguna.android.data.settings.AppSettingsRepository,
 ) : ViewModel() {
+
+    /** Buyer vs merchant home (user testing asked for them to be separate). */
+    val mode: StateFlow<com.sisaguna.android.data.settings.UserMode> = settingsRepository.settings
+        .map { it.mode }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.settings.value.mode)
+
+    fun setMode(mode: com.sisaguna.android.data.settings.UserMode) = settingsRepository.setMode(mode)
+
+    /** Persistent cart bar on Home — null while the cart is empty. */
+    val cartSummary: StateFlow<CartSummary?> = combine(cartRepository.cart, repository.listings) { cart, listings ->
+        if (cart.isEmpty) return@combine null
+        val byId = listings.associateBy { it.id }
+        CartSummary(
+            itemCount = cart.itemCount,
+            total = cart.quantities.entries.sumOf { (id, q) -> (byId[id]?.unitPrice ?: 0) * q },
+            merchantName = cart.merchantId?.let { repository.merchant(it)?.name },
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private var rawFeed: HomeFeed? = null
     private var query: String = ""
@@ -125,6 +146,8 @@ class HomeViewModel @Inject constructor(
             deals = dealsHits.toUi(merchantsById),
             animalFeed = animalHits.toUi(merchantsById),
             compost = compostHits.toUi(merchantsById),
+            popular = popular.filter(matches).toUi(merchantsById),
+            offerMerchants = merchantsById.values.filter { it.todaysOffer != null && it.id != ListingRepository.MY_MERCHANT_ID }.sortedBy { it.distanceKm },
             selectedTab = tab,
             otherTabMatchCount = if ((query.isNotBlank() || filter.activeCount > 0) && activeCount == 0) otherCount else 0,
             filter = filter,

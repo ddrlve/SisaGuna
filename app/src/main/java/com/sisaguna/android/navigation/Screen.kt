@@ -53,7 +53,14 @@ sealed class Screen(val route: String) {
         fun routeFor(id: String, justPlaced: Boolean = false) = "order/$id?justPlaced=$justPlaced"
     }
 
-    data object Upload : Screen("upload")
+    /** Opened as Siap santap or Pakan & kompos — the two upload forms differ (portion vs weight). */
+    data object Upload : Screen("upload?tier={tier}") {
+        const val ARG_TIER = "tier"
+        fun routeFor(tier: ListingTier = ListingTier.HUMAN) = "upload?tier=${tier.name}"
+    }
+
+    /** Language, theme, buyer/seller mode. */
+    data object Settings : Screen("profile/settings")
 
     // Profile sub-pages (3b). Nested under profile/ so the Profile tab stays lit.
     data object Addresses : Screen("profile/addresses")

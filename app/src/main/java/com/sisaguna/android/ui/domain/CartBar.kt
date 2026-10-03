@@ -20,7 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,26 +57,26 @@ fun CartBar(
                 .padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Sm)
                 .shadow(8.dp, RoundedCornerShape(SgRadius.Tile))
                 .clip(RoundedCornerShape(SgRadius.Tile))
-                .background(SgColor.Brand600)
+                .background(SgColor.Brand500)
                 .pressable(onClick)
                 .padding(horizontal = SgSpacing.Lg, vertical = SgSpacing.Md),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
             Box(
-                modifier = Modifier.size(36.dp).background(SgColor.Brand500, CircleShape),
+                modifier = Modifier.size(36.dp).background(SgColor.OnBrand.copy(alpha = 0.22f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.ShoppingBag, contentDescription = null, tint = SgColor.BaseWhite, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.ShoppingBag, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(20.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text("$itemCount item · ${formatPrice(total)}", style = SgTextStyle.Label, color = SgColor.BaseWhite)
+                Text("$itemCount item · ${formatPrice(total)}", style = SgTextStyle.Label, color = SgColor.OnBrand)
                 if (merchantName != null) {
-                    Text("dari $merchantName", style = SgTextStyle.Caption, color = SgColor.Brand100, maxLines = 1)
+                    Text("dari $merchantName", style = SgTextStyle.Caption, color = SgColor.OnBrand.copy(alpha = 0.85f), maxLines = 1)
                 }
             }
-            Text("Keranjang", style = SgTextStyle.Label, color = SgColor.BaseWhite)
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.BaseWhite)
+            Text(com.sisaguna.android.ui.i18n.l("Lihat pesanan", "View order"), style = SgTextStyle.Label, color = SgColor.OnBrand)
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.OnBrand)
         }
     }
 }

@@ -93,6 +93,12 @@ class OrderDetailViewModel @Inject constructor(
 
     fun rate(stars: Int, tags: List<String>, comment: String) =
         orderRepository.rate(orderId, OrderRating(stars, tags, comment.trim()))
+
+    fun complain(reason: com.sisaguna.android.data.model.ComplaintReason, detail: String, photos: List<String>) =
+        orderRepository.complain(
+            orderId,
+            com.sisaguna.android.data.model.Complaint(reason, detail.trim(), photos, java.time.Instant.now()),
+        )
 }
 
 /** Tag suggestions in the rating sheet: praise for 4–5 stars, issues for 1–3. */

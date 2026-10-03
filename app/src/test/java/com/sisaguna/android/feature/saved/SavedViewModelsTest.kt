@@ -62,7 +62,7 @@ class MerchantDetailViewModelTest {
     val main = MainDispatcherRule()
 
     private fun vm(id: String, saved: FakeSavedMerchantRepository = FakeSavedMerchantRepository()) =
-        MerchantDetailViewModel(TestListingRepository(), saved, InMemoryCartRepository(), SavedStateHandle(mapOf(Screen.MerchantDetail.ARG_ID to id)))
+        MerchantDetailViewModel(TestListingRepository(), saved, InMemoryCartRepository(), SavedStateHandle(mapOf(Screen.MerchantDetail.ARG_ID to id)), com.sisaguna.android.data.repository.FakeReviewRepository())
 
     private val MerchantDetailViewModel.success get() = uiState.value as MerchantDetailUiState.Success
 

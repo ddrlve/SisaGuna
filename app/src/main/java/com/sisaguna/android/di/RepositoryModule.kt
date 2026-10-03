@@ -55,4 +55,10 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindVoucherRepository(impl: FakeVoucherRepository): VoucherRepository
+
+    @Binds
+    abstract fun bindReviewRepository(impl: com.sisaguna.android.data.repository.FakeReviewRepository): com.sisaguna.android.data.repository.ReviewRepository
+
+    @Binds
+    abstract fun bindIncomingOrderRepository(impl: com.sisaguna.android.data.repository.FakeIncomingOrderRepository): com.sisaguna.android.data.repository.IncomingOrderRepository
 }

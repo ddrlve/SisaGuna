@@ -46,6 +46,8 @@ class ProfileViewModel @Inject constructor(
 
     private val impact = MutableStateFlow<ImpactStats?>(null)
 
+    fun setPhoto(uri: String?) = profileRepository.setPhoto(uri)
+
     /** Live: an upload or delete in Katalog saya shows up here without reopening Profile. */
     private val catalog = listingRepository.listings.map { all ->
         val me = listingRepository.merchant(ListingRepository.MY_MERCHANT_ID)
