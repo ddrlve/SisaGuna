@@ -57,7 +57,7 @@ class FakeNotificationRepository(now: Instant) : NotificationRepository {
             ),
             AppNotification(
                 "n4", NotificationType.PROMO, "Hemat ekstra pickup sore ini",
-                "Ambil makanan antara 16.00–18.00 dan dapat potongan tambahan dari penyedia Verified.",
+                "Ambil makanan antara 16.00-18.00 dan dapat potongan tambahan dari penyedia Verified.",
                 ago(26 * 60), isRead = true,
             ),
             AppNotification(

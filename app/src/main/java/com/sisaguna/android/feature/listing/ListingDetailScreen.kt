@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.listing
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.rounded.Storefront
@@ -239,19 +241,23 @@ private fun DetailBody(
                             now = s.now,
                         )
                     }
-                    Section(l("Halal & alergen", "Halal & allergens")) {
+                    // Halal only means something for food people eat; feed/compost shows allergens only.
+                    Section(if (listing.tier == ListingTier.HUMAN) l("Halal & alergen", "Halal & allergens") else l("Alergen", "Allergens")) {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                HalalBadge(listing.halal)
-                                Text(
-                                    when (listing.halal) {
-                                        HalalStatus.HALAL_CERTIFIED -> l("  Bersertifikat halal", "  Halal certified")
-                                        HalalStatus.NON_HALAL -> l("  Mengandung bahan non-halal", "  Contains non-halal ingredients")
-                                        HalalStatus.UNVERIFIED -> l("  Penyedia belum punya sertifikat", "  Seller isn't certified yet")
-                                        HalalStatus.OTHER -> l("  Tidak relevan / lainnya", "  Not applicable / other")
-                                    },
-                                    style = SgTextStyle.Caption,
-                                )
+                            if (listing.tier == ListingTier.HUMAN) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    HalalBadge(listing.halal)
+                                    Text(
+                                        when (listing.halal) {
+                                            HalalStatus.HALAL_CERTIFIED -> l("Bersertifikat halal", "Halal certified")
+                                            HalalStatus.NON_HALAL -> l("Mengandung bahan non-halal", "Contains non-halal ingredients")
+                                            HalalStatus.UNVERIFIED -> l("Penyedia belum punya sertifikat", "Seller isn't certified yet")
+                                            HalalStatus.OTHER -> l("Lainnya, tanya penyedia", "Other, ask the seller")
+                                        },
+                                        style = SgTextStyle.Caption,
+                                        modifier = Modifier.padding(start = 8.dp),
+                                    )
+                                }
                             }
                             Text(l("Mengandung", "Contains"), style = SgTextStyle.Caption)
                             AllergenChips(listing.allergens)
@@ -274,7 +280,7 @@ private fun DetailBody(
                     Section("Detail pengambilan") {
                         Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
                             val start = listing.pickupStart?.let { formatClock(it) }
-                            InfoLine(Icons.Rounded.Schedule, "Waktu ambil", if (start != null) "Hari ini, $start – ${formatClock(listing.pickupEnd)}" else "Sampai ${formatClock(listing.pickupEnd)}")
+                            InfoLine(Icons.Rounded.Schedule, "Waktu ambil", if (start != null) "Hari ini, $start sampai ${formatClock(listing.pickupEnd)}" else "Sampai ${formatClock(listing.pickupEnd)}")
                             InfoLine(Icons.Rounded.LocationOn, "Lokasi", s.detail.merchant.location + (listing.distanceKm?.let { " · %.1f km dari kamu".format(it) } ?: ""))
                             InfoLine(Icons.Rounded.Inventory2, "Stok", "Sisa ${listing.stock} ${unitWord(listing.unit)}" + if (s.inCart > 0) " · ${s.inCart} di keranjangmu" else "")
                         }
@@ -353,25 +359,23 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
             SafetyChip(FoodSafety.assess(listing, s.now))
         }
         Text(listing.title, style = SgTextStyle.Display)
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
+        // Price, struck-through original and savings sit on one centre line. The savings badge
+        // is a solid fill (red for a discount, green when free) so it's the second thing the
+        // eye lands on after the price.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(formatPrice(listing.unitPrice) + if (listing.isFree) "" else unitSuffix(listing), style = SgTextStyle.Display, color = SgColor.Brand600)
             if (!listing.isFree && listing.priceOriginal != null && listing.priceOriginal > listing.unitPrice) {
-                Text(
-                    formatRupiah(listing.priceOriginal),
-                    style = SgTextStyle.Body.copy(textDecoration = TextDecoration.LineThrough),
-                    modifier = Modifier.padding(bottom = 4.dp),
-                )
+                Text(formatRupiah(listing.priceOriginal), style = SgTextStyle.Body.copy(textDecoration = TextDecoration.LineThrough))
             }
             val pct = if (listing.isFree) 100 else discountPercent(listing.priceOriginal, listing.priceDiscounted)
             if (pct != null) {
                 Text(
                     "Hemat $pct%",
-                    style = SgTextStyle.TextXsMedium,
-                    color = SgColor.RedStatus,
+                    style = SgTextStyle.Label.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold),
+                    color = SgColor.OnBrand,
                     modifier = Modifier
-                        .padding(bottom = 4.dp)
-                        .background(SgColor.RedStatus.copy(alpha = 0.1f), RoundedCornerShape(SgRadius.Pill))
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                        .background(if (listing.isFree) SgColor.Brand500 else Color(0xFFE5484D), RoundedCornerShape(SgRadius.Pill))
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
                 )
             }
         }
@@ -382,7 +386,7 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
 /**
  * Store card. User testing: the old "Lihat toko" was a tiny text link nobody saw. Now the
  * store banner, name, rating and halal status sit in a card with a full-width outlined
- * "Lihat Toko" button (48dp tall) — unmistakably a button.
+ * "Lihat Toko" button (48dp tall), unmistakably a button.
  */
 private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (String) -> Unit) {
     val m = s.detail.merchant
@@ -403,8 +407,8 @@ private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (Strin
             }
             Column(modifier = Modifier.weight(1f)) {
                 MerchantSummary(merchant = m, distanceKm = s.listing.distanceKm, verifiedLabel = "Verified")
-                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    HalalBadge(m.halal)
+                Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (s.listing.tier == ListingTier.HUMAN) HalalBadge(m.halal)
                     if (m.ratingCount > 0) Text("${m.ratingCount} " + l("ulasan", "reviews"), style = SgTextStyle.Caption)
                 }
             }

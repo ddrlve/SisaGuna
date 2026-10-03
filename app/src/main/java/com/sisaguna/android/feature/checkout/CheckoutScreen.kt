@@ -607,7 +607,7 @@ private fun SpeedCard(q: DeliveryQuote, selected: Boolean, onClick: () -> Unit, 
             .padding(horizontal = 10.dp, vertical = 10.dp),
     ) {
         Text(l(q.speed.label, q.speed.labelEn), style = SgTextStyle.Label.copy(fontSize = 13.sp))
-        Text("${q.etaMinMinutes}–${q.etaMaxMinutes} " + l("mnt", "min"), style = SgTextStyle.Caption)
+        Text("${q.etaMinMinutes}-${q.etaMaxMinutes} " + l("mnt", "min"), style = SgTextStyle.Caption)
         Text(formatRupiah(q.payable), style = SgTextStyle.Label.copy(fontSize = 13.sp), color = SgColor.Brand700, modifier = Modifier.padding(top = 4.dp))
     }
 }
@@ -631,7 +631,7 @@ private fun CourierRow(q: DeliveryQuote, selected: Boolean, onClick: () -> Unit)
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(q.courier.label, style = SgTextStyle.Label)
             Text(
-                l("Tiba ", "Arrives in ") + "${q.etaMinMinutes}–${q.etaMaxMinutes} " + l("mnt", "min") + (q.promoLabel?.let { " · $it" } ?: ""),
+                l("Tiba ", "Arrives in ") + "${q.etaMinMinutes}-${q.etaMaxMinutes} " + l("mnt", "min") + (q.promoLabel?.let { " · $it" } ?: ""),
                 style = SgTextStyle.Caption,
                 color = if (q.promoLabel != null) SgColor.Brand700 else SgColor.InkMuted,
                 maxLines = 1,

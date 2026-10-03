@@ -6,6 +6,7 @@ import com.sisaguna.android.data.model.Allergen.GLUTEN
 import com.sisaguna.android.data.model.Allergen.MILK
 import com.sisaguna.android.data.model.Allergen.PEANUT
 import com.sisaguna.android.data.model.Allergen.SEAFOOD
+import com.sisaguna.android.data.model.Allergen.SESAME
 import com.sisaguna.android.data.model.Allergen.SOY
 import com.sisaguna.android.data.model.HalalStatus
 import com.sisaguna.android.data.model.Listing
@@ -54,7 +55,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             ListingRepository.MY_MERCHANT_ID, "Dapur Budi", isVerified = true, status = MerchantStatus.APPROVED, location = "Tangerang",
             rating = 4.8, ratingCount = 23, bannerUrl = seedImage("banner_dapur"), photos = listOf(seedImage("kue_lapis"), seedImage("banner_dapur")),
             about = "Dapur rumahan yang sering kebanjiran pesanan arisan. Sisa yang masih layak dijual murah, sisanya jadi kompos.",
-            address = "Jl. Sutera Onyx XII No.30, Tangerang", openHours = "08.00–20.00", halal = HalalStatus.UNVERIFIED,
+            address = "Jl. Sutera Onyx XII No.30, Tangerang", openHours = "08.00-20.00", halal = HalalStatus.UNVERIFIED,
             allergens = setOf(EGG, MILK, GLUTEN), prepMinutes = 10, distanceKm = 0.3, totalRescued = 41,
         ),
         Merchant(
@@ -62,7 +63,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.9, ratingCount = 212, bannerUrl = seedImage("banner_warung2"),
             photos = listOf(seedImage("banner_warung2"), seedImage("nasi_kuning"), seedImage("sayur_sop"), seedImage("pisang_goreng"), seedImage("banner_warung")),
             about = "Warung masakan rumahan sejak 2009. Tiap sore sisa lauk katering kantor kami bagikan murah lewat SisaGuna.",
-            address = "Jl. Kemang Raya No. 12, Jakarta Selatan", openHours = "07.00–21.00", halal = HalalStatus.HALAL_CERTIFIED,
+            address = "Jl. Kemang Raya No. 12, Jakarta Selatan", openHours = "07.00-21.00", halal = HalalStatus.HALAL_CERTIFIED,
             allergens = setOf(EGG, PEANUT, SEAFOOD), todaysOffer = "Nasi kuning + sayur sop mulai Rp 4.000 sampai jam 21.00",
             prepMinutes = 10, distanceKm = 0.8, totalRescued = 1_284,
         ),
@@ -71,7 +72,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.7, ratingCount = 158, bannerUrl = seedImage("banner_bakery"),
             photos = listOf(seedImage("banner_bakery"), seedImage("donat"), seedImage("croissant"), seedImage("roti_tawar")),
             about = "Bakery kecil di Blok M. Roti yang lewat best before tapi masih lembut dijual 70% lebih murah.",
-            address = "Jl. Melawai VI No. 3, Blok M", openHours = "06.00–20.00", halal = HalalStatus.HALAL_CERTIFIED,
+            address = "Jl. Melawai VI No. 3, Blok M", openHours = "06.00-20.00", halal = HalalStatus.HALAL_CERTIFIED,
             allergens = setOf(GLUTEN, MILK, EGG), todaysOffer = "Semua roti & donat diskon 70% setelah jam 18.00",
             prepMinutes = 5, distanceKm = 1.2, totalRescued = 932,
         ),
@@ -80,7 +81,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.5, ratingCount = 37, bannerUrl = seedImage("banner_kantin"),
             photos = listOf(seedImage("banner_kantin"), seedImage("nasi_box"), seedImage("ayam_goreng"), seedImage("bubur_ayam")),
             about = "Kantin kantor yang sering kelebihan nasi box rapat.",
-            address = "Jl. Cipete Raya No. 8", openHours = "06.30–16.00", halal = HalalStatus.UNVERIFIED,
+            address = "Jl. Cipete Raya No. 8", openHours = "06.30-16.00", halal = HalalStatus.UNVERIFIED,
             allergens = setOf(EGG, SOY), prepMinutes = 15, distanceKm = 0.5, totalRescued = 210,
         ),
         Merchant(
@@ -88,7 +89,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.8, ratingCount = 64, bannerUrl = seedImage("banner_farm"),
             photos = listOf(seedImage("banner_farm"), seedImage("sayur_pakan"), seedImage("ampas_tahu"), seedImage("dedak")),
             about = "Kami kumpulkan sisa sayur pasar dan ampas tahu untuk peternak kecil di Depok.",
-            address = "Jl. Raya Sawangan No. 51, Depok", openHours = "05.00–17.00", halal = HalalStatus.OTHER,
+            address = "Jl. Raya Sawangan No. 51, Depok", openHours = "05.00-17.00", halal = HalalStatus.OTHER,
             allergens = setOf(SOY), deliveryAvailable = true, prepMinutes = 20, distanceKm = 5.4, totalRescued = 3_400,
         ),
         Merchant(
@@ -96,7 +97,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.6, ratingCount = 19, bannerUrl = seedImage("banner_kompos"),
             photos = listOf(seedImage("banner_kompos"), seedImage("kompos_sayur"), seedImage("ampas_kopi")),
             about = "Bank sampah organik. Bahan kompos sudah dipilah bebas plastik.",
-            address = "Jl. Cilandak KKO No. 2", openHours = "08.00–16.00", halal = HalalStatus.OTHER,
+            address = "Jl. Cilandak KKO No. 2", openHours = "08.00-16.00", halal = HalalStatus.OTHER,
             deliveryAvailable = false, prepMinutes = 15, distanceKm = 3.1, totalRescued = 5_120,
         ),
         Merchant(
@@ -104,7 +105,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.9, ratingCount = 88, bannerUrl = seedImage("puding_cheesecake"),
             photos = listOf(seedImage("puding_cheesecake"), seedImage("kue_lapis")),
             about = "Puding cheesecake sistem PO. Bahan dibeli H-1 jadi selalu fresh; sisa PO dijual di sini sebelum lewat 2 hari.",
-            address = "Jl. Alam Sutera Boulevard No. 21", openHours = "10.00–21.00", halal = HalalStatus.UNVERIFIED,
+            address = "Jl. Alam Sutera Boulevard No. 21", openHours = "10.00-21.00", halal = HalalStatus.UNVERIFIED,
             allergens = setOf(MILK, EGG, GLUTEN), todaysOffer = "Sisa PO hari ini: beli 2 cup puding, hemat Rp 10.000",
             prepMinutes = 5, distanceKm = 0.4, totalRescued = 310,
         ),
@@ -113,8 +114,46 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             rating = 4.6, ratingCount = 120, bannerUrl = seedImage("mie_goreng"),
             photos = listOf(seedImage("mie_goreng")),
             about = "Bakmi dan mie goreng rumahan. Dapur kami non-halal.",
-            address = "Jl. Kebon Jeruk Raya No. 77", openHours = "09.00–21.00", halal = HalalStatus.NON_HALAL,
+            address = "Jl. Kebon Jeruk Raya No. 77", openHours = "09.00-21.00", halal = HalalStatus.NON_HALAL,
             allergens = setOf(SOY, EGG, GLUTEN), prepMinutes = 10, distanceKm = 2.2, totalRescued = 540,
+        ),
+        Merchant(
+            "m8", "Martabak Bang Udin", isVerified = true, status = MerchantStatus.APPROVED, location = "Tebet",
+            rating = 4.7, ratingCount = 301, bannerUrl = seedImage("martabak"), photos = listOf(seedImage("martabak")),
+            about = "Martabak manis dan telur sejak 2012. Pesanan yang batal diambil kami jual separuh harga.",
+            address = "Jl. Tebet Raya No. 40", openHours = "16.00-24.00", halal = HalalStatus.HALAL_CERTIFIED,
+            allergens = setOf(EGG, MILK, GLUTEN, PEANUT), todaysOffer = "Martabak batal ambil diskon 60% mulai jam 21.00",
+            prepMinutes = 10, distanceKm = 1.8, totalRescued = 670,
+        ),
+        Merchant(
+            "m9", "Pizza Lab", isVerified = true, status = MerchantStatus.APPROVED, location = "Senopati",
+            rating = 4.6, ratingCount = 95, bannerUrl = seedImage("pizza"), photos = listOf(seedImage("pizza")),
+            about = "Pizza oven batu. Slice yang tersisa saat tutup dijual murah.",
+            address = "Jl. Senopati No. 19", openHours = "11.00-22.00", halal = HalalStatus.UNVERIFIED,
+            allergens = setOf(GLUTEN, MILK), prepMinutes = 8, distanceKm = 2.6, totalRescued = 220,
+        ),
+        Merchant(
+            "m10", "Soto & Sate Pak Gino", isVerified = true, status = MerchantStatus.APPROVED, location = "Rawamangun",
+            rating = 4.8, ratingCount = 176, bannerUrl = seedImage("sate_ayam"), photos = listOf(seedImage("sate_ayam"), seedImage("soto_ayam"), seedImage("rendang")),
+            about = "Soto ayam, sate, dan rendang. Sisa katering kantor kami tawarkan tiap sore.",
+            address = "Jl. Pemuda No. 88, Rawamangun", openHours = "07.00-20.00", halal = HalalStatus.HALAL_CERTIFIED,
+            allergens = setOf(PEANUT, SOY, EGG), todaysOffer = "Paket soto + sate sisa katering mulai Rp 6.000",
+            prepMinutes = 10, distanceKm = 1.5, totalRescued = 860,
+        ),
+        Merchant(
+            "m11", "Jajanan Pasar Bu Ning", isVerified = true, status = MerchantStatus.APPROVED, location = "Pasar Minggu",
+            rating = 4.9, ratingCount = 240, bannerUrl = seedImage("klepon"), photos = listOf(seedImage("klepon"), seedImage("onde_onde"), seedImage("risoles"), seedImage("bolu_pandan")),
+            about = "Kue basah buatan subuh. Yang tidak habis di pasar kami tawarkan sebelum sore.",
+            address = "Pasar Minggu Blok B No. 12", openHours = "05.00-15.00", halal = HalalStatus.HALAL_CERTIFIED,
+            allergens = setOf(GLUTEN, EGG, MILK, SESAME), todaysOffer = "Kue basah 3 macam cuma Rp 5.000",
+            prepMinutes = 5, distanceKm = 2.0, totalRescued = 1_450,
+        ),
+        Merchant(
+            "m12", "Segar Juice & Salad", isVerified = false, status = MerchantStatus.APPROVED, location = "Kuningan",
+            rating = 4.4, ratingCount = 41, bannerUrl = seedImage("salad_buah"), photos = listOf(seedImage("salad_buah")),
+            about = "Kedai jus dan salad buah. Kulit buah dan ampas teh kami pisahkan untuk kompos.",
+            address = "Jl. Rasuna Said Kav. 5", openHours = "08.00-20.00", halal = HalalStatus.UNVERIFIED,
+            allergens = setOf(MILK), prepMinutes = 5, distanceKm = 3.4, totalRescued = 190,
         ),
     )
 
@@ -179,7 +218,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             ),
             human(
                 "l12", "m6", "Puding Cheesecake Sisa PO", 25000, 12000, "puding_cheesecake", 20.0, StorageMethod.CHILLED, 6.0,
-                "Puding cheesecake lembut dengan saus stroberi, sisa PO hari ini. Disimpan di kulkas sejak dibuat. Tekstur paling enak dalam 2 hari — habiskan hari ini.",
+                "Puding cheesecake lembut dengan saus stroberi, sisa PO hari ini. Disimpan di kulkas sejak dibuat. Tekstur paling enak dalam 2 hari, habiskan hari ini.",
                 6, setOf(MILK, EGG, GLUTEN), gallery = listOf("kue_lapis"), sold = 74,
             ),
             human(
@@ -211,6 +250,96 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
                 "l18", "m1", "Pisang Goreng Kipas", 10000, 3000, "pisang_goreng", 2.0, StorageMethod.ROOM_TEMP, 1.5,
                 "Pisang goreng tepung dari etalase sore, isi 4 potong per porsi.",
                 8, setOf(GLUTEN), sold = 39,
+            ),
+            human(
+                "l22", "m8", "Martabak Manis Cokelat Keju", 60000, 22000, "martabak", 3.0, StorageMethod.SHELF, 4.0,
+                "Martabak manis cokelat keju kacang, pesanan yang batal diambil. Masih utuh satu loyang, dipotong 8.",
+                3, setOf(EGG, MILK, GLUTEN, PEANUT), sold = 88,
+            ),
+            human(
+                "l23", "m1", "Gado-gado Sisa Katering", 18000, 6000, "gado_gado", 1.5, StorageMethod.ROOM_TEMP, 2.0,
+                "Gado-gado sayur rebus, tahu, telur, dan kerupuk. Bumbu kacang dipisah biar sayur tetap segar.",
+                5, setOf(PEANUT, EGG, SOY), sold = 27,
+            ),
+            human(
+                "l24", "m10", "Soto Ayam Kuah Bening", 20000, 7000, "soto_ayam", 1.0, StorageMethod.ROOM_TEMP, 2.5,
+                "Soto ayam kuah bening dengan suwiran ayam, soun, dan bawang goreng. Kuah dan isi dipisah.",
+                6, setOf(SOY), sold = 52,
+            ),
+            human(
+                "l25", "m10", "Rendang Daging (2 potong)", 35000, 14000, "rendang", 2.0, StorageMethod.ROOM_TEMP, 1.5,
+                "Rendang daging sapi sisa katering, bumbu kering. Bawa wadah tertutup.",
+                4, emptySet(), sold = 61,
+            ),
+            human(
+                "l26", "m10", "Sate Ayam 10 Tusuk", 30000, 12000, "sate_ayam", 1.0, StorageMethod.ROOM_TEMP, 2.0,
+                "Sate ayam bumbu kacang, 10 tusuk per porsi. Lontong tidak termasuk.",
+                5, setOf(PEANUT, SOY), sold = 70,
+            ),
+            human(
+                "l27", "m3", "Bakso Urat Kuah", 18000, 6000, "bakso", 1.0, StorageMethod.ROOM_TEMP, 2.0,
+                "Bakso urat dan bakso halus dengan mie kuning. Kuah kaldu sapi dipisah.",
+                6, setOf(GLUTEN, EGG, SOY), sold = 44,
+            ),
+            human(
+                "l28", "m11", "Klepon Gula Merah (isi 10)", 15000, 5000, "klepon", 8.0, StorageMethod.SHELF, 4.0,
+                "Klepon pandan isi gula merah dengan kelapa parut. Dibuat subuh, paling enak hari ini.",
+                8, emptySet(), sold = 93,
+            ),
+            human(
+                "l29", "m11", "Risoles Ragout (isi 5)", 15000, 5000, "risoles", 6.0, StorageMethod.SHELF, 4.0,
+                "Risoles isi ragout ayam sayur, digoreng pagi. Hangatkan di teflon tanpa minyak.",
+                6, setOf(GLUTEN, EGG, MILK), sold = 38,
+            ),
+            human(
+                "l30", "m2", "Brownies Panggang Potong", 25000, 8000, "brownies", 20.0, StorageMethod.SHELF, 5.0,
+                "Brownies cokelat panggang dari pinggir loyang. Padat dan fudgy.",
+                7, setOf(GLUTEN, EGG, MILK), sold = 66,
+            ),
+            human(
+                "l31", "m11", "Bolu Pandan Setengah Loyang", 40000, 12000, "bolu_pandan", 10.0, StorageMethod.SHELF, 5.0,
+                "Bolu pandan lembut sisa pesanan hajatan, setengah loyang dipotong 6.",
+                3, setOf(GLUTEN, EGG, MILK), sold = 21,
+            ),
+            human(
+                "l32", "m9", "Pizza Pepperoni 2 Slice", 45000, 15000, "pizza", 2.0, StorageMethod.ROOM_TEMP, 1.5,
+                "Dua slice pizza pepperoni dari etalase. Panaskan 5 menit di oven atau teflon tertutup.",
+                5, setOf(GLUTEN, MILK), sold = 35,
+            ),
+            human(
+                "l33", "m12", "Salad Buah Segar", 22000, 9000, "salad_buah", 6.0, StorageMethod.CHILLED, 6.0,
+                "Potongan apel, melon, dan anggur dengan yogurt. Disimpan di kulkas sejak dipotong.",
+                4, setOf(MILK), sold = 19,
+            ),
+            human(
+                "l34", "m11", "Onde-onde Wijen (isi 6)", 12000, 4000, "onde_onde", 7.0, StorageMethod.SHELF, 4.0,
+                "Onde-onde isi kacang hijau berbalut wijen. Renyah di luar, lembut di dalam.",
+                6, setOf(SESAME, GLUTEN), sold = 47,
+            ),
+            human(
+                "l35", "m3", "Nasi Goreng Telur Mata Sapi", 20000, 7000, "nasi_goreng", 1.0, StorageMethod.ROOM_TEMP, 2.0,
+                "Nasi goreng kecap dengan telur mata sapi dan acar. Sisa pesanan rapat siang.",
+                5, setOf(EGG, SOY), sold = 58,
+            ),
+            byWeight(
+                "l36", "m11", "Ampas Kelapa Parut", ANIMAL_FEED, 4000, 1500, "ampas_kelapa", 8,
+                "Ampas kelapa sisa peras santan pagi ini. Campuran pakan ayam dan bebek, masih segar.",
+                10, sold = 75,
+            ),
+            byWeight(
+                "l37", "m12", "Kulit Pisang untuk Kompos", COMPOST, null, null, "kulit_pisang", 9,
+                "Kulit pisang dari kedai jus, sudah dipisah dari plastik. Bisa dicacah untuk pakan kambing juga.",
+                8, sold = 30,
+            ),
+            byWeight(
+                "l38", "m5", "Daun Kering untuk Kompos", COMPOST, null, null, "daun_kering", 10,
+                "Daun kering hasil sapu taman, bahan cokelat untuk menyeimbangkan kompos sisa dapur.",
+                40, sold = 66,
+            ),
+            byWeight(
+                "l39", "m12", "Ampas Teh untuk Kompos", COMPOST, null, null, "ampas_teh", 10,
+                "Ampas daun teh dari kedai, sudah ditiriskan. Bagus untuk media tanam.",
+                6, sold = 14,
             ),
             byWeight(
                 "l6", "m4", "Sayur Layu Pasar untuk Pakan", ANIMAL_FEED, 5000, 2000, "sayur_pakan", 6,
@@ -264,15 +393,15 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
         val visible = visible()
 
         return HomeFeed(
-            nearby = visible.filter { it.tier == HUMAN }.sortedBy { it.distanceKm ?: Double.MAX_VALUE }.take(8),
+            nearby = visible.filter { it.tier == HUMAN }.sortedBy { it.distanceKm ?: Double.MAX_VALUE }.take(12),
             deals = visible
                 .filter { it.tier == HUMAN }
                 .sortedByDescending { l -> if (l.isFree) 1.0 else 1.0 - (l.unitPrice.toDouble() / (l.priceOriginal ?: 1)) }
-                .take(8),
-            animalFeed = visible.filter { it.tier == ANIMAL_FEED }.take(8),
-            compost = visible.filter { it.tier == COMPOST }.take(8),
+                .take(12),
+            animalFeed = visible.filter { it.tier == ANIMAL_FEED }.take(12),
+            compost = visible.filter { it.tier == COMPOST }.take(12),
             merchantsById = merchants.associateBy { it.id },
-            popular = visible.filter { it.tier == HUMAN }.sortedByDescending { it.soldCount }.take(8),
+            popular = visible.filter { it.tier == HUMAN }.sortedByDescending { it.soldCount }.take(12),
         )
     }
 

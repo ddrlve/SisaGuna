@@ -68,6 +68,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.layout
 import coil.compose.AsyncImage
 import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.data.model.Review
@@ -118,10 +119,21 @@ fun StoreHero(
                 )
             }
         }
-        Row(Modifier.padding(horizontal = SgSpacing.Gutter), verticalAlignment = Alignment.Bottom) {
+        // Avatar (72dp) overlaps the banner by 30dp. The text block (42dp) fills exactly the part
+        // below the banner and is centred in it, so the name never
+        // touches the photo and the row reads balanced against the avatar.
+        Row(
+            Modifier
+                .padding(horizontal = SgSpacing.Gutter)
+                .layout { measurable, constraints ->
+                    val overlap = 30.dp.roundToPx()
+                    val p = measurable.measure(constraints)
+                    layout(p.width, p.height - overlap) { p.place(0, -overlap) }
+                },
+            verticalAlignment = Alignment.Bottom,
+        ) {
             Box(
                 Modifier
-                    .offset(y = (-28).dp)
                     .size(72.dp)
                     .shadow(6.dp, RoundedCornerShape(22.dp))
                     .clip(RoundedCornerShape(22.dp))
@@ -135,19 +147,23 @@ fun StoreHero(
                     modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(19.dp)),
                 )
             }
-            Column(Modifier.padding(start = 12.dp, bottom = 8.dp).weight(1f)) {
+            Column(
+                Modifier.padding(start = 14.dp).weight(1f).height(42.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(merchant.name, style = SgTextStyle.Display.copy(fontSize = 20.sp), maxLines = 1)
+                    Text(merchant.name, style = SgTextStyle.Title.copy(fontSize = 19.sp, lineHeight = 24.sp), maxLines = 1, modifier = Modifier.weight(1f, fill = false))
                     if (merchant.isVerified) Icon(Icons.Rounded.Verified, contentDescription = "Verified", tint = SgColor.Brand500, modifier = Modifier.padding(start = 4.dp).size(18.dp))
                 }
                 Text(
                     merchant.location + (distanceKm?.let { " · " + formatDistance(it) } ?: "") + " · $listingCount " + l("menu aktif", "live items"),
                     style = SgTextStyle.Caption,
+                    maxLines = 1,
                 )
             }
         }
         Row(
-            Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, bottom = SgSpacing.Lg).offset(y = (-10).dp),
+            Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = 14.dp, bottom = SgSpacing.Lg),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -155,7 +171,7 @@ fun StoreHero(
                 StatPill(Icons.Rounded.Star, StarGold, "%.1f".format(it), "(${merchant.ratingCount})")
             }
             if (merchant.openHours.isNotBlank()) StatPill(Icons.Rounded.Schedule, SgColor.InkMuted, merchant.openHours, null)
-            HalalBadge(merchant.halal)
+            if (merchant.halal != com.sisaguna.android.data.model.HalalStatus.OTHER) HalalBadge(merchant.halal)
         }
     }
 }

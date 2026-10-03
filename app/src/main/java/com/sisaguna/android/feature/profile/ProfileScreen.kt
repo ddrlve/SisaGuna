@@ -1,5 +1,6 @@
 package com.sisaguna.android.feature.profile
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PhotoLibrary
@@ -255,13 +256,15 @@ private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit, onPh
         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Lg),
     ) {
         // Tap the avatar to take or pick a profile photo; a small camera badge says so.
-        Box(Modifier.size(72.dp).clip(CircleShape).pressable({ choosing = true }, pressedScale = 0.95f)) {
+        // Only the photo is clipped to a circle; the camera badge sits on the outer box so it can
+        // hang over the edge instead of being cut off.
+        Box(Modifier.size(76.dp).pressable({ choosing = true }, pressedScale = 0.95f)) {
             if (state.profile.photoUri != null) {
                 coil.compose.AsyncImage(
                     state.profile.photoUri,
                     contentDescription = l("Foto profil", "Profile photo"),
                     contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize().clip(CircleShape).border(2.dp, SgColor.Brand300, CircleShape),
+                    modifier = Modifier.size(72.dp).clip(CircleShape).border(2.dp, SgColor.Brand300, CircleShape),
                 )
             } else {
                 InitialAvatar(
@@ -274,7 +277,7 @@ private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit, onPh
                 )
             }
             Box(
-                Modifier.align(Alignment.BottomEnd).size(24.dp).background(SgColor.Brand500, CircleShape).border(2.dp, SgColor.BaseWhite, CircleShape),
+                Modifier.align(Alignment.BottomEnd).size(26.dp).border(2.dp, SgColor.BaseWhite, CircleShape).padding(2.dp).background(SgColor.Brand500, CircleShape),
                 contentAlignment = Alignment.Center,
             ) { Icon(Icons.Rounded.PhotoCamera, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(13.dp)) }
         }
@@ -327,10 +330,12 @@ private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
     ) {
         Text(stringResource(R.string.profile_impact_title), style = SgTextStyle.Title)
-        Row(horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-            StatTile("${impact?.portions ?: "–"}", stringResource(R.string.profile_impact_portions_unit), stringResource(R.string.profile_impact_portions_label), Modifier.weight(1f))
-            StatTile("${impact?.compostKg ?: "–"}", "kg", stringResource(R.string.profile_impact_compost_label), Modifier.weight(1f))
-            StatTile("${impact?.carbonKg ?: "–"}", "kg", stringResource(R.string.profile_impact_carbon_label), Modifier.weight(1f))
+        // IntrinsicSize.Min + fillMaxHeight: all three tiles take the tallest one's height, so
+        // "porsi" and "kg" tiles line up whatever their label length.
+        Row(Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
+            StatTile("${impact?.portions ?: "…"}", stringResource(R.string.profile_impact_portions_unit), stringResource(R.string.profile_impact_portions_label), Modifier.weight(1f))
+            StatTile("${impact?.compostKg ?: "…"}", "kg", stringResource(R.string.profile_impact_compost_label), Modifier.weight(1f))
+            StatTile("${impact?.carbonKg ?: "…"}", "kg", stringResource(R.string.profile_impact_carbon_label), Modifier.weight(1f))
         }
         Row(
             modifier = Modifier
@@ -349,7 +354,7 @@ private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
             }
             Column {
                 Text(
-                    stringResource(R.string.profile_saved_money, impact?.let { formatRupiah(it.savedRupiah) } ?: "–"),
+                    stringResource(R.string.profile_saved_money, impact?.let { formatRupiah(it.savedRupiah) } ?: "-"),
                     style = SgTextStyle.Label,
                 )
                 Text(stringResource(R.string.profile_saved_money_body), style = SgTextStyle.Caption)
@@ -362,15 +367,16 @@ private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
 private fun StatTile(value: String, unit: String, label: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
+            .fillMaxHeight()
             .clip(RoundedCornerShape(SgRadius.Thumb))
             .background(SgColor.Mint)
-            .padding(horizontal = SgSpacing.Md, vertical = SgSpacing.Md),
+            .padding(12.dp),
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = SgTextStyle.Display, color = SgColor.Brand600)
-            Text(unit, style = SgTextStyle.Label, color = SgColor.Brand600, modifier = Modifier.padding(start = 3.dp, bottom = 3.dp))
+            Text(value, style = SgTextStyle.Display, color = SgColor.Brand600, modifier = Modifier.alignByBaseline())
+            Text(unit, style = SgTextStyle.Caption.copy(fontWeight = FontWeight.Bold), color = SgColor.Brand600, modifier = Modifier.alignByBaseline().padding(start = 3.dp))
         }
-        Text(label, style = SgTextStyle.Caption, maxLines = 2)
+        Text(label, style = SgTextStyle.Caption, minLines = 2, maxLines = 2, modifier = Modifier.padding(top = 2.dp))
     }
 }
 

@@ -15,3 +15,21 @@ banner_bakery.jpg <- File:Bread on display in Belfast.jpg
 banner_farm.jpg <- File:Farm goat feeding.jpg
 banner_kompos.jpg <- File:NYC Compost Project.jpg
 banner_dapur.jpg <- File:People Cooking in the Kitchen 11.jpg
+martabak.jpg <- File:Terang Bulan roasted chicken.JPG
+gado_gado.jpg <- File:Gado-gado in Jakarta.JPG
+soto_ayam.jpg <- File:Soto Ayam Kudus.jpg
+rendang.jpg <- File:Lamb rendang.jpg
+sate_ayam.jpg <- File:Warung Sate H. Faqih - Sate Ayam 172308.jpg
+bakso.jpg <- File:Bakso Indonesian Meatball Soup from Solo.jpg
+klepon.jpg <- File:Klepon Khas Tulungagung.jpg
+risoles.jpg <- File:Risoles jumbo.jpg
+brownies.jpg <- File:Brownies 2010.jpg
+bolu_pandan.jpg <- File:Pandan Cake.jpg
+pizza.jpg <- File:Slice House pizza (38501729515).jpg
+salad_buah.jpg <- File:A bowl of fruits salad with avocado.jpg
+onde_onde.jpg <- File:Onde-Onde Wijen.jpg
+nasi_goreng.jpg <- File:Nasi Goreng Ikan Asin.jpg
+ampas_kelapa.jpg <- File:Grated Coconut - Howrah 2013-10-18 3544.JPG
+daun_kering.jpg <- File:Nasu 20210724 113015.jpg
+ampas_teh.jpg <- File:Zhu-Ye-Qing-Tea-03.jpg
+kulit_pisang.jpg <- File:Banane-A-05 cropped.jpg

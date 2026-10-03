@@ -1,5 +1,10 @@
 package com.sisaguna.android.navigation
 
+import com.sisaguna.android.ui.components.SgEaseOut
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +70,12 @@ private const val KEY_PROFILE_UPDATED = "profile_updated"
 
 /** Free-text confirmation for Profile's snackbar from sub-pages (e.g. password changed). */
 private const val KEY_PROFILE_MESSAGE = "profile_message"
+
+private val tabRoutes = setOf(Screen.Home.route, Screen.Activity.route, Screen.Saved.route, Screen.Profile.route)
+
+/** Tab swaps and the splash hand-off crossfade; everything else is a push. */
+private fun isTabSwitch(from: String?, to: String?): Boolean =
+    (from in tabRoutes && to in tabRoutes) || from == Screen.Splash.route
 
 @Composable
 fun SgNavGraph(navController: NavHostController) {
@@ -139,9 +150,29 @@ fun SgNavGraph(navController: NavHostController) {
             }
         },
     ) { padding ->
+        // Default Navigation transitions are a 700ms crossfade, which made tab taps feel laggy.
+        // Tabs now swap with a quick 150ms fade (no movement: they're siblings, not a stack);
+        // pushed screens slide a short distance in from the right with the strong ease-out and
+        // pop back the same way they came (spatial consistency).
         NavHost(
             navController = navController,
             startDestination = Screen.Splash.route,
+            enterTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) fadeIn(tween(150))
+                else slideInHorizontally(tween(300, easing = SgEaseOut)) { it / 6 } + fadeIn(tween(220, easing = SgEaseOut))
+            },
+            exitTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) fadeOut(tween(100))
+                else slideOutHorizontally(tween(300, easing = SgEaseOut)) { -it / 12 } + fadeOut(tween(160))
+            },
+            popEnterTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) fadeIn(tween(150))
+                else slideInHorizontally(tween(300, easing = SgEaseOut)) { -it / 12 } + fadeIn(tween(220, easing = SgEaseOut))
+            },
+            popExitTransition = {
+                if (isTabSwitch(initialState.destination.route, targetState.destination.route)) fadeOut(tween(100))
+                else slideOutHorizontally(tween(240, easing = SgEaseOut)) { it / 6 } + fadeOut(tween(160))
+            },
             modifier = Modifier
                 .padding(
                     top = padding.calculateTopPadding(),

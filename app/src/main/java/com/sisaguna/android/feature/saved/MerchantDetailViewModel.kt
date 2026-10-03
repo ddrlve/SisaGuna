@@ -68,7 +68,7 @@ class MerchantDetailViewModel @Inject constructor(
                 merchantId = merchantId,
                 author = "Kamu",
                 stars = stars.coerceIn(1, 5),
-                comment = comment.ifBlank { tags.joinToString().ifBlank { "—" } },
+                comment = comment.ifBlank { tags.joinToString() },
                 createdAt = Instant.now(),
                 photos = photos,
                 tags = tags,

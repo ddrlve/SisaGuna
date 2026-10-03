@@ -170,7 +170,7 @@ fun MerchantHome(
             }
         }
         item {
-            SectionTitle(l("Posting sisa makanan", "Post leftovers"), l("Pilih jenisnya — satuannya beda", "Pick a type — they're counted differently"))
+            SectionTitle(l("Posting sisa makanan", "Post leftovers"), l("Pilih jenisnya, satuannya beda", "Pick a type, they're counted differently"))
             Row(
                 Modifier.padding(horizontal = SgSpacing.Gutter).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),

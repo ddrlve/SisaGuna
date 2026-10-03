@@ -370,7 +370,7 @@ fun UploadScreen(
                     now.plus(form.pickupHours, ChronoUnit.HOURS).isAfter(assessment.safeUntil)
                 ) {
                     Text(
-                        l("Listing otomatis ditutup ${formatClock(assessment.safeUntil)} — batas aman konsumsi.", "Listing closes automatically at ${formatClock(assessment.safeUntil)} — the safe-to-eat limit."),
+                        l("Listing otomatis ditutup ${formatClock(assessment.safeUntil)}, batas aman konsumsi.", "Listing closes automatically at ${formatClock(assessment.safeUntil)}, the safe-to-eat limit."),
                         style = SgTextStyle.Caption,
                         color = SgColor.YellowStatus,
                     )
@@ -559,7 +559,7 @@ private fun MediaSection(
             Icon(Icons.Rounded.Videocam, contentDescription = null, tint = SgColor.PromoInk)
             Column(Modifier.padding(start = 10.dp).weight(1f)) {
                 Text(if (videoUri == null) l("Rekam video (opsional)", "Record a video (optional)") else l("Rekam ulang video", "Re-record video"), style = SgTextStyle.Label)
-                Text(l("Maks. $MAX_VIDEO_SECONDS detik — tunjukkan kondisi makanan dari dekat", "Max $MAX_VIDEO_SECONDS seconds — show the food up close"), style = SgTextStyle.Caption)
+                Text(l("Maks. $MAX_VIDEO_SECONDS detik, tunjukkan kondisi makanan dari dekat", "Max $MAX_VIDEO_SECONDS seconds, show the food up close"), style = SgTextStyle.Caption)
             }
             if (videoUri != null) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = SgColor.Brand500)
         }
