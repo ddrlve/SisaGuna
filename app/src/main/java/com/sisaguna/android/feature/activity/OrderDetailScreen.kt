@@ -233,8 +233,8 @@ private fun StatusHeader(o: Order) {
     val (title, body) = when (o.status) {
         OrderStatus.READY -> if (o.fulfillment == Fulfillment.DELIVERY && o.delivery != null) {
             l("Sedang disiapkan", "Being prepared") to l(
-                "${o.delivery.courier.label} ${o.delivery.speed.label.lowercase()} · tiba ±${o.delivery.etaMinMinutes}–${o.delivery.etaMaxMinutes} menit ke ${o.deliveryAddress?.label ?: "alamatmu"}.",
-                "${o.delivery.courier.label} ${o.delivery.speed.labelEn.lowercase()} · arrives in ~${o.delivery.etaMinMinutes}–${o.delivery.etaMaxMinutes} min.",
+                "${o.delivery.courier.label} ${o.delivery.speed.label.lowercase()} · tiba ±${o.delivery.etaMinMinutes}-${o.delivery.etaMaxMinutes} menit ke ${o.deliveryAddress?.label ?: "alamatmu"}.",
+                "${o.delivery.courier.label} ${o.delivery.speed.labelEn.lowercase()} · arrives in ~${o.delivery.etaMinMinutes}-${o.delivery.etaMaxMinutes} min.",
             )
         } else {
             "Siap diambil" to l(
@@ -526,7 +526,7 @@ private fun ComplaintPrompt(onClick: () -> Unit) {
         }
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(l("Ada masalah dengan makanannya?", "Something wrong with the food?"), style = SgTextStyle.Label)
-            Text(l("Laporkan dalam 24 jam — basi, tidak sesuai, atau kurang. Dana kembali kalau terbukti.", "Report within 24h — spoiled, wrong or missing. Refund if confirmed."), style = SgTextStyle.Caption)
+            Text(l("Laporkan dalam 24 jam, basi, tidak sesuai, atau kurang. Dana kembali kalau terbukti.", "Report within 24h, spoiled, wrong or missing. Refund if confirmed."), style = SgTextStyle.Caption)
         }
         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.InkMuted)
     }

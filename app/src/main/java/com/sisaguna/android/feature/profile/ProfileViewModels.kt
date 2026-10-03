@@ -91,7 +91,7 @@ object ProfileValidation {
     fun normalizePhone(value: String): String =
         value.filter(Char::isDigit).removePrefix("62").removePrefix("0")
 
-    fun phone(value: String): String? = if (normalizePhone(value).length in 9..13) null else "Nomor harus 9–13 digit"
+    fun phone(value: String): String? = if (normalizePhone(value).length in 9..13) null else "Nomor harus 9-13 digit"
 }
 
 enum class ProfileField { NAME, EMAIL, PHONE }

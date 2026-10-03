@@ -40,7 +40,7 @@ class ProfileValidationTest {
 
     @Test
     fun `phone must be 9 to 13 digits after normalizing`() {
-        assertEquals("Nomor harus 9–13 digit", ProfileValidation.phone("08123"))
+        assertEquals("Nomor harus 9-13 digit", ProfileValidation.phone("08123"))
         assertNull(ProfileValidation.phone("0812345678901")) // 12 digits after the 0
         assertNotNull(ProfileValidation.phone("81234567890123")) // 14
     }

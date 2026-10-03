@@ -22,7 +22,7 @@ import java.time.Instant
 enum class StorageMethod(val label: String, val labelEn: String, val safeHours: Long) {
     ROOM_TEMP("Suhu ruang (masakan)", "Room temp (cooked)", 4),
     SHELF("Suhu ruang, kering (roti/kue)", "Room temp, dry (bread/cake)", 72),
-    CHILLED("Kulkas (1–5°C)", "Fridge (1–5°C)", 48),
+    CHILLED("Kulkas (1-5°C)", "Fridge (1-5°C)", 48),
     FROZEN("Freezer", "Freezer", 24 * 7),
 }
 
