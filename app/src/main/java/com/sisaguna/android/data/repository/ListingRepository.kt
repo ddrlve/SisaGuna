@@ -15,6 +15,8 @@ data class HomeFeed(
     val animalFeed: List<Listing>,
     val compost: List<Listing>,
     val merchantsById: Map<String, Merchant>,
+    /** Best sellers across stores, for the "Paling laris" rail. */
+    val popular: List<Listing> = emptyList(),
 )
 
 /** Everything Category List needs for one tier: the matching listings plus the merchants they

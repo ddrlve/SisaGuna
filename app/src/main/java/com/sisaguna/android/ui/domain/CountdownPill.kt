@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +37,7 @@ fun CountdownPill(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .background(SgColor.Neutral800.copy(alpha = 0.8f), RoundedCornerShape(30.dp))
+            .background(SgColor.Scrim.copy(alpha = 0.78f), RoundedCornerShape(30.dp))
             .padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         Icon(
@@ -48,7 +48,7 @@ fun CountdownPill(
         )
         Text(
             text = label,
-            color = SgColor.Neutral50,
+            color = SgColor.OnBrand,
             fontSize = 10.sp,
             modifier = Modifier.padding(start = 4.dp),
         )

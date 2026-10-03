@@ -25,12 +25,15 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -62,19 +65,26 @@ fun SgButton(
     leading: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val (bg, fg, border) = when (style) {
-        SgButtonStyle.Primary -> Triple(SgColor.Brand500, SgColor.BaseWhite, null)
-        SgButtonStyle.Secondary -> Triple(SgColor.BaseWhite, SgColor.Ink, SgColor.Hairline)
-        SgButtonStyle.Destructive -> Triple(Color(0xFFFDECEC), SgColor.RedStatus, null)
+        SgButtonStyle.Primary -> Triple(SgColor.Brand500, SgColor.OnBrand, null)
+        SgButtonStyle.Secondary -> Triple(SgColor.BaseWhite, SgColor.Ink, SgColor.Neutral300)
+        SgButtonStyle.Destructive -> Triple(SgColor.RedStatus.copy(alpha = 0.1f), SgColor.RedStatus, null)
         SgButtonStyle.Ghost -> Triple(Color.Transparent, SgColor.Brand600, null)
     }
-    val shape = RoundedCornerShape(SgRadius.Tile)
+    // Pill, like the Figma Login/Register CTAs. Primary gets a soft green glow underneath so it
+    // reads as a raised, tappable object rather than a flat coloured strip.
+    val shape = RoundedCornerShape(SgRadius.Pill)
     Row(
         modifier = modifier
             .height(height)
             .alpha(if (enabled) 1f else 0.4f)
+            .then(
+                if (style == SgButtonStyle.Primary && enabled) {
+                    Modifier.shadow(10.dp, shape, ambientColor = SgColor.Brand500, spotColor = SgColor.Brand500)
+                } else Modifier,
+            )
             .clip(shape)
             .background(bg)
-            .then(if (border != null) Modifier.border(1.dp, border, shape) else Modifier)
+            .then(if (border != null) Modifier.border(1.5.dp, border, shape) else Modifier)
             .pressable(onClick = { if (!loading) onClick() }, enabled = enabled)
             .padding(horizontal = 20.dp),
         horizontalArrangement = Arrangement.Center,
@@ -87,7 +97,7 @@ fun SgButton(
                 leading()
                 Box(Modifier.width(8.dp))
             }
-            Text(text, style = SgTextStyle.Label, color = fg, textAlign = TextAlign.Center, maxLines = 1)
+            Text(text, style = SgTextStyle.Label.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold), color = fg, textAlign = TextAlign.Center, maxLines = 1)
         }
     }
 }

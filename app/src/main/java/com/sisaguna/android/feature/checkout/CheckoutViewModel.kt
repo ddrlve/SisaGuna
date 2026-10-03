@@ -1,5 +1,16 @@
 package com.sisaguna.android.feature.checkout
 
+import com.sisaguna.android.data.model.Address
+import com.sisaguna.android.data.model.Courier
+import com.sisaguna.android.data.model.DeliveryPricing
+import com.sisaguna.android.data.model.DeliveryQuote
+import com.sisaguna.android.data.model.DeliverySpeed
+import com.sisaguna.android.data.model.Fulfillment
+import com.sisaguna.android.data.repository.AddressRepository
+import com.sisaguna.android.data.repository.PICKUP_GRACE_MINUTES
+import java.time.Duration
+import java.time.Instant
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.Listing
@@ -37,6 +48,13 @@ sealed interface PaymentStep {
     data class Failed(val message: String) : PaymentStep
 }
 
+/** Pickup vs courier, and for courier which provider and speed. */
+data class DeliveryChoice(
+    val fulfillment: Fulfillment = Fulfillment.PICKUP,
+    val courier: Courier = Courier.GOSEND,
+    val speed: DeliverySpeed = DeliverySpeed.STANDARD,
+)
+
 data class CheckoutUiState(
     val merchant: Merchant? = null,
     val lines: List<CheckoutLine> = emptyList(),
@@ -46,14 +64,41 @@ data class CheckoutUiState(
     val step: PaymentStep = PaymentStep.Idle,
     val vouchers: List<Voucher> = emptyList(),
     val voucher: Voucher? = null,
+    val delivery: DeliveryChoice = DeliveryChoice(),
+    val address: Address? = null,
+    val now: Instant = Instant.now(),
 ) {
     val isEmpty: Boolean get() = lines.isEmpty()
     val subtotal: Int get() = lines.sumOf { it.total }
     val voucherDiscount: Int get() = voucher?.discountFor(subtotal) ?: 0
-    val total: Int get() = (subtotal - voucherDiscount).coerceAtLeast(0)
+    val itemsTotal: Int get() = (subtotal - voucherDiscount).coerceAtLeast(0)
+
+    /** Store → buyer distance. Fake: the store's distance from the buyer's saved area. */
+    val distanceKm: Double get() = merchant?.distanceKm ?: lines.firstNotNullOfOrNull { it.listing.distanceKm } ?: 3.0
+    val deliveryAvailable: Boolean get() = merchant?.deliveryAvailable != false && distanceKm <= DeliveryPricing.MAX_DISTANCE_KM
+
+    /** Every courier's quote for the chosen speed, cheapest first. */
+    val quotes: List<DeliveryQuote>
+        get() = DeliveryPricing.allQuotes(distanceKm, subtotal, merchant?.prepMinutes ?: 15, delivery.speed)
+
+    /** The quote for each speed with the chosen courier — for the Prioritas/Standar/Hemat cards. */
+    val speedQuotes: List<DeliveryQuote>
+        get() = DeliverySpeed.entries.map { DeliveryPricing.quote(delivery.courier, it, distanceKm, subtotal, merchant?.prepMinutes ?: 15) }
+
+    val selectedQuote: DeliveryQuote?
+        get() = if (delivery.fulfillment == Fulfillment.DELIVERY && deliveryAvailable) {
+            DeliveryPricing.quote(delivery.courier, delivery.speed, distanceKm, subtotal, merchant?.prepMinutes ?: 15)
+        } else null
+
+    val deliveryFee: Int get() = selectedQuote?.payable ?: 0
+    val total: Int get() = itemsTotal + deliveryFee
+
+    /** Pickup: arrive within the grace window, but never after the listing closes. */
+    val pickupBy: Instant?
+        get() = earliestPickupEnd?.let { minOf(now.plus(Duration.ofMinutes(PICKUP_GRACE_MINUTES)), it) }
 
     /** Retail price minus what's paid: surplus discount plus voucher. */
-    val savings: Int get() = (lines.sumOf { it.originalTotal } - total).coerceAtLeast(0)
+    val savings: Int get() = (lines.sumOf { it.originalTotal } - itemsTotal).coerceAtLeast(0)
     val itemCount: Int get() = lines.sumOf { it.quantity }
 
     /** A free order has nothing to pay online; it's confirmed like cash. */
@@ -68,7 +113,18 @@ class CheckoutViewModel @Inject constructor(
     private val orderRepository: OrderRepository,
     paymentRepository: PaymentMethodRepository,
     private val voucherRepository: VoucherRepository,
+    addressRepository: AddressRepository,
 ) : ViewModel() {
+
+    private val delivery = MutableStateFlow(DeliveryChoice())
+
+    fun setFulfillment(f: Fulfillment) { delivery.value = delivery.value.copy(fulfillment = f) }
+    fun setCourier(c: Courier) { delivery.value = delivery.value.copy(courier = c, fulfillment = Fulfillment.DELIVERY) }
+    fun setSpeed(sp: DeliverySpeed) { delivery.value = delivery.value.copy(speed = sp, fulfillment = Fulfillment.DELIVERY) }
+
+    private val addressFlow = combine(addressRepository.addresses, addressRepository.selectedId) { list, id ->
+        list.firstOrNull { it.id == id } ?: list.firstOrNull()
+    }
 
     private val voucherCode = MutableStateFlow<String?>(null)
 
@@ -90,8 +146,12 @@ class CheckoutViewModel @Inject constructor(
         mine to mine.firstOrNull { it.code == code }
     }
 
-    val uiState: StateFlow<CheckoutUiState> = combine(base, selected, note, step, vouchersFlow) { (merchant, lines, methods), sel, n, st, (mine, v) ->
+    private val core = combine(base, selected, note, step, vouchersFlow) { (merchant, lines, methods), sel, n, st, (mine, v) ->
         CheckoutUiState(merchant, lines, methods, if (methods.any { it.kind == sel }) sel else PaymentKind.QRIS, n, st, mine, v)
+    }
+
+    val uiState: StateFlow<CheckoutUiState> = combine(core, delivery, addressFlow) { s, d, a ->
+        s.copy(delivery = d, address = a, now = Instant.now())
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CheckoutUiState())
 
     /** null removes the voucher. One below its minimum stays selectable; the screen says why
@@ -138,6 +198,9 @@ class CheckoutViewModel @Inject constructor(
                     PlaceOrderRequest(
                         merchant.id, s.lines.map { it.listing to it.quantity }, s.effectivePayment, s.note,
                         voucherCode = applied?.code, voucherDiscount = s.voucherDiscount,
+                        fulfillment = if (s.selectedQuote != null) Fulfillment.DELIVERY else Fulfillment.PICKUP,
+                        delivery = s.selectedQuote,
+                        deliveryAddress = s.address,
                     ),
                 )
                 applied?.let { voucherRepository.consume(it.code) }

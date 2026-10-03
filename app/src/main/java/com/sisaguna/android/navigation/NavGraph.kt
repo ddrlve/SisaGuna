@@ -91,6 +91,11 @@ fun SgNavGraph(navController: NavHostController) {
         else navController.navigate(Screen.Checkout.route) { launchSingleTop = true }
     }
 
+    fun openUpload(tier: com.sisaguna.android.data.model.ListingTier = com.sisaguna.android.data.model.ListingTier.HUMAN) {
+        if (authStatus == AuthStatus.GUEST) showGuestGate = true
+        else navController.navigate(Screen.Upload.routeFor(tier)) { launchSingleTop = true }
+    }
+
     fun navigateOrGate(screen: Screen) {
         if (authStatus == AuthStatus.GUEST && screen.route in gatedRoutes) {
             showGuestGate = true
@@ -186,13 +191,11 @@ fun SgNavGraph(navController: NavHostController) {
                 HomeScreen(
                     onListingClick = { openListing(it.id) },
                     onCategoryClick = { tier -> navController.navigate(Screen.CategoryList.routeFor(tier)) },
-                    onUploadClick = {
-                        if (authStatus == AuthStatus.GUEST) {
-                            showGuestGate = true
-                        } else {
-                            navController.navigate(Screen.Upload.route) { launchSingleTop = true }
-                        }
-                    },
+                    onUploadClick = { openUpload() },
+                    onUploadTierClick = { tier -> openUpload(tier) },
+                    onCartClick = ::openCart,
+                    onMerchantClick = ::openStore,
+                    onMyCatalogClick = { navController.navigate(Screen.MyCatalog.route) { launchSingleTop = true } },
                     onNotificationsClick = {
                         if (authStatus == AuthStatus.GUEST) {
                             showGuestGate = true
@@ -303,6 +306,7 @@ fun SgNavGraph(navController: NavHostController) {
                     onHelp = { go(Screen.Help) },
                     onPrivacy = { go(Screen.Privacy) },
                     onCatalog = { go(Screen.MyCatalog) },
+                    onSettings = { go(Screen.Settings) },
                     onListingClick = ::openListing,
                     onLogout = {
                         sessionViewModel.logout()
@@ -327,7 +331,10 @@ fun SgNavGraph(navController: NavHostController) {
                     },
                 )
             }
-            composable(Screen.Upload.route) {
+            composable(
+                route = Screen.Upload.route,
+                arguments = listOf(navArgument(Screen.Upload.ARG_TIER) { type = NavType.StringType; defaultValue = "HUMAN" }),
+            ) {
                 UploadScreen(
                     onBack = { navController.popBackStack() },
                     onPublished = { id ->
@@ -353,12 +360,15 @@ fun SgNavGraph(navController: NavHostController) {
                     },
                 )
             }
+            composable(Screen.Settings.route) {
+                com.sisaguna.android.feature.settings.SettingsScreen(onBack = { navController.popBackStack() })
+            }
             composable(Screen.Help.route) { HelpScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.Privacy.route) { PrivacyScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.MyCatalog.route) {
                 MyCatalogScreen(
                     onBack = { navController.popBackStack() },
-                    onUpload = { navController.navigate(Screen.Upload.route) { launchSingleTop = true } },
+                    onUpload = { openUpload() },
                     onListingClick = ::openListing,
                 )
             }

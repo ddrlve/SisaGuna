@@ -1,5 +1,21 @@
 package com.sisaguna.android.feature.listing
 
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.sisaguna.android.data.model.FoodSafety
+import com.sisaguna.android.data.model.HalalStatus
+import com.sisaguna.android.data.model.QuantityUnit
+import com.sisaguna.android.ui.components.SgButtonStyle
+import com.sisaguna.android.ui.domain.AllergenChips
+import com.sisaguna.android.ui.domain.HalalBadge
+import com.sisaguna.android.ui.domain.ReviewCard
+import com.sisaguna.android.ui.domain.SafetyCard
+import com.sisaguna.android.ui.domain.SafetyChip
+import com.sisaguna.android.ui.domain.unitSuffix
+import com.sisaguna.android.ui.i18n.l
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +54,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -192,10 +208,10 @@ private fun DetailBody(
             contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + SgSpacing.Xl),
         ) {
             item(key = "hero") {
-                ListingImage(
-                    imageUrl = listing.imageUrl,
+                PhotoPager(
+                    photos = listing.photos.ifEmpty { listOf("") },
                     tier = listing.tier,
-                    contentDescription = listing.title,
+                    title = listing.title,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(HeroHeight)
@@ -215,6 +231,40 @@ private fun DetailBody(
                 ) {
                     HeaderBlock(s)
                     MerchantRow(s, onMerchantClick)
+                    Section(l("Cek kelayakan", "Is it safe to eat?")) {
+                        SafetyCard(
+                            assessment = FoodSafety.assess(listing, s.now),
+                            madeAt = listing.madeAt,
+                            storage = listing.storage,
+                            now = s.now,
+                        )
+                    }
+                    Section(l("Halal & alergen", "Halal & allergens")) {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                HalalBadge(listing.halal)
+                                Text(
+                                    when (listing.halal) {
+                                        HalalStatus.HALAL_CERTIFIED -> l("  Bersertifikat halal", "  Halal certified")
+                                        HalalStatus.NON_HALAL -> l("  Mengandung bahan non-halal", "  Contains non-halal ingredients")
+                                        HalalStatus.UNVERIFIED -> l("  Penyedia belum punya sertifikat", "  Seller isn't certified yet")
+                                        HalalStatus.OTHER -> l("  Tidak relevan / lainnya", "  Not applicable / other")
+                                    },
+                                    style = SgTextStyle.Caption,
+                                )
+                            }
+                            Text(l("Mengandung", "Contains"), style = SgTextStyle.Caption)
+                            AllergenChips(listing.allergens)
+                            val kitchen = s.detail.merchant.allergens - listing.allergens
+                            if (kitchen.isNotEmpty()) {
+                                Text(
+                                    l("Dapur ini juga mengolah: ", "This kitchen also handles: ") + kitchen.joinToString { it.label } +
+                                        l(". Kemungkinan kontaminasi silang.", ". Cross-contact is possible."),
+                                    style = SgTextStyle.Caption,
+                                )
+                            }
+                        }
+                    }
                     Section("Deskripsi") {
                         Text(
                             listing.description.ifBlank { "Penyedia belum menambahkan deskripsi." },
@@ -226,19 +276,38 @@ private fun DetailBody(
                             val start = listing.pickupStart?.let { formatClock(it) }
                             InfoLine(Icons.Rounded.Schedule, "Waktu ambil", if (start != null) "Hari ini, $start – ${formatClock(listing.pickupEnd)}" else "Sampai ${formatClock(listing.pickupEnd)}")
                             InfoLine(Icons.Rounded.LocationOn, "Lokasi", s.detail.merchant.location + (listing.distanceKm?.let { " · %.1f km dari kamu".format(it) } ?: ""))
-                            InfoLine(Icons.Rounded.Inventory2, "Stok", "Sisa ${listing.stock} porsi" + if (s.inCart > 0) " · ${s.inCart} di keranjangmu" else "")
+                            InfoLine(Icons.Rounded.Inventory2, "Stok", "Sisa ${listing.stock} ${unitWord(listing.unit)}" + if (s.inCart > 0) " · ${s.inCart} di keranjangmu" else "")
                         }
                     }
                     TipsCard(listing.tier)
-                    if (s.detail.moreFromMerchant.isNotEmpty()) {
+                    if (s.reviews.isNotEmpty()) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(start = SgSpacing.Gutter, end = SgSpacing.Sm, top = SgSpacing.Xl),
+                            modifier = Modifier.fillMaxWidth().padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text("Lainnya dari ${s.detail.merchant.name}", style = SgTextStyle.Title, modifier = Modifier.weight(1f))
-                            TextButton(onClick = { onMerchantClick(s.detail.merchant.id) }) {
-                                Text("Lihat toko", style = SgTextStyle.TextXsMedium, color = SgColor.Brand600)
+                            Column(Modifier.weight(1f)) {
+                                Text(l("Ulasan toko", "Store reviews"), style = SgTextStyle.Title)
+                                Text("★ ${s.detail.merchant.rating ?: "-"} · ${s.detail.merchant.ratingCount} " + l("ulasan", "reviews"), style = SgTextStyle.Caption)
                             }
+                            SeeStorePill(l("Semua ulasan", "All reviews")) { onMerchantClick(s.detail.merchant.id) }
+                        }
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Sm),
+                            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+                        ) {
+                            items(s.reviews.take(5), key = { it.id }) { r -> ReviewCard(r, Modifier.width(280.dp)) }
+                        }
+                    }
+                    if (s.detail.moreFromMerchant.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(l("Orang juga memesan", "People also ordered"), style = SgTextStyle.Title)
+                                Text(l("dari ", "from ") + s.detail.merchant.name + l(" · ambil sekalian", " · same pickup"), style = SgTextStyle.Caption)
+                            }
+                            SeeStorePill(l("Lihat toko", "Visit store")) { onMerchantClick(s.detail.merchant.id) }
                         }
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Sm),
@@ -281,10 +350,11 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
         Row(horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm), verticalAlignment = Alignment.CenterVertically) {
             TierBadge(tier = listing.tier)
             CountdownPill(pickupEnd = listing.pickupEnd, now = s.now)
+            SafetyChip(FoodSafety.assess(listing, s.now))
         }
         Text(listing.title, style = SgTextStyle.Display)
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-            Text(formatPrice(listing.unitPrice), style = SgTextStyle.Display, color = SgColor.Brand600)
+            Text(formatPrice(listing.unitPrice) + if (listing.isFree) "" else unitSuffix(listing), style = SgTextStyle.Display, color = SgColor.Brand600)
             if (!listing.isFree && listing.priceOriginal != null && listing.priceOriginal > listing.unitPrice) {
                 Text(
                     formatRupiah(listing.priceOriginal),
@@ -300,7 +370,7 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
                     color = SgColor.RedStatus,
                     modifier = Modifier
                         .padding(bottom = 4.dp)
-                        .background(Color(0xFFFDECEC), RoundedCornerShape(SgRadius.Pill))
+                        .background(SgColor.RedStatus.copy(alpha = 0.1f), RoundedCornerShape(SgRadius.Pill))
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
             }
@@ -309,25 +379,98 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
 }
 
 @Composable
+/**
+ * Store card. User testing: the old "Lihat toko" was a tiny text link nobody saw. Now the
+ * store banner, name, rating and halal status sit in a card with a full-width outlined
+ * "Lihat Toko" button (48dp tall) — unmistakably a button.
+ */
 private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (String) -> Unit) {
-    Row(
+    val m = s.detail.merchant
+    Column(
         modifier = Modifier
             .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(SgRadius.Tile))
+            .clip(RoundedCornerShape(20.dp))
             .background(SgColor.BaseWhite)
-            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile))
-            .pressable({ onMerchantClick(s.detail.merchant.id) })
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(20.dp))
             .padding(SgSpacing.Md),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
     ) {
-        InitialAvatar(s.detail.merchant.name.first().uppercaseChar(), 44.dp, s.detail.merchant.isVerified)
-        Column(modifier = Modifier.weight(1f)) {
-            MerchantSummary(merchant = s.detail.merchant, distanceKm = s.listing.distanceKm, verifiedLabel = "Verified")
-            Text("Lihat semua makanan di toko ini", style = SgTextStyle.Caption, color = SgColor.Brand600)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+            if (m.bannerUrl.isNotBlank()) {
+                AsyncImage(m.bannerUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)))
+            } else {
+                InitialAvatar(m.name.first().uppercaseChar(), 52.dp, m.isVerified)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                MerchantSummary(merchant = m, distanceKm = s.listing.distanceKm, verifiedLabel = "Verified")
+                Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    HalalBadge(m.halal)
+                    if (m.ratingCount > 0) Text("${m.ratingCount} " + l("ulasan", "reviews"), style = SgTextStyle.Caption)
+                }
+            }
         }
-        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.InkMuted)
+        SgButton(
+            text = l("Lihat Toko", "Visit Store"),
+            onClick = { onMerchantClick(m.id) },
+            style = SgButtonStyle.Secondary,
+            height = 48.dp,
+            modifier = Modifier.padding(top = SgSpacing.Md).fillMaxWidth(),
+            leading = { Icon(Icons.Rounded.Storefront, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp)) },
+        )
+    }
+}
+
+@Composable
+private fun SeeStorePill(label: String, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .height(36.dp)
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.Mint)
+            .pressable(onClick)
+            .padding(start = 14.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = SgTextStyle.Label, color = SgColor.Brand700)
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.Brand700, modifier = Modifier.size(18.dp))
+    }
+}
+
+private fun unitWord(unit: QuantityUnit) = if (unit == QuantityUnit.KILOGRAM) "kg" else "porsi"
+
+/**
+ * Swipeable photo carousel for the hero. Dots track the page; the active dot stretches into a
+ * pill (width on a spring-free tween, 200ms ease-out) so position reads at a glance.
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun PhotoPager(photos: List<String>, tier: ListingTier, title: String, modifier: Modifier = Modifier) {
+    val pager = androidx.compose.foundation.pager.rememberPagerState { photos.size }
+    Box(modifier) {
+        androidx.compose.foundation.pager.HorizontalPager(state = pager, modifier = Modifier.fillMaxSize()) { page ->
+            ListingImage(imageUrl = photos[page], tier = tier, contentDescription = title, modifier = Modifier.fillMaxSize())
+        }
+        if (photos.size > 1) {
+            Row(
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 36.dp)
+                    .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(SgRadius.Pill))
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                repeat(photos.size) { i ->
+                    val active = pager.currentPage == i
+                    val w by androidx.compose.animation.core.animateDpAsState(if (active) 16.dp else 6.dp, androidx.compose.animation.core.tween(200, easing = com.sisaguna.android.ui.components.SgEaseOut), label = "dot")
+                    Box(Modifier.height(6.dp).width(w).background(Color.White.copy(alpha = if (active) 1f else 0.6f), RoundedCornerShape(SgRadius.Pill)))
+                }
+            }
+            Text(
+                "${pager.currentPage + 1}/${photos.size}",
+                style = SgTextStyle.TextXsMedium,
+                color = Color.White,
+                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(16.dp)
+                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(SgRadius.Pill)).padding(horizontal = 10.dp, vertical = 3.dp),
+            )
+        }
     }
 }
 
@@ -367,12 +510,12 @@ private fun TipsCard(tier: ListingTier) {
             .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl)
             .fillMaxWidth()
             .clip(RoundedCornerShape(SgRadius.Tile))
-            .background(Color(0xFFFFF8E1))
+            .background(SgColor.Yellow50)
             .padding(SgSpacing.Lg),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = Color(0xFFB7791F), modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.Lightbulb, contentDescription = null, tint = SgColor.YellowStatus, modifier = Modifier.size(18.dp))
             Text("Yang perlu kamu tahu", style = SgTextStyle.Label, modifier = Modifier.padding(start = 6.dp))
         }
         tips.forEach { Text("•  $it", style = SgTextStyle.Body.copy(color = SgColor.Ink)) }

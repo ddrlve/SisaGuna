@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -125,7 +125,7 @@ fun LoginScreen(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = "Masuk", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.BaseWhite)
+                Text(text = "Masuk", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.OnBrand)
             }
             Row {
                 Text(text = "Belum punya akun? ", style = SgTextStyle.TextSmRegular, color = SgColor.Neutral500)

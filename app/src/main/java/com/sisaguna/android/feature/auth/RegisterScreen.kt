@@ -17,7 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -271,7 +271,7 @@ private fun PrimaryButton(label: String, onClick: () -> Unit) {
             .padding(16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.BaseWhite)
+        Text(text = label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.OnBrand)
     }
 }
 
@@ -311,7 +311,7 @@ private fun AccountTypeCard(
                         .background(SgColor.Brand500, RoundedCornerShape(100.dp))
                         .padding(horizontal = 10.dp, vertical = 4.dp),
                 ) {
-                    Text(text = "Aktif", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SgColor.BaseWhite)
+                    Text(text = "Aktif", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SgColor.OnBrand)
                 }
             }
         }

@@ -41,7 +41,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
@@ -217,7 +217,7 @@ private fun SwipeableNotificationRow(
                     .padding(end = SgSpacing.Xl),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = SgColor.BaseWhite)
+                Icon(Icons.Rounded.DeleteOutline, contentDescription = null, tint = SgColor.OnBrand)
             }
         },
     ) {

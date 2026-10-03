@@ -42,7 +42,7 @@ import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -263,7 +263,7 @@ private fun OngoingCard(order: Order, now: Instant, onClick: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (urgent) Color(0xFFFDECEC) else SgColor.Mint)
+                .background(if (urgent) SgColor.RedStatus.copy(alpha = 0.1f) else SgColor.Mint)
                 .padding(horizontal = SgSpacing.Lg, vertical = SgSpacing.Sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -308,7 +308,7 @@ private fun RateNudge(count: Int) {
             .padding(horizontal = SgSpacing.Gutter)
             .fillMaxWidth()
             .clip(RoundedCornerShape(SgRadius.Tile))
-            .background(Color(0xFFFFF8E1))
+            .background(SgColor.Yellow50)
             .padding(SgSpacing.Md),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -325,7 +325,7 @@ private fun RateNudge(count: Int) {
 private fun HistoryCard(order: Order, onClick: () -> Unit) {
     val (statusText, statusFg, statusBg) = when (order.status) {
         OrderStatus.COMPLETED -> Triple("Selesai", SgColor.Brand700, SgColor.Mint)
-        OrderStatus.CANCELLED -> Triple("Dibatalkan", SgColor.RedStatus, Color(0xFFFDECEC))
+        OrderStatus.CANCELLED -> Triple("Dibatalkan", SgColor.RedStatus, SgColor.RedStatus.copy(alpha = 0.1f))
         OrderStatus.READY -> Triple("Siap diambil", SgColor.Brand700, SgColor.Mint)
     }
     Column(

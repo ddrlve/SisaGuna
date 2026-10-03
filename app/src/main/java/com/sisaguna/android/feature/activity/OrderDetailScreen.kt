@@ -1,5 +1,16 @@
 package com.sisaguna.android.feature.activity
 
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.ReportProblem
+import com.sisaguna.android.data.model.Complaint
+import com.sisaguna.android.data.model.ComplaintReason
+import com.sisaguna.android.data.model.ComplaintStatus
+import com.sisaguna.android.data.model.Fulfillment
+import com.sisaguna.android.ui.i18n.l
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -44,7 +55,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -100,6 +111,7 @@ fun OrderDetailScreen(
     var showCancel by remember { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
     var showPickedUp by remember { mutableStateOf(false) }
+    var showComplaint by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -132,6 +144,8 @@ fun OrderDetailScreen(
             }
             if (o.canRate) item { RatePrompt(onStar = { showRating = true }) }
             o.rating?.let { r -> item { RatedCard(r.stars, r.tags, r.comment) } }
+            o.complaint?.let { c -> item { ComplaintStatusCard(c) } }
+            if (o.canComplain) item { ComplaintPrompt(onClick = { showComplaint = true }) }
             item { MerchantCard(o) }
             item { ItemsCard(o) }
             item { Timeline(o) }
@@ -162,6 +176,16 @@ fun OrderDetailScreen(
                 viewModel.cancel()
             },
             onDismiss = { showCancel = false },
+        )
+    }
+    if (showComplaint) {
+        ComplaintSheet(
+            onSubmit = { reason, detail, photos ->
+                viewModel.complain(reason, detail, photos)
+                showComplaint = false
+                scope.launch { snackbar.showSnackbar(l("Komplain terkirim. Kami tinjau dalam 1×24 jam.", "Complaint sent. We'll review it within 24h.")) }
+            },
+            onDismiss = { showComplaint = false },
         )
     }
     if (showRating) {
@@ -207,7 +231,17 @@ private fun SuccessBanner() {
 @Composable
 private fun StatusHeader(o: Order) {
     val (title, body) = when (o.status) {
-        OrderStatus.READY -> "Siap diambil" to "Ambil sebelum ${formatClock(o.pickupEnd)} di ${o.merchant.name}."
+        OrderStatus.READY -> if (o.fulfillment == Fulfillment.DELIVERY && o.delivery != null) {
+            l("Sedang disiapkan", "Being prepared") to l(
+                "${o.delivery.courier.label} ${o.delivery.speed.label.lowercase()} · tiba ±${o.delivery.etaMinMinutes}–${o.delivery.etaMaxMinutes} menit ke ${o.deliveryAddress?.label ?: "alamatmu"}.",
+                "${o.delivery.courier.label} ${o.delivery.speed.labelEn.lowercase()} · arrives in ~${o.delivery.etaMinMinutes}–${o.delivery.etaMaxMinutes} min.",
+            )
+        } else {
+            "Siap diambil" to l(
+                "Ambil maks. ${formatClock(o.pickupBy ?: o.pickupEnd)} di ${o.merchant.name}.",
+                "Collect by ${formatClock(o.pickupBy ?: o.pickupEnd)} at ${o.merchant.name}.",
+            )
+        }
         OrderStatus.COMPLETED -> "Pesanan selesai" to "Diambil ${o.completedAt?.let { formatDateTime(it) } ?: ""}."
         OrderStatus.CANCELLED -> "Pesanan dibatalkan" to "Dibatalkan. Pembayaran online sudah dikembalikan."
     }
@@ -230,9 +264,13 @@ private fun PickupCodeCard(o: Order) {
         verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
     ) {
         Text("Tunjukkan ke penyedia", style = SgTextStyle.Caption)
-        Box(Modifier.size(160.dp).padding(SgSpacing.Sm)) { FakeQr(seed = o.pickupCode.hashCode()) }
+        // QR always sits on white so scanners read it in dark mode too.
+        Box(Modifier.size(160.dp).background(androidx.compose.ui.graphics.Color.White, RoundedCornerShape(12.dp)).padding(SgSpacing.Sm)) { FakeQr(seed = o.pickupCode.hashCode()) }
         Text(o.pickupCode, style = SgTextStyle.Display.copy(letterSpacing = 2.sp))
-        Text("Sisa waktu " + remainingLabel(o.pickupEnd, Instant.now()), style = SgTextStyle.Caption, color = SgColor.Brand700)
+        Text("Sisa waktu " + remainingLabel(o.pickupBy ?: o.pickupEnd, Instant.now()), style = SgTextStyle.Caption, color = SgColor.Brand700)
+        if (o.fulfillment == Fulfillment.DELIVERY) {
+            Text(l("Kurir akan menunjukkan kode ini ke penyedia.", "The courier shows this code to the store."), style = SgTextStyle.Caption)
+        }
     }
 }
 
@@ -242,7 +280,7 @@ private fun RatePrompt(onStar: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(SgRadius.Card))
-            .background(Color(0xFFFFF8E1))
+            .background(SgColor.Yellow50)
             .pressable(onStar)
             .padding(SgSpacing.Lg),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -464,6 +502,144 @@ private fun RatingSheet(
                 onClick = { onSubmit(stars, tags.toList(), comment) },
                 enabled = stars > 0,
                 modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+
+/** Entry to the complaint flow, under the rating. Quiet (outlined), because most orders are fine. */
+@Composable
+private fun ComplaintPrompt(onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Card))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Card))
+            .pressable(onClick)
+            .padding(SgSpacing.Lg),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp).background(SgColor.RedStatus.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.ReportProblem, contentDescription = null, tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(l("Ada masalah dengan makanannya?", "Something wrong with the food?"), style = SgTextStyle.Label)
+            Text(l("Laporkan dalam 24 jam — basi, tidak sesuai, atau kurang. Dana kembali kalau terbukti.", "Report within 24h — spoiled, wrong or missing. Refund if confirmed."), style = SgTextStyle.Caption)
+        }
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.InkMuted)
+    }
+}
+
+@Composable
+private fun ComplaintStatusCard(c: Complaint) {
+    val steps = ComplaintStatus.entries
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Card))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.RedStatus.copy(alpha = 0.3f), RoundedCornerShape(SgRadius.Card))
+            .padding(SgSpacing.Lg),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(l("Komplain kamu", "Your complaint"), style = SgTextStyle.Caption)
+        Text(c.reason.label, style = SgTextStyle.Title)
+        if (c.detail.isNotBlank()) Text(c.detail, style = SgTextStyle.Body)
+        if (c.photos.isNotEmpty()) {
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                c.photos.take(3).forEach { p ->
+                    coil.compose.AsyncImage(p, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(64.dp).clip(RoundedCornerShape(12.dp)))
+                }
+            }
+        }
+        steps.forEachIndexed { i, st ->
+            val reached = i <= steps.indexOf(c.status)
+            androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(10.dp).background(if (reached) SgColor.Brand500 else SgColor.Neutral300, CircleShape))
+                Text(st.label, style = SgTextStyle.Caption.copy(color = if (reached) SgColor.Ink else SgColor.InkMuted), modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Complaint form (user testing: "tambah fitur komplain"). Pick a reason, describe it, add
+ * proof photos (camera or gallery). "Makanan basi" is first because it's the one that matters
+ * most for food safety and feeds back into the store's safety record.
+ */
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ComplaintSheet(
+    onSubmit: (ComplaintReason, String, List<String>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var reason by remember { mutableStateOf<ComplaintReason?>(null) }
+    var detail by remember { mutableStateOf("") }
+    val photos = remember { androidx.compose.runtime.mutableStateListOf<android.net.Uri>() }
+    val media = com.sisaguna.android.ui.components.rememberMediaCapture(onPhotos = { uris -> uris.forEach { if (photos.size < 3) photos.add(it) } }, maxPick = 3)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = SgColor.BaseWhite,
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                .navigationBarsPadding()
+                .padding(horizontal = SgSpacing.Gutter),
+            verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+        ) {
+            Text(l("Laporkan masalah", "Report a problem"), style = SgTextStyle.Title)
+            Text(l("Apa yang terjadi?", "What happened?"), style = SgTextStyle.Caption)
+            androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ComplaintReason.entries.forEach { r ->
+                    val on = r == reason
+                    Text(
+                        r.label,
+                        style = SgTextStyle.TextXsMedium,
+                        color = if (on) SgColor.RedStatus else SgColor.Ink,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(SgRadius.Pill))
+                            .background(if (on) SgColor.RedStatus.copy(alpha = 0.1f) else SgColor.Page)
+                            .border(1.dp, if (on) SgColor.RedStatus else SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
+                            .pressable({ reason = r })
+                            .padding(horizontal = 12.dp, vertical = 7.dp),
+                    )
+                }
+            }
+            OutlinedTextField(
+                value = detail,
+                onValueChange = { detail = it.take(400) },
+                placeholder = { androidx.compose.material3.Text(l("Ceritakan detailnya, misal: bau asam saat dibuka jam 19.10", "Details, e.g. smelled sour when opened at 7.10pm"), color = SgColor.Neutral400, style = SgTextStyle.TextSmRegular) },
+                minLines = 3,
+                textStyle = SgTextStyle.TextSmRegular.copy(color = SgColor.Ink),
+                shape = RoundedCornerShape(16.dp),
+                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SgColor.Brand500, unfocusedBorderColor = SgColor.Hairline),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(l("Foto bukti (maks. 3)", "Photo proof (max 3)"), style = SgTextStyle.Caption)
+            androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                photos.forEach { uri ->
+                    coil.compose.AsyncImage(uri, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(72.dp).clip(RoundedCornerShape(14.dp)).pressable({ photos.remove(uri) }))
+                }
+                if (photos.size < 3) {
+                    com.sisaguna.android.feature.saved.MediaButton(Icons.Rounded.PhotoCamera, l("Kamera", "Camera"), media.takePhoto)
+                    com.sisaguna.android.feature.saved.MediaButton(Icons.Rounded.PhotoLibrary, l("Galeri", "Gallery"), media.pickPhotos)
+                }
+            }
+            SgButton(
+                text = l("Kirim komplain", "Send complaint"),
+                enabled = reason != null,
+                onClick = { reason?.let { onSubmit(it, detail, photos.map(android.net.Uri::toString)) } },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                l("Tim SisaGuna meninjau dalam 1×24 jam. Laporan makanan basi juga menurunkan skor kelayakan toko.", "We review within 24h. Spoiled-food reports also lower the store's safety score."),
+                style = SgTextStyle.Caption,
+                modifier = Modifier.padding(bottom = SgSpacing.Lg),
             )
         }
     }

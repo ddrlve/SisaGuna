@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sisaguna.android.R
 import com.sisaguna.android.ui.components.SgEaseOut
-import com.sisaguna.android.ui.theme.Inter
+import com.sisaguna.android.ui.theme.SgFont
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgTextStyle
 import com.sisaguna.android.ui.theme.SisaGunaTheme
@@ -84,7 +84,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
                 Icon(
                     painter = painterResource(R.drawable.ic_logo_mark),
                     contentDescription = null,
-                    tint = SgColor.BaseWhite,
+                    tint = SgColor.OnBrand,
                     modifier = Modifier
                         .size(30.dp)
                         .graphicsLayer {
@@ -98,10 +98,10 @@ fun SplashScreen(onTimeout: () -> Unit) {
                 Box(Modifier.clipToBounds()) {
                     Text(
                         text = "sisaguna",
-                        fontFamily = Inter,
+                        fontFamily = SgFont,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = SgColor.BaseWhite,
+                        color = SgColor.OnBrand,
                         modifier = Modifier
                             .padding(start = 8.dp)
                             .graphicsLayer {

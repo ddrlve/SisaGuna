@@ -28,7 +28,7 @@ import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -162,7 +162,7 @@ fun MapPickerDialog(
                         .offset(y = 20.dp)
                         .size(10.dp, 4.dp)
                         .graphicsLayer { alpha = 0.3f + pinLift.value / 80f }
-                        .background(SgColor.Ink, CircleShape),
+                        .background(SgColor.Scrim, CircleShape),
                 )
                 Icon(
                     Icons.Rounded.LocationOn,
@@ -187,7 +187,7 @@ fun MapPickerDialog(
                     style = SgTextStyle.Label,
                     modifier = Modifier
                         .shadow(4.dp, RoundedCornerShape(SgRadius.Pill))
-                        .background(SgColor.BaseWhite.copy(alpha = 0.92f), RoundedCornerShape(SgRadius.Pill))
+                        .background(SgColor.BaseWhite.copy(alpha = 0.94f), RoundedCornerShape(SgRadius.Pill))
                         .padding(horizontal = SgSpacing.Lg, vertical = 10.dp),
                 )
             }

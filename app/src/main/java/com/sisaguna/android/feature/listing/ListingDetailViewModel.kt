@@ -30,6 +30,7 @@ sealed interface ListingDetailUiState {
         val cart: Cart,
         val cartTotal: Int,
         val now: Instant,
+        val reviews: List<com.sisaguna.android.data.model.Review> = emptyList(),
     ) : ListingDetailUiState {
         val listing: Listing get() = detail.listing
         val isExpired: Boolean get() = !listing.pickupEnd.isAfter(now)
@@ -56,6 +57,7 @@ class ListingDetailViewModel @Inject constructor(
     private val listingRepository: ListingRepository,
     private val cartRepository: CartRepository,
     savedStateHandle: SavedStateHandle,
+    private val reviewRepository: com.sisaguna.android.data.repository.ReviewRepository,
 ) : ViewModel() {
 
     private val listingId: String = savedStateHandle.get<String>(Screen.ListingDetail.ARG_ID).orEmpty()
@@ -71,7 +73,10 @@ class ListingDetailViewModel @Inject constructor(
                     val d = result.getOrThrow()
                     val inCart = cart.quantities[d.listing.id] ?: 0
                     val max = (d.listing.stock - inCart).coerceAtLeast(1)
-                    ListingDetailUiState.Success(d, qty.coerceIn(1, max), inCart, cart, cartTotal(cart, all), Instant.now())
+                    ListingDetailUiState.Success(
+                        d, qty.coerceIn(1, max), inCart, cart, cartTotal(cart, all), Instant.now(),
+                        reviews = reviewRepository.forMerchant(d.merchant.id),
+                    )
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.Eagerly, ListingDetailUiState.Loading)

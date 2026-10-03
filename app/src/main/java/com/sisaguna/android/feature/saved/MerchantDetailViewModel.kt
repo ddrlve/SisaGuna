@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.saved
 
+import com.sisaguna.android.data.model.Review
+import com.sisaguna.android.data.repository.ReviewRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -36,6 +38,9 @@ sealed interface MerchantDetailUiState {
         val now: Instant,
         val cartCount: Int = 0,
         val cartTotal: Int = 0,
+        val reviews: List<Review> = emptyList(),
+        val showReviews: Boolean = false,
+        val allergenAcknowledged: Boolean = false,
     ) : MerchantDetailUiState
 }
 
@@ -47,7 +52,30 @@ class MerchantDetailViewModel @Inject constructor(
     private val savedRepository: SavedMerchantRepository,
     private val cartRepository: CartRepository,
     savedStateHandle: SavedStateHandle,
+    private val reviewRepository: ReviewRepository,
 ) : ViewModel() {
+
+    private val showReviews = MutableStateFlow(false)
+    private val allergenAck = MutableStateFlow(false)
+
+    fun showReviews(show: Boolean) { showReviews.value = show }
+    fun acknowledgeAllergens(ack: Boolean) { allergenAck.value = ack }
+
+    fun addReview(stars: Int, comment: String, tags: List<String>, photos: List<String>) {
+        reviewRepository.add(
+            Review(
+                id = "r-" + System.currentTimeMillis(),
+                merchantId = merchantId,
+                author = "Kamu",
+                stars = stars.coerceIn(1, 5),
+                comment = comment.ifBlank { tags.joinToString().ifBlank { "—" } },
+                createdAt = Instant.now(),
+                photos = photos,
+                tags = tags,
+            ),
+        )
+        showReviews.value = true
+    }
 
     val merchantId: String = savedStateHandle.get<String>(Screen.MerchantDetail.ARG_ID).orEmpty()
 
@@ -78,10 +106,18 @@ class MerchantDetailViewModel @Inject constructor(
             }
         }
 
-    val uiState: StateFlow<MerchantDetailUiState> =
-        combine(base, cartRepository.cart, listingRepository.listings) { state, cart, all ->
+    private val withCart = combine(base, cartRepository.cart, listingRepository.listings) { state, cart, all ->
             if (state is MerchantDetailUiState.Success) {
                 state.copy(cartCount = cart.itemCount, cartTotal = cartTotal(cart, all))
+            } else {
+                state
+            }
+        }
+
+    val uiState: StateFlow<MerchantDetailUiState> =
+        combine(withCart, reviewRepository.reviews, showReviews, allergenAck) { state, reviews, show, ack ->
+            if (state is MerchantDetailUiState.Success) {
+                state.copy(reviews = reviews.filter { it.merchantId == merchantId }, showReviews = show, allergenAcknowledged = ack)
             } else {
                 state
             }

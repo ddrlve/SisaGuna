@@ -25,7 +25,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -158,14 +158,14 @@ private fun SwitchRow(
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedTrackColor = SgColor.Brand500,
-                checkedThumbColor = SgColor.BaseWhite,
+                checkedThumbColor = SgColor.OnBrand,
                 uncheckedTrackColor = SgColor.Hairline,
                 uncheckedBorderColor = SgColor.Hairline,
-                uncheckedThumbColor = SgColor.BaseWhite,
+                uncheckedThumbColor = SgColor.OnBrand,
                 disabledCheckedTrackColor = SgColor.Brand500,
-                disabledCheckedThumbColor = SgColor.BaseWhite,
+                disabledCheckedThumbColor = SgColor.OnBrand,
                 disabledUncheckedTrackColor = SgColor.Hairline,
-                disabledUncheckedThumbColor = SgColor.BaseWhite,
+                disabledUncheckedThumbColor = SgColor.OnBrand,
             ),
         )
     }

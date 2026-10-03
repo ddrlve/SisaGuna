@@ -14,7 +14,7 @@ class HomeViewModelTest {
     @get:Rule
     val main = MainDispatcherRule()
 
-    private fun viewModel() = HomeViewModel(TestListingRepository(), FakeNotificationRepository(), FakeVoucherRepository())
+    private fun viewModel() = HomeViewModel(TestListingRepository(), FakeNotificationRepository(), FakeVoucherRepository(), com.sisaguna.android.data.repository.InMemoryCartRepository(), com.sisaguna.android.data.settings.AppSettingsRepository(null))
 
     private val HomeViewModel.success get() = uiState.value as HomeUiState.Success
 

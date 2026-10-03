@@ -55,7 +55,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -159,7 +159,7 @@ fun AddressesScreen(onBack: () -> Unit, viewModel: AddressViewModel = hiltViewMo
                     showMap = true
                 },
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
-                leading = { Icon(Icons.Rounded.Add, contentDescription = null, tint = SgColor.BaseWhite, modifier = Modifier.size(20.dp)) },
+                leading = { Icon(Icons.Rounded.Add, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(20.dp)) },
             )
         },
     ) { padding ->
@@ -572,7 +572,7 @@ fun HelpScreen(onBack: () -> Unit) {
                         "Chat CS",
                         onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/6281200000000?text=Halo%20SisaGuna"))) } },
                         modifier = Modifier.weight(1f),
-                        leading = { Icon(Icons.Rounded.SupportAgent, contentDescription = null, tint = SgColor.BaseWhite, modifier = Modifier.size(20.dp)) },
+                        leading = { Icon(Icons.Rounded.SupportAgent, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(20.dp)) },
                     )
                     SgButton(
                         "Email",
@@ -636,7 +636,7 @@ fun MyCatalogScreen(
                 "Upload makanan",
                 onClick = onUpload,
                 modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
-                leading = { Icon(Icons.Rounded.Add, contentDescription = null, tint = SgColor.BaseWhite, modifier = Modifier.size(20.dp)) },
+                leading = { Icon(Icons.Rounded.Add, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(20.dp)) },
             )
         },
     ) { padding ->

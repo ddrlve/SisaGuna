@@ -1,5 +1,23 @@
 package com.sisaguna.android.feature.checkout
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.material.icons.rounded.DeliveryDining
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.sisaguna.android.data.model.Courier
+import com.sisaguna.android.data.model.DeliveryQuote
+import com.sisaguna.android.data.model.DeliverySpeed
+import com.sisaguna.android.data.model.Fulfillment
+import com.sisaguna.android.ui.components.SgEaseOut
+import com.sisaguna.android.ui.domain.unitSuffix
+import com.sisaguna.android.ui.i18n.l
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -40,7 +58,7 @@ import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -119,7 +137,9 @@ fun CheckoutScreen(
 
     Scaffold(
         containerColor = SgColor.Page,
-        topBar = { SgTopBar(title = "Keranjang", onBack = onBack) },
+        // Renamed from "Keranjang" after user testing: by the time people land here they're
+        // reviewing an order, not browsing a basket.
+        topBar = { SgTopBar(title = "Order Summary", onBack = onBack) },
         snackbarHost = { SnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
@@ -132,7 +152,7 @@ fun CheckoutScreen(
                         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Lg),
                     ) {
                         Column {
-                            Text("Total", style = SgTextStyle.Caption)
+                            Text(if (state.selectedQuote != null) l("Total + ongkir", "Total incl. delivery") else "Total", style = SgTextStyle.Caption)
                             Text(formatPrice(state.total), style = SgTextStyle.Title, color = SgColor.Brand700)
                         }
                         val cta = when {
@@ -161,21 +181,14 @@ fun CheckoutScreen(
             verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
             item {
-                Card {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
-                        Box(Modifier.size(40.dp).background(SgColor.Mint, CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Rounded.Schedule, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp))
-                        }
-                        Column(Modifier.weight(1f)) {
-                            Text("Ambil di ${state.merchant?.name.orEmpty()}", style = SgTextStyle.Label)
-                            Text(
-                                (state.merchant?.location.orEmpty()) + (state.earliestPickupEnd?.let { " · paling lambat ${formatClock(it)}" } ?: ""),
-                                style = SgTextStyle.Body,
-                            )
-                        }
-                    }
-                }
+                FulfillmentSection(
+                    state = state,
+                    onFulfillment = viewModel::setFulfillment,
+                    onCourier = viewModel::setCourier,
+                    onSpeed = viewModel::setSpeed,
+                )
             }
+            item { SectionTitle(l("Pesanan dari ", "Items from ") + state.merchant?.name.orEmpty()) }
             items(state.lines, key = { it.listing.id }) { line ->
                 Card(modifier = Modifier.animateItem()) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
@@ -188,7 +201,7 @@ fun CheckoutScreen(
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(line.listing.title, style = SgTextStyle.Label, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Text(formatPrice(line.listing.unitPrice), style = SgTextStyle.Label, color = SgColor.Brand600)
+                                Text(formatPrice(line.listing.unitPrice) + if (line.listing.isFree) "" else unitSuffix(line.listing), style = SgTextStyle.Label, color = SgColor.Brand600)
                                 if (line.listing.unitOriginalPrice > line.listing.unitPrice) {
                                     Text(formatRupiah(line.listing.unitOriginalPrice), style = SgTextStyle.Caption.copy(textDecoration = TextDecoration.LineThrough))
                                 }
@@ -238,10 +251,14 @@ fun CheckoutScreen(
                 SectionTitle("Ringkasan")
                 Card {
                     Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-                        SummaryRow("Harga normal (${state.itemCount} item)", formatRupiah(state.total + state.savings))
+                        SummaryRow("Harga normal (${state.itemCount} item)", formatRupiah(state.itemsTotal + state.savings))
                         SummaryRow("Diskon surplus", "−" + formatRupiah(state.savings - state.voucherDiscount), valueColor = SgColor.Brand600)
                         if (state.voucherDiscount > 0) {
                             SummaryRow("Voucher ${state.voucher?.code.orEmpty()}", "−" + formatRupiah(state.voucherDiscount), valueColor = SgColor.Brand600)
+                        }
+                        state.selectedQuote?.let { q ->
+                            SummaryRow(l("Ongkir ", "Delivery ") + "${q.courier.label} · ${l(q.speed.label, q.speed.labelEn)}", formatRupiah(q.fee))
+                            if (q.discount > 0) SummaryRow(l("Diskon ongkir", "Delivery discount"), "−" + formatRupiah(q.discount), valueColor = SgColor.Brand600)
                         }
                         HorizontalDivider(color = SgColor.Hairline)
                         SummaryRow("Total bayar", formatPrice(state.total), bold = true)
@@ -450,5 +467,187 @@ private fun VoucherSheet(state: CheckoutUiState, onSelect: (String?) -> Unit, on
                 SgButton("Jangan pakai voucher", onClick = { onSelect(null) }, style = SgButtonStyle.Secondary, modifier = Modifier.fillMaxWidth())
             }
         }
+    }
+}
+
+
+/**
+ * Pickup or courier. Pickup states the latest arrival time ("ambil maks. 18.45, 45 menit
+ * setelah pesan"); delivery shows Prioritas / Standar / Hemat with each one's fee and ETA,
+ * then every courier's quote (cheapest first) with its promo and the discount struck through.
+ */
+@Composable
+private fun FulfillmentSection(
+    state: CheckoutUiState,
+    onFulfillment: (Fulfillment) -> Unit,
+    onCourier: (Courier) -> Unit,
+    onSpeed: (DeliverySpeed) -> Unit,
+) {
+    val delivery = state.delivery.fulfillment == Fulfillment.DELIVERY && state.deliveryAvailable
+    Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+        SectionTitle(l("Cara terima pesanan", "How you'll get it"))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+            ModeCard(
+                icon = Icons.Rounded.Storefront,
+                title = l("Ambil sendiri", "Self pickup"),
+                sub = l("Gratis", "Free"),
+                selected = !delivery,
+                onClick = { onFulfillment(Fulfillment.PICKUP) },
+                modifier = Modifier.weight(1f),
+            )
+            ModeCard(
+                icon = Icons.Rounded.DeliveryDining,
+                title = l("Kirim kurir", "Courier"),
+                sub = if (state.deliveryAvailable) l("mulai ", "from ") + formatRupiah(state.quotes.minOfOrNull { it.payable } ?: 0) else l("Tidak tersedia", "Unavailable"),
+                selected = delivery,
+                enabled = state.deliveryAvailable,
+                onClick = { onFulfillment(Fulfillment.DELIVERY) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        AnimatedContent(
+            targetState = delivery,
+            transitionSpec = { fadeIn(tween(200, easing = SgEaseOut)) togetherWith fadeOut(tween(90)) using SizeTransform(clip = false) },
+            label = "fulfillment",
+        ) { isDelivery ->
+            if (!isDelivery) {
+                Card {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+                        Box(Modifier.size(40.dp).background(SgColor.Mint, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Rounded.Schedule, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp))
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text(l("Ambil di ", "Pick up at ") + state.merchant?.name.orEmpty(), style = SgTextStyle.Label)
+                            Text(state.merchant?.address?.ifBlank { null } ?: state.merchant?.location.orEmpty(), style = SgTextStyle.Caption, maxLines = 1)
+                            state.pickupBy?.let { by ->
+                                val mins = java.time.Duration.between(state.now, by).toMinutes()
+                                Text(
+                                    l("Ambil maks. ${formatClock(by)} · $mins menit setelah pesan", "Collect by ${formatClock(by)} · $mins min after ordering"),
+                                    style = SgTextStyle.Caption.copy(fontWeight = FontWeight.SemiBold),
+                                    color = SgColor.YellowStatus,
+                                    modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                            Text(
+                                l("Siap diambil ±${state.merchant?.prepMinutes ?: 15} menit", "Ready in ~${state.merchant?.prepMinutes ?: 15} min"),
+                                style = SgTextStyle.Caption,
+                            )
+                        }
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+                    Card {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+                            Box(Modifier.size(40.dp).background(SgColor.RedStatus.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
+                            }
+                            Column(Modifier.weight(1f)) {
+                                Text(l("Kirim ke ", "Deliver to ") + (state.address?.label ?: l("lokasi kamu", "your location")), style = SgTextStyle.Label)
+                                Text(state.address?.fullAddress.orEmpty(), style = SgTextStyle.Caption, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text("%.1f km ".format(state.distanceKm) + l("dari toko", "from the store"), style = SgTextStyle.Caption)
+                            }
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
+                        state.speedQuotes.forEach { q ->
+                            SpeedCard(q, selected = q.speed == state.delivery.speed, onClick = { onSpeed(q.speed) }, modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Text(l(state.delivery.speed.blurb, state.delivery.speed.blurb), style = SgTextStyle.Caption)
+                    state.quotes.forEach { q ->
+                        CourierRow(q, selected = q.courier == state.delivery.courier, onClick = { onCourier(q.courier) })
+                    }
+                    Text(
+                        l("Ongkir adalah estimasi dari mitra kurir dan bisa berubah saat pesanan dijemput.", "Fees are courier estimates and may change at pickup."),
+                        style = SgTextStyle.Caption.copy(fontSize = 11.sp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeCard(
+    icon: ImageVector,
+    title: String,
+    sub: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val border by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Hairline, tween(150), label = "modeBorder")
+    val bg by animateColorAsState(if (selected) SgColor.Mint else SgColor.BaseWhite, tween(150), label = "modeBg")
+    Column(
+        modifier
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(bg)
+            .border(if (selected) 1.5.dp else 1.dp, border, RoundedCornerShape(SgRadius.Tile))
+            .alpha(if (enabled) 1f else 0.45f)
+            .pressable(onClick, enabled = enabled)
+            .padding(SgSpacing.Md),
+    ) {
+        Icon(icon, contentDescription = null, tint = if (selected) SgColor.Brand600 else SgColor.InkMuted)
+        Text(title, style = SgTextStyle.Label, modifier = Modifier.padding(top = 6.dp))
+        Text(sub, style = SgTextStyle.Caption)
+    }
+}
+
+@Composable
+private fun SpeedCard(q: DeliveryQuote, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val border by animateColorAsState(if (selected) SgColor.Ink else SgColor.Hairline, tween(150), label = "speedBorder")
+    Column(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(SgColor.BaseWhite)
+            .border(if (selected) 1.5.dp else 1.dp, border, RoundedCornerShape(14.dp))
+            .pressable(onClick, pressedScale = 0.96f)
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+    ) {
+        Text(l(q.speed.label, q.speed.labelEn), style = SgTextStyle.Label.copy(fontSize = 13.sp))
+        Text("${q.etaMinMinutes}–${q.etaMaxMinutes} " + l("mnt", "min"), style = SgTextStyle.Caption)
+        Text(formatRupiah(q.payable), style = SgTextStyle.Label.copy(fontSize = 13.sp), color = SgColor.Brand700, modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@Composable
+private fun CourierRow(q: DeliveryQuote, selected: Boolean, onClick: () -> Unit) {
+    val border by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Hairline, tween(150), label = "courierBorder")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(SgColor.BaseWhite)
+            .border(if (selected) 1.5.dp else 1.dp, border, RoundedCornerShape(SgRadius.Tile))
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(horizontal = SgSpacing.Md, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(36.dp).background(Color(q.courier.brandColor), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.DeliveryDining, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        }
+        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(q.courier.label, style = SgTextStyle.Label)
+            Text(
+                l("Tiba ", "Arrives in ") + "${q.etaMinMinutes}–${q.etaMaxMinutes} " + l("mnt", "min") + (q.promoLabel?.let { " · $it" } ?: ""),
+                style = SgTextStyle.Caption,
+                color = if (q.promoLabel != null) SgColor.Brand700 else SgColor.InkMuted,
+                maxLines = 1,
+            )
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text(formatRupiah(q.payable), style = SgTextStyle.Label)
+            if (q.discount > 0) {
+                Text(formatRupiah(q.fee), style = SgTextStyle.Caption.copy(textDecoration = TextDecoration.LineThrough))
+            }
+        }
+        RadioButton(
+            selected = selected,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(selectedColor = SgColor.Brand500, unselectedColor = SgColor.InkMuted),
+            modifier = Modifier.padding(start = 4.dp),
+        )
     }
 }

@@ -47,15 +47,27 @@ private val SgDarkColorScheme = darkColorScheme(
     outline = SgColor.Neutral500,
 )
 
-/** Always light: the Figma file has no dark design, and following the system dark setting
- * turned unselected chip labels light-on-light on the test device. [SgDarkColorScheme] stays
- * for when a real dark design exists. */
+/** Light by default (Figma only designs light). Dark is driven by [SgPalette.isDark], which
+ * MainActivity sets from the user's Pengaturan choice; [SgColor] tokens follow it directly and
+ * the Material scheme here keeps M3 internals (sheets, dialogs, ripples) in step. */
 @Composable
 fun SisaGunaTheme(
-    darkTheme: Boolean = false,
+    darkTheme: Boolean = SgPalette.isDark,
     content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) SgDarkColorScheme else SgLightColorScheme
+    val base = if (darkTheme) SgDarkColorScheme else SgLightColorScheme
+    val colorScheme = base.copy(
+        background = SgColor.Page,
+        surface = SgColor.BaseWhite,
+        surfaceContainerLow = SgColor.BaseWhite,
+        surfaceContainer = SgColor.BaseWhite,
+        surfaceContainerHigh = SgColor.BaseWhite,
+        surfaceContainerHighest = SgColor.Neutral100,
+        onSurface = SgColor.Ink,
+        onSurfaceVariant = SgColor.InkMuted,
+        outline = SgColor.Neutral300,
+        outlineVariant = SgColor.Hairline,
+    )
     MaterialTheme(
         colorScheme = colorScheme,
         typography = SgTypography,

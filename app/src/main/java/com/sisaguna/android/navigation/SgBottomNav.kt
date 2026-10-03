@@ -19,7 +19,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -53,7 +53,7 @@ fun SgBottomNav(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier.fillMaxWidth().background(SgColor.BaseWhite.copy(alpha = 0.96f))) {
+    Column(modifier.fillMaxWidth().background(SgColor.BaseWhite.copy(alpha = 0.97f))) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(SgColor.Hairline))
         Row(
             modifier = Modifier
@@ -67,7 +67,7 @@ fun SgBottomNav(
                 val tint by animateColorAsState(if (selected) SgColor.Brand700 else SgColor.InkMuted, tween(160), label = "navTint")
                 val pillWidth by animateDpAsState(
                     if (selected) 56.dp else 32.dp,
-                    spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMedium),
+                    spring(dampingRatio = 1f, stiffness = Spring.StiffnessMediumLow), // critically damped: a tap has no momentum to overshoot with
                     label = "navPill",
                 )
                 Column(
@@ -83,7 +83,7 @@ fun SgBottomNav(
                             .height(30.dp)
                             .width(pillWidth)
                             .clip(RoundedCornerShape(SgRadius.Pill))
-                            .background(if (selected) SgColor.Mint else SgColor.BaseWhite.copy(alpha = 0f)),
+                            .background(if (selected) SgColor.Mint else androidx.compose.ui.graphics.Color.Transparent),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(painter = painterResource(item.icon), contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))

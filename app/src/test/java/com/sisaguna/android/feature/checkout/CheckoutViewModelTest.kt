@@ -23,7 +23,7 @@ class CheckoutViewModelTest {
     private val cart = InMemoryCartRepository()
     private val orders = FakeOrderRepository(listings, FakeNotificationRepository(), { Instant.now() }, paymentDelayMs = 0)
     private val vouchers = FakeVoucherRepository()
-    private fun vm() = CheckoutViewModel(cart, listings, orders, FakePaymentMethodRepository(), vouchers)
+    private fun vm() = CheckoutViewModel(cart, listings, orders, FakePaymentMethodRepository(), vouchers, com.sisaguna.android.data.repository.FakeAddressRepository())
     private fun listing(id: String) = listings.listings.value.first { it.id == id }
 
     @Test

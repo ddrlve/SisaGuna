@@ -1,6 +1,22 @@
 package com.sisaguna.android.feature.home
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material.icons.rounded.Agriculture
+import androidx.compose.material.icons.rounded.LocalOffer
+import androidx.compose.material.icons.rounded.RestaurantMenu
+import androidx.compose.ui.graphics.Brush
+import coil.compose.AsyncImage
+import com.sisaguna.android.data.repository.seedImage
+import com.sisaguna.android.data.settings.UserMode
+import com.sisaguna.android.ui.domain.CartBar
+import com.sisaguna.android.ui.domain.VoucherCard
+import com.sisaguna.android.ui.domain.VoucherDetailSheet
+import com.sisaguna.android.ui.i18n.l
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -58,7 +74,7 @@ import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -112,11 +128,18 @@ fun HomeScreen(
     showNotificationBadge: Boolean = false,
     addressLabel: String = "Rumah",
     onAddressClick: () -> Unit = {},
+    onCartClick: () -> Unit = {},
+    onMerchantClick: (String) -> Unit = {},
+    onUploadTierClick: (ListingTier) -> Unit = { onUploadClick() },
+    onMyCatalogClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val unread by viewModel.unreadNotifications.collectAsStateWithLifecycle()
     val vouchers by viewModel.vouchers.collectAsStateWithLifecycle()
+    val mode by viewModel.mode.collectAsStateWithLifecycle()
+    val cart by viewModel.cartSummary.collectAsStateWithLifecycle()
     var showFilter by remember { mutableStateOf(false) }
+    var openVoucher by remember { mutableStateOf<Voucher?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -128,7 +151,27 @@ fun HomeScreen(
     }
 
     Box(Modifier.fillMaxSize()) {
-        HomeScreenContent(
+        // Buyer <-> merchant homes crossfade (short: it's a mode change the user asked for, not
+        // navigation). Size snaps so the list never animates its height.
+        AnimatedContent(
+            targetState = mode,
+            transitionSpec = { fadeIn(tween(220, easing = SgEaseOut)) togetherWith fadeOut(tween(120)) using SizeTransform(clip = false) { _, _ -> snap() } },
+            label = "homeMode",
+        ) { m ->
+        if (m == UserMode.MERCHANT) {
+            MerchantHome(
+                onModeChange = viewModel::setMode,
+                onUploadTierClick = onUploadTierClick,
+                onNotificationsClick = onNotificationsClick,
+                unreadNotifications = if (showNotificationBadge) unread else 0,
+                onMyCatalogClick = onMyCatalogClick,
+                onListingClick = onListingClick,
+            )
+        } else HomeScreenContent(
+            mode = m,
+            onModeChange = viewModel::setMode,
+            onMerchantClick = onMerchantClick,
+            onVoucherClick = { openVoucher = it },
             uiState = uiState,
             addressLabel = addressLabel,
             unreadNotifications = if (showNotificationBadge) unread else 0,
@@ -163,7 +206,29 @@ fun HomeScreen(
                 }
             },
         )
-        SnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter))
+        }
+        // Cart stays reachable from Home (user testing: it vanished after leaving a store).
+        CartBar(
+            visible = cart != null && mode == UserMode.BUYER,
+            itemCount = cart?.itemCount ?: 0,
+            total = cart?.total ?: 0,
+            merchantName = cart?.merchantName,
+            onClick = onCartClick,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+        SnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (cart != null) 72.dp else 0.dp))
+    }
+
+    openVoucher?.let { v ->
+        VoucherDetailSheet(
+            voucher = v,
+            claimed = vouchers.firstOrNull { it.first.code == v.code }?.second == true,
+            onClaim = {
+                viewModel.claimVoucher(v.code)
+                toast(l("Voucher diklaim. Pakai saat checkout ya!", "Voucher claimed. Use it at checkout!"))
+            },
+            onDismiss = { openVoucher = null },
+        )
     }
 
     if (showFilter) {
@@ -181,6 +246,10 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenContent(
     uiState: HomeUiState,
+    mode: UserMode = UserMode.BUYER,
+    onModeChange: (UserMode) -> Unit = {},
+    onMerchantClick: (String) -> Unit = {},
+    onVoucherClick: (Voucher) -> Unit = {},
     addressLabel: String,
     unreadNotifications: Int,
     vouchers: List<Pair<Voucher, Boolean>>,
@@ -202,6 +271,10 @@ private fun HomeScreenContent(
             is HomeUiState.Error -> ErrorState(message = uiState.message, onRetry = onRetry)
             is HomeUiState.Success -> HomeFeedList(
                 state = uiState,
+                mode = mode,
+                onModeChange = onModeChange,
+                onMerchantClick = onMerchantClick,
+                onVoucherClick = onVoucherClick,
                 addressLabel = addressLabel,
                 unreadNotifications = unreadNotifications,
                 vouchers = vouchers,
@@ -247,6 +320,10 @@ private fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier 
 @Composable
 private fun HomeFeedList(
     state: HomeUiState.Success,
+    mode: UserMode,
+    onModeChange: (UserMode) -> Unit,
+    onMerchantClick: (String) -> Unit,
+    onVoucherClick: (Voucher) -> Unit,
     addressLabel: String,
     unreadNotifications: Int,
     vouchers: List<Pair<Voucher, Boolean>>,
@@ -269,10 +346,12 @@ private fun HomeFeedList(
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = SgSpacing.Xl),
+        contentPadding = PaddingValues(bottom = 96.dp),
     ) {
         item {
             HomeTopBar(
+                mode = mode,
+                onModeChange = onModeChange,
                 addressLabel = addressLabel,
                 unreadNotifications = unreadNotifications,
                 onAddressClick = onAddressClick,
@@ -317,18 +396,23 @@ private fun HomeFeedList(
             }
         }
         item(key = "tab-content") {
+            // Was janky: the default SizeTransform animated the item's height inside the
+            // LazyColumn while both tabs overlapped, so the page "breathed". Now the height
+            // snaps, the old tab leaves fast (90ms) and the new one slides in from the side the
+            // thumb moved toward, with the strong ease-out — reads as one sideways move.
             AnimatedContent(
                 targetState = state.selectedTab,
                 transitionSpec = {
                     val forward = targetState.ordinal > initialState.ordinal
-                    (fadeIn(tween(200, easing = SgEaseOut)) + slideInHorizontally(tween(260, easing = SgEaseOut)) { if (forward) it / 8 else -it / 8 }) togetherWith
-                        fadeOut(tween(120))
+                    (fadeIn(tween(220, delayMillis = 40, easing = SgEaseOut)) + slideInHorizontally(tween(280, easing = SgEaseOut)) { if (forward) 72 else -72 }) togetherWith
+                        (fadeOut(tween(90)) + slideOutHorizontally(tween(160, easing = SgEaseOut)) { if (forward) -48 else 48 }) using
+                        SizeTransform(clip = false) { _, _ -> snap() }
                 },
                 label = "homeTab",
             ) { tab ->
                 Column {
                     when (tab) {
-                        HomeTab.SIAP_SANTAP -> SiapSantapTab(state, vouchers, onListingClick, onCategoryClick, onClaimVoucher)
+                        HomeTab.SIAP_SANTAP -> SiapSantapTab(state, vouchers, onListingClick, onCategoryClick, onVoucherClick, onMerchantClick)
                         HomeTab.TERNAK_KOMPOS -> TernakKomposTab(state, onListingClick, onCategoryClick)
                     }
                     if (state.activeTabIsEmpty) {
@@ -381,7 +465,8 @@ private fun SiapSantapTab(
     vouchers: List<Pair<Voucher, Boolean>>,
     onListingClick: (Listing) -> Unit,
     onCategoryClick: (ListingTier) -> Unit,
-    onClaimVoucher: (String) -> Unit,
+    onVoucherClick: (Voucher) -> Unit,
+    onMerchantClick: (String) -> Unit,
 ) {
     Rail(
         title = stringResource(R.string.home_rail_nearby),
@@ -402,18 +487,36 @@ private fun SiapSantapTab(
             horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
             items(vouchers, key = { it.first.code }) { (v, claimed) ->
-                VoucherTicket(
-                    title = v.title,
-                    subtitle = v.description,
-                    trailing = if (claimed) "Sudah diklaim ✓" else "Ketuk untuk klaim",
-                    trailingColor = if (claimed) SgColor.InkMuted else SgColor.Brand700,
-                    selected = claimed,
-                    onClick = { if (!claimed) onClaimVoucher(v.code) },
-                    modifier = Modifier.width(272.dp),
-                )
+                VoucherCard(voucher = v, claimed = claimed, onClick = { onVoucherClick(v) })
             }
         }
     }
+    if (state.offerMerchants.isNotEmpty() && state.searchQuery.isBlank()) {
+        Text(
+            l("Penawaran hari ini", "Today's offers"),
+            style = SgTextStyle.Title,
+            modifier = Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg),
+        )
+        Text(
+            l("Promo langsung dari toko mitra", "Deals straight from partner stores"),
+            style = SgTextStyle.Caption,
+            modifier = Modifier.padding(horizontal = SgSpacing.Gutter),
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
+            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+        ) {
+            items(state.offerMerchants, key = { it.id }) { m -> OfferStoreCard(m, onClick = { onMerchantClick(m.id) }) }
+        }
+    }
+    Rail(
+        title = l("Paling laris", "Best sellers"),
+        subtitle = l("Yang paling sering diselamatkan hari ini", "Most rescued today"),
+        trailing = { SeeAllLink(onClick = { onCategoryClick(ListingTier.HUMAN) }) },
+        listings = state.popular,
+        now = state.now,
+        onListingClick = onListingClick,
+    )
     Rail(
         title = stringResource(R.string.home_rail_deals),
         subtitle = stringResource(R.string.home_rail_deals_subtitle),
@@ -437,7 +540,7 @@ private fun TernakKomposTab(
         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
     ) {
         WideTile(
-            image = R.drawable.category_animal,
+            photo = seedImage("sayur_pakan"),
             label = stringResource(R.string.tier_animal_feed),
             count = state.animalFeed.size,
             tint = SgColor.Farm,
@@ -445,7 +548,7 @@ private fun TernakKomposTab(
             onClick = { onCategoryClick(ListingTier.ANIMAL_FEED) },
         )
         WideTile(
-            image = R.drawable.category_compost,
+            photo = seedImage("kompos_sayur"),
             label = stringResource(R.string.tier_compost),
             count = state.compost.size,
             tint = SgColor.Compost,
@@ -475,6 +578,8 @@ private fun TernakKomposTab(
  * (85:3039) + notification bell (104:6511) with an unread badge. */
 @Composable
 private fun HomeTopBar(
+    mode: UserMode,
+    onModeChange: (UserMode) -> Unit,
     addressLabel: String,
     unreadNotifications: Int,
     onAddressClick: () -> Unit,
@@ -515,27 +620,7 @@ private fun HomeTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(SgRadius.Pill))
-                    .background(SgColor.Brand500)
-                    .pressable(onUploadClick)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_upload),
-                    contentDescription = null,
-                    tint = SgColor.BaseWhite,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = stringResource(R.string.home_upload_cta),
-                    style = SgTextStyle.Label,
-                    color = SgColor.BaseWhite,
-                    modifier = Modifier.padding(start = 6.dp),
-                )
-            }
+            ModeSwitch(mode = mode, onChange = onModeChange)
             NotificationBell(unread = unreadNotifications, onClick = onNotificationsClick)
         }
     }
@@ -584,7 +669,7 @@ private fun NotificationBell(unread: Int, onClick: () -> Unit) {
             ) {
                 Text(
                     text = if (unread > 9) "9+" else unread.toString(),
-                    color = SgColor.BaseWhite,
+                    color = SgColor.OnBrand,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     lineHeight = 14.sp,
@@ -595,9 +680,15 @@ private fun NotificationBell(unread: Int, onClick: () -> Unit) {
 }
 
 /**
- * Pill track in [SgColor.Hairline] with a white thumb that slides under the selected label.
- * The thumb moves on a spring so a quick double-tap retargets mid-flight instead of
- * restarting.
+ * Siap Santap / Ternak & Kompos switch. User testing called the old one "kurang smooth dan
+ * jelek": a grey track with a white thumb moved by `offset` (a relayout every frame) and labels
+ * that only changed colour at the end.
+ *
+ * Now: a green thumb rides under the selected option on `graphicsLayer.translationX` (no
+ * relayout), driven by a critically damped spring (Apple: bounce only after a momentum gesture) so a quick double tap retargets mid-way
+ * instead of restarting; label + icon colours cross-fade over the same 200ms so the text
+ * "hands over" as the thumb passes. Each option carries an icon so the two worlds are told
+ * apart at a glance.
  */
 @Composable
 private fun SegmentedSwitch(
@@ -606,46 +697,52 @@ private fun SegmentedSwitch(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val icons = listOf(Icons.Rounded.RestaurantMenu, Icons.Rounded.Agriculture)
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(52.dp)
             .clip(RoundedCornerShape(SgRadius.Pill))
-            .background(SgColor.Hairline)
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
             .padding(4.dp),
     ) {
         val segmentWidth = maxWidth / options.size
-        val thumbOffset by animateDpAsState(
-            targetValue = segmentWidth * selectedIndex,
-            animationSpec = spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow),
+        val density = androidx.compose.ui.platform.LocalDensity.current
+        val thumbX by animateFloatAsState(
+            targetValue = with(density) { (segmentWidth * selectedIndex).toPx() },
+            animationSpec = spring(dampingRatio = 1f, stiffness = 420f), // critically damped: no overshoot on a tap
             label = "segmentThumb",
         )
         Box(
             modifier = Modifier
-                .offset(x = thumbOffset)
                 .width(segmentWidth)
                 .fillMaxHeight()
-                .shadow(2.dp, RoundedCornerShape(SgRadius.Pill))
-                .background(SgColor.BaseWhite, RoundedCornerShape(SgRadius.Pill)),
+                .graphicsLayer { translationX = thumbX }
+                .shadow(6.dp, RoundedCornerShape(SgRadius.Pill), ambientColor = SgColor.Brand500, spotColor = SgColor.Brand500)
+                .background(SgColor.Brand500, RoundedCornerShape(SgRadius.Pill)),
         )
         Row(modifier = Modifier.fillMaxSize().selectableGroup()) {
             options.forEachIndexed { index, label ->
                 val selected = index == selectedIndex
-                Box(
+                val fg by animateColorAsState(if (selected) SgColor.OnBrand else SgColor.InkMuted, tween(200, easing = SgEaseOut), label = "segFg")
+                Row(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
                         .clip(RoundedCornerShape(SgRadius.Pill))
                         .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(index) }),
-                    contentAlignment = Alignment.Center,
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(icons[index % icons.size], contentDescription = null, tint = fg, modifier = Modifier.size(18.dp))
                     Text(
                         text = label,
-                        style = SgTextStyle.Label,
-                        color = if (selected) SgColor.Ink else SgColor.InkMuted,
+                        style = SgTextStyle.Label.copy(fontWeight = FontWeight.Bold),
+                        color = fg,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = 8.dp),
+                        modifier = Modifier.padding(start = 6.dp),
                     )
                 }
             }
@@ -653,10 +750,83 @@ private fun SegmentedSwitch(
     }
 }
 
+/** Pembeli | Mitra pill in the Home top bar — the two homes user testing asked us to separate. */
+@Composable
+fun ModeSwitch(mode: UserMode, onChange: (UserMode) -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
+            .padding(3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        listOf(UserMode.BUYER to l("Pembeli", "Buyer"), UserMode.MERCHANT to l("Mitra", "Seller")).forEach { (m, label) ->
+            val selected = m == mode
+            val bg by animateColorAsState(if (selected) SgColor.Ink else Color.Transparent, tween(180, easing = SgEaseOut), label = "modeBg")
+            val fg by animateColorAsState(if (selected) SgColor.BaseWhite else SgColor.InkMuted, tween(180, easing = SgEaseOut), label = "modeFg")
+            Text(
+                label,
+                style = SgTextStyle.TextXsMedium.copy(fontWeight = FontWeight.Bold),
+                color = fg,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(SgRadius.Pill))
+                    .background(bg)
+                    .pressable({ onChange(m) }, pressedScale = 0.95f)
+                    .wrapContentHeight(Alignment.CenterVertically)
+                    .padding(horizontal = 12.dp),
+            )
+        }
+    }
+}
+
+/** Store card for "Penawaran hari ini": banner photo, store name, rating, and the offer. */
+@Composable
+private fun OfferStoreCard(merchant: Merchant, onClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(260.dp)
+            .clip(RoundedCornerShape(20.dp))
+            .background(SgColor.BaseWhite)
+            .pressable(onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().height(96.dp)) {
+            AsyncImage(merchant.bannerUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)))))
+            Text(
+                merchant.name,
+                style = SgTextStyle.Label,
+                color = SgColor.OnBrand,
+                modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+            merchant.rating?.let {
+                Text(
+                    "★ %.1f".format(it),
+                    style = SgTextStyle.TextXsMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF1F2A1C),
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).background(Color.White, RoundedCornerShape(SgRadius.Pill)).padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
+        }
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.LocalOffer, contentDescription = null, tint = SgColor.PromoInk, modifier = Modifier.size(16.dp))
+            Text(
+                merchant.todaysOffer.orEmpty(),
+                style = SgTextStyle.Caption.copy(color = SgColor.Ink),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+    }
+}
+
 /** Ternak & Kompos entry tile (spec §2): tinted icon square left, label + count right. */
 @Composable
 private fun WideTile(
-    image: Int,
+    photo: String,
     label: String,
     count: Int,
     tint: Color,
@@ -675,20 +845,16 @@ private fun WideTile(
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .background(tint, RoundedCornerShape(SgRadius.Thumb)),
+                .size(48.dp)
+                .clip(RoundedCornerShape(SgRadius.Thumb))
+                .background(tint),
             contentAlignment = Alignment.Center,
         ) {
-            Image(
-                painter = painterResource(image),
-                contentDescription = null,
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(32.dp),
-            )
+            AsyncImage(model = photo, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(text = label, style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(text = stringResource(R.string.home_available_count, count), style = SgTextStyle.Body, maxLines = 1)
+            Text(text = stringResource(R.string.home_available_count, count) + " · " + l("per kg", "by kg"), style = SgTextStyle.Caption, maxLines = 1)
         }
     }
 }
