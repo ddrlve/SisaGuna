@@ -198,7 +198,7 @@ Lewat terminal:
 
 ## Link Terkait
 
-| | |
+| Tipe | Link |
 |---|---|
 | Presentasi | [Canva](https://canva.link/d403zux6vbz05gn) |
 | Desain | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
