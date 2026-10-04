@@ -25,7 +25,7 @@ Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung,
 
 ## Coba Aplikasinya
 
-**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases/latest), lalu unduh file `SisaGuna-v0.3.0-debug.apk`.
+**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases), lalu unduh file `SisaGuna-v0.3.0-debug.apk`.
 
 **Cara install di HP Android (minimal Android 8.0):**
 
