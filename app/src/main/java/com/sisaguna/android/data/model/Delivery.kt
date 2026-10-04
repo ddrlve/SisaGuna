@@ -8,7 +8,7 @@ enum class Fulfillment { PICKUP, DELIVERY }
 enum class Courier(val label: String, val app: String, val brandColor: Long, val baseFee: Int, val perKm: Int, private val logo: String) {
     GOSEND("GoSend", "Gojek", 0xFF00AA13, 6_000, 2_500, "courier_gosend"),
     GRAB("GrabExpress", "Grab", 0xFF00B14F, 6_500, 2_400, "courier_grab"),
-    SHOPEE("ShopeeFood", "Shopee", 0xFFEE4D2D, 5_000, 2_600, "courier_shopee"),
+    SHOPEE("SPX Instant", "Shopee Express", 0xFFEE4D2D, 5_000, 2_600, "courier_shopee"),
     LALAMOVE("Lalamove", "Lalamove", 0xFFF16622, 8_000, 2_200, "courier_lalamove");
 
     /** Bundled brand mark (assets/img/couriers), loaded by Coil like the seed photos. */
