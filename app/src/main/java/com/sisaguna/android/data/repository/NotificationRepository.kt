@@ -47,7 +47,7 @@ class FakeNotificationRepository(now: Instant) : NotificationRepository {
             ),
             AppNotification(
                 "n2", NotificationType.ORDER, "Pesanan siap diambil",
-                "Roti Segar Bakery sudah menyiapkan Roti Tawar Lewat Best Before kamu. Tunjukkan kode SG-4821 saat ambil.",
+                "Roti Segar Bakery sudah menyiapkan Roti Gandum Lewat Best Before kamu. Tunjukkan kode SG-4821 saat ambil.",
                 ago(52), isRead = false,
             ),
             AppNotification(
@@ -62,7 +62,7 @@ class FakeNotificationRepository(now: Instant) : NotificationRepository {
             ),
             AppNotification(
                 "n5", NotificationType.ORDER, "Pesanan selesai",
-                "Terima kasih sudah menyelamatkan Donat Reject Bentuk. Beri rating untuk Roti Segar Bakery?",
+                "Terima kasih sudah menyelamatkan Donat Glaze Sisa Etalase. Beri rating untuk Roti Segar Bakery?",
                 ago(30 * 60), isRead = true,
             ),
             AppNotification(

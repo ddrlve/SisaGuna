@@ -118,11 +118,11 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             allergens = setOf(SOY, EGG, GLUTEN), prepMinutes = 10, distanceKm = 2.2, totalRescued = 540,
         ),
         Merchant(
-            "m8", "Martabak Bang Udin", isVerified = true, status = MerchantStatus.APPROVED, location = "Tebet",
+            "m8", "Ayam Bakar Bang Udin", isVerified = true, status = MerchantStatus.APPROVED, location = "Tebet",
             rating = 4.7, ratingCount = 301, bannerUrl = seedImage("martabak"), photos = listOf(seedImage("martabak")),
-            about = "Martabak manis dan telur sejak 2012. Pesanan yang batal diambil kami jual separuh harga.",
-            address = "Jl. Tebet Raya No. 40", openHours = "16.00-24.00", halal = HalalStatus.HALAL_CERTIFIED,
-            allergens = setOf(EGG, MILK, GLUTEN, PEANUT), todaysOffer = "Martabak batal ambil diskon 60% mulai jam 21.00",
+            about = "Ayam bakar jepit bumbu kecap sejak 2012, dibakar di atas arang. Pesanan yang batal diambil kami jual separuh harga.",
+            address = "Jl. Tebet Raya No. 40", openHours = "10.00-22.00", halal = HalalStatus.HALAL_CERTIFIED,
+            allergens = setOf(SOY), todaysOffer = "Ayam bakar batal ambil diskon 60% mulai jam 20.00",
             prepMinutes = 10, distanceKm = 1.8, totalRescued = 670,
         ),
         Merchant(
@@ -188,17 +188,17 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
         listOf(
             human(
                 "l1", "m1", "Nasi Kuning Sisa Katering", 25000, 8000, "nasi_kuning", 1.5, StorageMethod.ROOM_TEMP, 2.0,
-                "Nasi kuning lengkap dengan ayam suwir, telur balado, dan sambal dari pesanan katering kantor siang ini. Dimasak jam 10 pagi, disimpan tertutup. Paling enak dihangatkan sebentar sebelum dimakan.",
+                "Nasi kuning dengan telur dadar iris, mie goreng, orek tempe, perkedel, dan kentang balado dari pesanan katering kantor siang ini. Dimasak jam 10 pagi, disimpan tertutup. Paling enak dihangatkan sebentar sebelum dimakan.",
                 6, setOf(EGG, PEANUT), gallery = listOf("banner_warung2"), sold = 48,
             ),
             human(
-                "l2", "m2", "Roti Tawar Lewat Best Before", 18000, 5000, "roti_tawar", 26.0, StorageMethod.SHELF, 3.0,
-                "Roti tawar gandum lewat tanggal best before 1 hari. Masih lembut dan aman dikonsumsi, cocok dipanggang untuk sarapan besok.",
+                "l2", "m2", "Roti Gandum Lewat Best Before", 18000, 5000, "roti_tawar", 26.0, StorageMethod.SHELF, 3.0,
+                "Satu loaf roti gandum bulat, lewat tanggal best before 1 hari. Kulitnya masih renyah dan dalamnya lembut, enak diiris lalu dipanggang untuk sarapan.",
                 8, setOf(GLUTEN, MILK), gallery = listOf("banner_bakery"), sold = 61,
             ),
             human(
                 "l3", "m3", "Nasi Box Rapat Berlebih", 20000, null, "nasi_box", 2.0, StorageMethod.ROOM_TEMP, 1.0,
-                "Nasi box sisa rapat: nasi putih, ayam bakar, telur pindang, dan sambal. Gratis untuk yang bisa ambil sebelum kantin tutup.",
+                "Nasi box sisa rapat: nasi putih, ayam goreng bumbu, empal, dan telur pindang. Gratis untuk yang bisa ambil sebelum kantin tutup.",
                 4, setOf(EGG, SOY), sold = 22,
             ),
             human(
@@ -207,8 +207,8 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
                 5, emptySet(), sold = 30,
             ),
             human(
-                "l5", "m2", "Donat Reject Bentuk", 12000, 3000, "donat", 6.0, StorageMethod.SHELF, 5.0,
-                "Donat gula dan cokelat yang bentuknya kurang rapi. Rasa tetap sama dengan donat etalase. Per porsi isi 3 donat.",
+                "l5", "m2", "Donat Glaze Sisa Etalase", 12000, 3000, "donat", 6.0, StorageMethod.SHELF, 5.0,
+                "Donat mini dengan glaze gula putih yang belum terjual dari etalase pagi. Masih empuk. Per porsi isi 3 donat.",
                 10, setOf(GLUTEN, MILK, EGG), gallery = listOf("banner_bakery"), sold = 95,
             ),
             human(
@@ -218,7 +218,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             ),
             human(
                 "l12", "m6", "Puding Cheesecake Sisa PO", 25000, 12000, "puding_cheesecake", 20.0, StorageMethod.CHILLED, 6.0,
-                "Puding cheesecake lembut dengan saus stroberi, sisa PO hari ini. Disimpan di kulkas sejak dibuat. Tekstur paling enak dalam 2 hari, habiskan hari ini.",
+                "Puding cheesecake lembut dengan whipped cream, irisan peach, dan saus stroberi, sisa PO hari ini. Disimpan di kulkas sejak dibuat. Tekstur paling enak dalam 2 hari, habiskan hari ini.",
                 6, setOf(MILK, EGG, GLUTEN), gallery = listOf("kue_lapis"), sold = 74,
             ),
             human(
@@ -228,12 +228,12 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             ),
             human(
                 "l14", "m3", "Ayam Goreng Crispy", 22000, 9000, "ayam_goreng", 2.0, StorageMethod.ROOM_TEMP, 1.5,
-                "Ayam goreng tepung renyah sisa makan siang kantin, dikemas paper wrap. Cocok dipanaskan pakai air fryer.",
+                "Satu potong besar ayam goreng tepung renyah sisa makan siang kantin, dikemas paper wrap. Cocok dipanaskan pakai air fryer.",
                 5, setOf(GLUTEN, EGG), gallery = listOf("banner_kantin"), sold = 57,
             ),
             human(
-                "l15", "m2", "Croissant Isi Sayur", 28000, 9000, "croissant", 8.0, StorageMethod.SHELF, 4.0,
-                "Croissant butter isi selada dan tomat dari etalase pagi. Masih renyah di luar.",
+                "l15", "m2", "Croissant Sandwich Smoked Beef", 28000, 9000, "croissant", 8.0, StorageMethod.CHILLED, 4.0,
+                "Croissant butter isi smoked beef, keju, tomat, dan arugula dari etalase pagi. Disimpan di chiller, kulitnya masih renyah.",
                 6, setOf(GLUTEN, MILK, EGG), sold = 33,
             ),
             human(
@@ -247,23 +247,23 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
                 7, setOf(GLUTEN, SOY), sold = 26,
             ),
             human(
-                "l18", "m1", "Pisang Goreng Kipas", 10000, 3000, "pisang_goreng", 2.0, StorageMethod.ROOM_TEMP, 1.5,
-                "Pisang goreng tepung dari etalase sore, isi 4 potong per porsi.",
+                "l18", "m1", "Pisang Goreng Tepung", 10000, 3000, "pisang_goreng", 2.0, StorageMethod.ROOM_TEMP, 1.5,
+                "Pisang goreng tepung renyah dari etalase sore, isi 4 potong per porsi.",
                 8, setOf(GLUTEN), sold = 39,
             ),
             human(
-                "l22", "m8", "Martabak Manis Cokelat Keju", 60000, 22000, "martabak", 3.0, StorageMethod.SHELF, 4.0,
-                "Martabak manis cokelat keju kacang, pesanan yang batal diambil. Masih utuh satu loyang, dipotong 8.",
-                3, setOf(EGG, MILK, GLUTEN, PEANUT), sold = 88,
+                "l22", "m8", "Ayam Bakar Jepit (4 potong)", 48000, 18000, "martabak", 2.0, StorageMethod.ROOM_TEMP, 2.0,
+                "Ayam bakar bumbu kecap yang dijepit bambu, dari pesanan yang batal diambil. Isi 4 potong, sambal dan lalapan dipisah.",
+                3, setOf(SOY), sold = 88,
             ),
             human(
                 "l23", "m1", "Gado-gado Sisa Katering", 18000, 6000, "gado_gado", 1.5, StorageMethod.ROOM_TEMP, 2.0,
-                "Gado-gado sayur rebus, tahu, telur, dan kerupuk. Bumbu kacang dipisah biar sayur tetap segar.",
+                "Gado-gado sayur rebus, lontong, telur rebus, dan kerupuk dengan siraman bumbu kacang kental.",
                 5, setOf(PEANUT, EGG, SOY), sold = 27,
             ),
             human(
-                "l24", "m10", "Soto Ayam Kuah Bening", 20000, 7000, "soto_ayam", 1.0, StorageMethod.ROOM_TEMP, 2.5,
-                "Soto ayam kuah bening dengan suwiran ayam, soun, dan bawang goreng. Kuah dan isi dipisah.",
+                "l24", "m10", "Soto Ayam Kuah Santan", 20000, 7000, "soto_ayam", 1.0, StorageMethod.ROOM_TEMP, 2.5,
+                "Soto ayam kuah santan dengan suwiran ayam dan taburan bawang goreng. Kuah dan isi dipisah supaya tidak cepat basi.",
                 6, setOf(SOY), sold = 52,
             ),
             human(
@@ -277,13 +277,13 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
                 5, setOf(PEANUT, SOY), sold = 70,
             ),
             human(
-                "l27", "m3", "Bakso Urat Kuah", 18000, 6000, "bakso", 1.0, StorageMethod.ROOM_TEMP, 2.0,
-                "Bakso urat dan bakso halus dengan mie kuning. Kuah kaldu sapi dipisah.",
+                "l27", "m3", "Bakso Tahu Kuah", 18000, 6000, "bakso", 1.0, StorageMethod.ROOM_TEMP, 2.0,
+                "Bakso sapi, tahu bakso, dan bihun dengan kuah kaldu sapi. Kuah dipisah.",
                 6, setOf(GLUTEN, EGG, SOY), sold = 44,
             ),
             human(
                 "l28", "m11", "Klepon Gula Merah (isi 10)", 15000, 5000, "klepon", 8.0, StorageMethod.SHELF, 4.0,
-                "Klepon pandan isi gula merah dengan kelapa parut. Dibuat subuh, paling enak hari ini.",
+                "Klepon pandan isi gula merah, disajikan di atas daun pisang. Dibuat subuh, paling enak hari ini.",
                 8, emptySet(), sold = 93,
             ),
             human(
@@ -302,14 +302,14 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
                 3, setOf(GLUTEN, EGG, MILK), sold = 21,
             ),
             human(
-                "l32", "m9", "Pizza Pepperoni 2 Slice", 45000, 15000, "pizza", 2.0, StorageMethod.ROOM_TEMP, 1.5,
-                "Dua slice pizza pepperoni dari etalase. Panaskan 5 menit di oven atau teflon tertutup.",
+                "l32", "m9", "Pizza Pepperoni Jamur (2 slice)", 45000, 15000, "pizza", 2.0, StorageMethod.ROOM_TEMP, 1.5,
+                "Dua slice pizza pepperoni dan jamur dari etalase. Panaskan 5 menit di oven atau teflon tertutup.",
                 5, setOf(GLUTEN, MILK), sold = 35,
             ),
             human(
                 "l33", "m12", "Salad Buah Segar", 22000, 9000, "salad_buah", 6.0, StorageMethod.CHILLED, 6.0,
-                "Potongan apel, melon, dan anggur dengan yogurt. Disimpan di kulkas sejak dipotong.",
-                4, setOf(MILK), sold = 19,
+                "Potongan semangka, melon, alpukat, dan blueberry tanpa saus. Disimpan di kulkas sejak dipotong.",
+                4, emptySet(), sold = 19,
             ),
             human(
                 "l34", "m11", "Onde-onde Wijen (isi 6)", 12000, 4000, "onde_onde", 7.0, StorageMethod.SHELF, 4.0,
@@ -338,7 +338,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
             ),
             byWeight(
                 "l39", "m12", "Ampas Teh untuk Kompos", COMPOST, null, null, "ampas_teh", 10,
-                "Ampas daun teh dari kedai, sudah ditiriskan. Bagus untuk media tanam.",
+                "Daun teh bekas seduh dari kedai, sudah dijemur kering. Bagus untuk kompos dan media tanam.",
                 6, sold = 14,
             ),
             byWeight(
