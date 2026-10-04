@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.home
 
+import com.sisaguna.android.data.model.AppFees
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -125,7 +127,8 @@ fun MerchantHome(
     val now = Instant.now()
     val waiting = incoming.filter { it.status == IncomingStatus.WAITING }
     val active = listings.filter { it.pickupEnd.isAfter(now) && it.stock > 0 }
-    val todayRevenue = incoming.filter { it.status == IncomingStatus.HANDED_OVER }.sumOf { it.total }
+    val todaySales = incoming.filter { it.status == IncomingStatus.HANDED_OVER }.sumOf { it.total }
+    val todayRevenue = AppFees.merchantPayout(todaySales)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SgColor.Page),
@@ -145,6 +148,9 @@ fun MerchantHome(
                 }
                 Spacer(Modifier.size(8.dp))
                 ModeSwitch(mode = UserMode.MERCHANT, onChange = onModeChange)
+                Spacer(Modifier.size(8.dp))
+                // Partners get order, pickup and payout alerts too, same bell as buyer Home.
+                NotificationBell(unread = unreadNotifications, onClick = onNotificationsClick)
             }
         }
         item {
@@ -153,14 +159,19 @@ fun MerchantHome(
                 Modifier
                     .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg)
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(172.dp)
                     .clip(RoundedCornerShape(24.dp)),
             ) {
                 AsyncImage(store?.bannerUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                 Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(Color(0xE61F3A14), Color(0x661F3A14)))))
                 Column(Modifier.align(Alignment.CenterStart).padding(18.dp)) {
-                    Text(l("Pendapatan hari ini", "Today's earnings"), style = SgTextStyle.Caption, color = Color.White.copy(alpha = 0.8f))
+                    Text(l("Pendapatan bersih hari ini", "Today's net earnings"), style = SgTextStyle.Caption, color = Color.White.copy(alpha = 0.8f))
                     androidx.compose.material3.Text(formatRupiah(todayRevenue), style = SgTextStyle.Display, color = Color.White)
+                    Text(
+                        l("Penjualan ${formatRupiah(todaySales)} · komisi SisaGuna ${AppFees.MERCHANT_COMMISSION_PERCENT}%", "Sales ${formatRupiah(todaySales)} · SisaGuna fee ${AppFees.MERCHANT_COMMISSION_PERCENT}%"),
+                        style = SgTextStyle.Caption.copy(fontSize = 11.sp),
+                        color = Color.White.copy(alpha = 0.75f),
+                    )
                     Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         HeroStat("${waiting.size}", l("menunggu", "waiting"))
                         HeroStat("${active.size}", l("listing aktif", "live items"))
@@ -311,14 +322,23 @@ private fun IncomingOrderCard(order: IncomingOrder, onConfirm: (String) -> Confi
                 Text(
                     when {
                         done -> l("✓ Sudah diserahkan", "✓ Handed over")
-                        order.fulfillment == Fulfillment.DELIVERY -> (order.courierLabel ?: "Kurir") + l(" · siapkan sebelum ", " · ready by ") + formatClock(order.pickupBy)
+                        order.fulfillment == Fulfillment.DELIVERY -> (order.courierLabel ?: l("Kurir", "Courier")) + l(" · siapkan sebelum ", " · ready by ") + formatClock(order.pickupBy)
                         else -> l("Diambil maks. ", "Pickup by ") + formatClock(order.pickupBy)
                     },
                     style = SgTextStyle.Caption.copy(fontWeight = FontWeight.SemiBold),
                     color = if (done) SgColor.Brand600 else SgColor.YellowStatus,
                 )
             }
-            Text(formatPrice(order.total), style = SgTextStyle.Label)
+            Column(horizontalAlignment = Alignment.End) {
+                Text(formatPrice(order.total), style = SgTextStyle.Label)
+                if (order.total > 0) {
+                    Text(
+                        l("Kamu terima ", "You get ") + formatRupiah(AppFees.merchantPayout(order.total)),
+                        style = SgTextStyle.Caption.copy(fontSize = 11.sp),
+                        color = SgColor.Brand700,
+                    )
+                }
+            }
         }
         if (!done) {
             AnimatedVisibility(visible = !expanded, enter = fadeIn(tween(150)), exit = fadeOut(tween(90))) {
