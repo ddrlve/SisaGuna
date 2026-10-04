@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import com.sisaguna.android.ui.i18n.Text
@@ -127,14 +128,25 @@ fun LoginScreen(
             ) {
                 Text(text = "Masuk", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.OnBrand)
             }
-            Row {
-                Text(text = "Belum punya akun? ", style = SgTextStyle.TextSmRegular, color = SgColor.Neutral500)
+            // Both halves share one text style and sit on a shared baseline. The link used to
+            // have its own fontSize with the default line height, so it rode higher than the
+            // prompt. The link keeps a 48dp-tall touch target without shifting the text.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Belum punya akun?",
+                    style = SgTextStyle.TextSmRegular,
+                    color = SgColor.Neutral500,
+                    modifier = Modifier.alignByBaseline(),
+                )
                 Text(
                     text = "Daftar disini",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    style = SgTextStyle.TextSmRegular.copy(fontWeight = FontWeight.SemiBold),
                     color = SgColor.Brand600,
-                    modifier = Modifier.clickable(onClick = onRegisterClick),
+                    modifier = Modifier
+                        .alignByBaseline()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onRegisterClick)
+                        .padding(horizontal = 6.dp, vertical = 14.dp),
                 )
             }
         }

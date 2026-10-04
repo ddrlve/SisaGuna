@@ -211,8 +211,14 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Register.route) {
+                val settingsViewModel: com.sisaguna.android.feature.settings.SettingsViewModel = hiltViewModel()
                 RegisterScreen(
-                    onRegisterComplete = {
+                    onRegisterComplete = { type ->
+                        // A new seller lands on the partner dashboard, not the buyer feed.
+                        settingsViewModel.setMode(
+                            if (type == com.sisaguna.android.feature.auth.AccountType.MERCHANT) com.sisaguna.android.data.settings.UserMode.MERCHANT
+                            else com.sisaguna.android.data.settings.UserMode.BUYER,
+                        )
                         sessionViewModel.login()
                         navigateHomeAfterAuth()
                     },

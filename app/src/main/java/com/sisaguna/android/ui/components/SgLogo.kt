@@ -13,6 +13,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.LineHeightStyle
+import com.sisaguna.android.ui.theme.SgFont
 import com.sisaguna.android.R
 import com.sisaguna.android.ui.theme.SgColor
 
@@ -32,11 +36,20 @@ fun SgLogo(
             tint = markTint,
             modifier = Modifier.size(markSize.dp),
         )
+        // Font padding and the default line box put the wordmark visibly below the mark's
+        // centre; trimming both makes Row's CenterVertically centre the actual glyphs.
         Text(
             text = "sisaguna",
-            fontSize = textSize.sp,
-            fontWeight = FontWeight.Medium,
             color = textColor,
+            style = TextStyle(
+                fontFamily = SgFont,
+                fontSize = textSize.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = (-0.2).sp,
+                lineHeight = textSize.sp,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.Both),
+            ),
             modifier = Modifier.padding(start = 8.dp),
         )
     }

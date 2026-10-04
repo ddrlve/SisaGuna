@@ -1,5 +1,35 @@
 package com.sisaguna.android.feature.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.ShoppingBag
+import androidx.compose.material.icons.rounded.Storefront
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.sisaguna.android.ui.components.SgButton
+import com.sisaguna.android.ui.components.SgEaseOut
+import com.sisaguna.android.ui.components.pressable
+import com.sisaguna.android.ui.i18n.l
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,6 +100,11 @@ fun RegisterScreen(
     }
 }
 
+/**
+ * Step 1: who is this account for. Two radio cards; the selected one opens to show what the
+ * role gets, so the choice is made on content rather than on a title. The CTA names the role
+ * ("Lanjut sebagai Mitra") so the button confirms what was picked.
+ */
 @Composable
 private fun AccountTypeStep(
     selected: AccountType,
@@ -77,49 +112,158 @@ private fun AccountTypeStep(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize().background(SgColor.Neutral50)) {
-        Column(modifier = Modifier.weight(1f)) {
-            Column(
-                modifier = Modifier.padding(top = 24.dp, start = 24.dp, end = 24.dp, bottom = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SgLogo(textColor = SgColor.Brand500)
-                Text(
-                    text = "Pilih Tipe Akun Anda",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = SgColor.Neutral800,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = "Sesuaikan peran Anda untuk mengakses sistem terbaik SisaGuna.",
-                    style = SgTextStyle.TextSmRegular,
-                    color = SgColor.Neutral500,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            Column(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+    Column(modifier = modifier.fillMaxSize().background(SgColor.Page)) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp),
+        ) {
+            SgLogo(markSize = 28, textSize = 17, textColor = SgColor.Ink, modifier = Modifier.padding(top = 24.dp))
+            Text(
+                text = l("Mau pakai SisaGuna sebagai apa?", "How will you use SisaGuna?"),
+                style = SgTextStyle.Display.copy(fontSize = 26.sp, lineHeight = 32.sp),
+                color = SgColor.Ink,
+                modifier = Modifier.padding(top = 28.dp),
+            )
+            Text(
+                text = l("Pilih satu. Kamu bisa menggantinya nanti di Pengaturan.", "Pick one. You can switch later in Settings."),
+                style = SgTextStyle.Body,
+                color = SgColor.InkMuted,
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 AccountTypeCard(
-                    emoji = "😋",
-                    title = "Pengguna Biasa",
-                    description = "Ambil makanan berlebih yang lezat dari resto sekitar dengan diskon melimpah atau gratis demi misi penyelamatan lingkungan.",
+                    index = 0,
+                    icon = Icons.Rounded.ShoppingBag,
+                    iconBg = SgColor.Mint,
+                    iconTint = SgColor.Brand700,
+                    title = l("Pembeli", "Buyer"),
+                    subtitle = l("Selamatkan makanan enak di sekitarmu", "Rescue good food near you"),
+                    perks = listOf(
+                        l("Diskon 50-70%, ada juga yang gratis", "50-70% off, some for free"),
+                        l("Ambil sendiri atau kirim pakai kurir", "Pick up yourself or get it delivered"),
+                        l("Bayar QRIS atau e-wallet", "Pay with QRIS or e-wallet"),
+                    ),
                     selected = selected == AccountType.REGULAR,
                     onClick = { onSelect(AccountType.REGULAR) },
                 )
                 AccountTypeCard(
-                    emoji = "🏪",
-                    title = "Mitra Restoran",
-                    description = "Redistribusikan makanan sisa hari ini, kurangi sampah organik, dan raih profit tambahan secara cepat dan transparan.",
+                    index = 1,
+                    icon = Icons.Rounded.Storefront,
+                    iconBg = SgColor.Farm,
+                    iconTint = SgColor.FarmInk,
+                    title = l("Mitra penjual", "Seller partner"),
+                    subtitle = l("Warung, bakery, kantin, atau dapur rumahan", "Food stalls, bakeries, canteens or home kitchens"),
+                    perks = listOf(
+                        l("Jual makanan berlebih sebelum toko tutup", "Sell extra food before closing"),
+                        l("Tanpa biaya awal, komisi 10% per penjualan", "No upfront cost, 10% per sale"),
+                        l("Sisa yang tak layak jadi pakan atau kompos", "Leftovers go to feed or compost"),
+                    ),
                     selected = selected == AccountType.MERCHANT,
                     onClick = { onSelect(AccountType.MERCHANT) },
                 )
             }
         }
-        PrimaryButton(label = "Lanjutkan Registrasi", onClick = onNext)
+        Column(Modifier.background(SgColor.Page).navigationBarsPadding().padding(24.dp)) {
+            SgButton(
+                text = if (selected == AccountType.MERCHANT) l("Lanjut sebagai Mitra", "Continue as Seller") else l("Lanjut sebagai Pembeli", "Continue as Buyer"),
+                onClick = onNext,
+                modifier = Modifier.fillMaxWidth(),
+                height = 54.dp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountTypeCard(
+    index: Int,
+    icon: ImageVector,
+    iconBg: Color,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    perks: List<String>,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    // First-time screen: one short staggered entrance, then nothing moves except the choice.
+    val entrance = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        delay(60L * index)
+        entrance.animateTo(1f, tween(320, easing = SgEaseOut))
+    }
+    val border by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Hairline, tween(150), label = "typeBorder")
+    val bg by animateColorAsState(if (selected) SgColor.BaseWhite else SgColor.BaseWhite.copy(alpha = 0.6f), tween(150), label = "typeBg")
+    val shape = RoundedCornerShape(20.dp)
+
+    Column(
+        modifier = Modifier
+            .graphicsLayer {
+                alpha = entrance.value
+                translationY = (1f - entrance.value) * 12.dp.toPx()
+            }
+            .fillMaxWidth()
+            .clip(shape)
+            .background(bg)
+            .border(if (selected) 1.5.dp else 1.dp, border, shape)
+            .pressable(onClick, role = Role.RadioButton, pressedScale = 0.98f)
+            .semantics { this.selected = selected }
+            .padding(16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(48.dp).background(iconBg, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+            }
+            Column(Modifier.weight(1f).padding(horizontal = 14.dp)) {
+                Text(title, style = SgTextStyle.Title, color = SgColor.Ink)
+                Text(subtitle, style = SgTextStyle.Caption, color = SgColor.InkMuted, modifier = Modifier.padding(top = 2.dp))
+            }
+            RadioDot(selected)
+        }
+        AnimatedVisibility(
+            visible = selected,
+            enter = fadeIn(tween(180, easing = SgEaseOut)) + expandVertically(tween(220, easing = SgEaseOut)),
+            exit = fadeOut(tween(100)) + shrinkVertically(tween(180, easing = SgEaseOut)),
+        ) {
+            Column(
+                Modifier.padding(top = 14.dp).fillMaxWidth().background(SgColor.Page, RoundedCornerShape(14.dp)).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                perks.forEach { perk ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = SgColor.Brand500, modifier = Modifier.size(16.dp))
+                        Text(perk, style = SgTextStyle.Body, color = SgColor.Ink, modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Radio indicator: ring when idle, filled ring with a dot when picked. */
+@Composable
+private fun RadioDot(selected: Boolean) {
+    val ring by animateColorAsState(if (selected) SgColor.Brand500 else SgColor.Neutral300, tween(150), label = "radioRing")
+    val dot by animateFloatAsState(if (selected) 1f else 0f, tween(180, easing = SgEaseOut), label = "radioDot")
+    Box(
+        Modifier.size(22.dp).border(2.dp, ring, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    scaleX = 0.5f + 0.5f * dot
+                    scaleY = 0.5f + 0.5f * dot
+                    alpha = dot
+                }
+                .background(SgColor.Brand500, CircleShape),
+        )
     }
 }
 
@@ -275,54 +419,6 @@ private fun PrimaryButton(label: String, onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun AccountTypeCard(
-    emoji: String,
-    title: String,
-    description: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(if (selected) SgColor.Green50 else SgColor.BaseWhite, RoundedCornerShape(20.dp))
-            .border(
-                BorderStroke(1.dp, if (selected) SgColor.Brand500 else SgColor.Neutral200),
-                RoundedCornerShape(20.dp),
-            )
-            .clickable(onClick = onClick)
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(text = emoji, fontSize = 22.sp)
-                Text(
-                    text = title,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (selected) SgColor.Brand600 else SgColor.Neutral800,
-                )
-            }
-            if (selected) {
-                Box(
-                    modifier = Modifier
-                        .background(SgColor.Brand500, RoundedCornerShape(100.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                ) {
-                    Text(text = "Aktif", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = SgColor.OnBrand)
-                }
-            }
-        }
-        Text(
-            text = description,
-            fontSize = 13.sp,
-            lineHeight = 18.sp,
-            color = if (selected) SgColor.Neutral800 else SgColor.Neutral500,
-        )
-    }
-}
 
 @Preview(showBackground = true, heightDp = 900)
 @Composable
