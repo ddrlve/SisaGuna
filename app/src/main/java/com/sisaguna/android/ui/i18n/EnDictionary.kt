@@ -522,6 +522,11 @@ internal object EnDictionary {
         "Masih ada kak, sampai jam 7 malam ya. Lauknya lengkap." to "Yes, until 7pm. All the sides are there.",
         "Oke bu, saya ambil sore ini. Terima kasih!" to "Great, I'll pick it up this afternoon. Thank you!",
         "Halo kak, roti gandum pesananmu sudah siap diambil ya. Tunjukkan kode SG-4821 di kasir." to "Hi! Your wholewheat loaf is ready. Show code SG-4821 at the counter.",
+        "Kak, kue lapisnya masih ada 2 porsi?" to "Are there still 2 portions of kue lapis?",
+        "Bisa diambil jam 5 sore?" to "Can I pick it up at 5pm?",
+        "Kulit buahnya masih ada? Mau buat komposter RW." to "Are the fruit peels still available? They're for our neighbourhood composter.",
+        "Masih ada kak, sekitar 3 kg. Silakan diambil." to "Yes, about 3 kg. Come and pick it up.",
+        "Siap, makasih kak!" to "Great, thanks!",
     )
 }
 

@@ -67,7 +67,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.sisaguna.android.data.model.ChatMessage
 import com.sisaguna.android.data.model.Listing
-import com.sisaguna.android.data.model.Merchant
+import com.sisaguna.android.ui.domain.FruitAvatar
+import com.sisaguna.android.ui.domain.FruitAvatarBadge
 import com.sisaguna.android.ui.components.SgEaseOut
 import com.sisaguna.android.ui.components.pressable
 import com.sisaguna.android.ui.domain.ListingImage
@@ -88,7 +89,6 @@ import java.time.ZoneId
  * whether the food is still there, when it was cooked and whether it's halal. Those questions
  * sit as one-tap chips above the keyboard; the item being asked about is pinned at the top.
  */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
@@ -98,11 +98,92 @@ fun ChatScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val merchant = state.merchant
+    ChatConversation(
+        state = state,
+        mine = { it.fromBuyer },
+        title = merchant?.name.orEmpty(),
+        idleStatus = l("Biasanya membalas dalam 5 menit", "Usually replies within 5 min"),
+        avatar = {
+            AsyncImage(
+                merchant?.photos?.firstOrNull() ?: merchant?.bannerUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(SgColor.Mint),
+            )
+        },
+        trailing = {
+            IconButton(onClick = { merchant?.let { onOpenStore(it.id) } }) {
+                Icon(Icons.Rounded.Storefront, contentDescription = l("Lihat toko", "Visit store"), tint = SgColor.Brand600)
+            }
+        },
+        contextLabel = l("Kamu bertanya tentang", "You're asking about"),
+        emptyTitle = l("Tanya langsung ke ${merchant?.name.orEmpty()}", "Ask ${merchant?.name.orEmpty()} directly"),
+        emptyBody = l(
+            "Cek stok, jam masak, atau halal sebelum pesan. Pilih pertanyaan cepat di bawah.",
+            "Check stock, cooking time or halal status before ordering. Tap a quick question below.",
+        ),
+        quick = QuickQuestion.entries.map { it.text },
+        onBack = onBack,
+        onOpenListing = onOpenListing,
+        onDraftChange = viewModel::onDraftChange,
+        onSend = viewModel::send,
+    )
+}
+
+/**
+ * Partner mode: the user's store answering a buyer. Same conversation as the buyer sees, from
+ * the other side: the store's replies are the green bubbles on the right, and the chips are
+ * short answers a busy seller can send between customers.
+ */
+@Composable
+fun SellerChatScreen(
+    onBack: () -> Unit,
+    onOpenListing: (String) -> Unit,
+    viewModel: SellerChatViewModel = hiltViewModel(),
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    ChatConversation(
+        state = state,
+        mine = { !it.fromBuyer },
+        title = viewModel.buyer,
+        idleStatus = l("Pembeli", "Buyer"),
+        avatar = { FruitAvatarBadge(FruitAvatar.defaultFor(viewModel.buyer), 40.dp) },
+        trailing = {},
+        contextLabel = l("Ditanyakan pembeli", "Buyer is asking about"),
+        emptyTitle = l("Belum ada pesan", "No messages yet"),
+        emptyBody = l("Pesan dari pembeli muncul di sini.", "Messages from this buyer show up here."),
+        quick = SellerQuickReply.entries.map { it.text },
+        onBack = onBack,
+        onOpenListing = onOpenListing,
+        onDraftChange = viewModel::onDraftChange,
+        onSend = viewModel::send,
+    )
+}
+
+/** Shared body for both sides; [mine] decides which bubbles go right in brand green. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ChatConversation(
+    state: ChatUiState,
+    mine: (ChatMessage) -> Boolean,
+    title: String,
+    idleStatus: String,
+    avatar: @Composable () -> Unit,
+    trailing: @Composable () -> Unit,
+    contextLabel: String,
+    emptyTitle: String,
+    emptyBody: String,
+    quick: List<String>,
+    onBack: () -> Unit,
+    onOpenListing: (String) -> Unit,
+    onDraftChange: (String) -> Unit,
+    onSend: (String) -> Unit,
+) {
     val listState = rememberLazyListState()
     val openedAt = remember { Instant.now() }
 
     // Keep the newest message (or the typing bubble) in view.
-    val rows = state.messages.size + if (state.storeTyping) 1 else 0
+    val rows = state.messages.size + if (state.otherTyping) 1 else 0
     LaunchedEffect(rows) {
         if (rows > 0) listState.animateScrollToItem(rows - 1)
     }
@@ -114,12 +195,12 @@ fun ChatScreen(
     }
 
     Column(Modifier.fillMaxSize().background(SgColor.Page)) {
-        ChatTopBar(merchant, typing = state.storeTyping, onBack = onBack, onOpenStore = { merchant?.let { onOpenStore(it.id) } })
-        state.listing?.let { ListingContext(it, onClick = { onOpenListing(it.id) }) }
+        ChatTopBar(title, typing = state.otherTyping, idleStatus = idleStatus, avatar = avatar, trailing = trailing, onBack = onBack)
+        state.listing?.let { ListingContext(it, contextLabel, onClick = { onOpenListing(it.id) }) }
 
         Box(Modifier.weight(1f).fillMaxWidth()) {
-            if (state.messages.isEmpty() && !state.storeTyping) {
-                EmptyChat(merchant?.name.orEmpty(), Modifier.align(Alignment.Center))
+            if (state.messages.isEmpty() && !state.otherTyping) {
+                EmptyChat(emptyTitle, emptyBody, Modifier.align(Alignment.Center))
             }
             LazyColumn(
                 state = listState,
@@ -130,24 +211,37 @@ fun ChatScreen(
                 itemsIndexed(state.messages, key = { _, m -> m.id }) { index, message ->
                     val prev = state.messages.getOrNull(index - 1)
                     if (prev == null || !sameDay(prev.sentAt, message.sentAt)) DayLabel(message.sentAt)
-                    Bubble(message, isNew = message.sentAt.isAfter(openedAt), groupedWithPrevious = prev?.fromMe == message.fromMe)
+                    Bubble(
+                        message,
+                        mine = mine(message),
+                        isNew = message.sentAt.isAfter(openedAt),
+                        groupedWithPrevious = prev != null && mine(prev) == mine(message),
+                    )
                 }
-                if (state.storeTyping) item(key = "typing") { TypingBubble() }
+                if (state.otherTyping) item(key = "typing") { TypingBubble() }
             }
         }
 
         Composer(
             draft = state.draft,
             canSend = state.canSend,
-            onDraftChange = viewModel::onDraftChange,
-            onSend = { viewModel.send() },
-            onQuick = { viewModel.send(it) },
+            quick = quick,
+            onDraftChange = onDraftChange,
+            onSend = { onSend(state.draft) },
+            onQuick = onSend,
         )
     }
 }
 
 @Composable
-private fun ChatTopBar(merchant: Merchant?, typing: Boolean, onBack: () -> Unit, onOpenStore: () -> Unit) {
+private fun ChatTopBar(
+    title: String,
+    typing: Boolean,
+    idleStatus: String,
+    avatar: @Composable () -> Unit,
+    trailing: @Composable () -> Unit,
+    onBack: () -> Unit,
+) {
     Column(Modifier.background(SgColor.BaseWhite)) {
         Row(
             Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
@@ -156,32 +250,25 @@ private fun ChatTopBar(merchant: Merchant?, typing: Boolean, onBack: () -> Unit,
             IconButton(onClick = onBack) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = l("Kembali", "Back"), tint = SgColor.Ink)
             }
-            AsyncImage(
-                merchant?.photos?.firstOrNull() ?: merchant?.bannerUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(SgColor.Mint),
-            )
+            avatar()
             Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(merchant?.name.orEmpty(), style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                // Status line swaps to "typing" so the buyer knows an answer is coming.
+                Text(title, style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Status line swaps to "typing" so the reader knows an answer is coming.
                 Text(
-                    if (typing) l("sedang mengetik…", "typing…") else l("Biasanya membalas dalam 5 menit", "Usually replies within 5 min"),
+                    if (typing) l("sedang mengetik…", "typing…") else idleStatus,
                     style = SgTextStyle.Caption,
                     color = if (typing) SgColor.Brand600 else SgColor.InkMuted,
                     maxLines = 1,
                 )
             }
-            IconButton(onClick = onOpenStore) {
-                Icon(Icons.Rounded.Storefront, contentDescription = l("Lihat toko", "Visit store"), tint = SgColor.Brand600)
-            }
+            trailing()
         }
         HorizontalDivider(color = SgColor.Hairline)
     }
 }
 
 @Composable
-private fun ListingContext(listing: Listing, onClick: () -> Unit) {
+private fun ListingContext(listing: Listing, label: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -192,7 +279,7 @@ private fun ListingContext(listing: Listing, onClick: () -> Unit) {
     ) {
         ListingImage(listing.imageUrl, listing.tier, null, Modifier.size(44.dp).clip(RoundedCornerShape(SgRadius.Thumb)))
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
-            Text(l("Kamu bertanya tentang", "You're asking about"), style = SgTextStyle.Caption)
+            Text(label, style = SgTextStyle.Caption)
             Text(listing.title, style = SgTextStyle.Label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
         Text(formatPrice(listing.unitPrice), style = SgTextStyle.Label, color = SgColor.Brand700)
@@ -201,18 +288,14 @@ private fun ListingContext(listing: Listing, onClick: () -> Unit) {
 }
 
 @Composable
-private fun EmptyChat(storeName: String, modifier: Modifier = Modifier) {
+private fun EmptyChat(title: String, body: String, modifier: Modifier = Modifier) {
     Column(modifier.padding(horizontal = 40.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.size(56.dp).background(SgColor.Mint, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(26.dp))
         }
+        Text(title, style = SgTextStyle.Title, modifier = Modifier.padding(top = SgSpacing.Md))
         Text(
-            l("Tanya langsung ke $storeName", "Ask $storeName directly"),
-            style = SgTextStyle.Title,
-            modifier = Modifier.padding(top = SgSpacing.Md),
-        )
-        Text(
-            l("Cek stok, jam masak, atau halal sebelum pesan. Pilih pertanyaan cepat di bawah.", "Check stock, cooking time or halal status before ordering. Tap a quick question below."),
+            body,
             style = SgTextStyle.Body,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp),
@@ -237,10 +320,9 @@ private fun DayLabel(at: Instant) {
  * and fades in; history loads still.
  */
 @Composable
-private fun Bubble(message: ChatMessage, isNew: Boolean, groupedWithPrevious: Boolean) {
+private fun Bubble(message: ChatMessage, mine: Boolean, isNew: Boolean, groupedWithPrevious: Boolean) {
     val enter = remember { Animatable(if (isNew) 0f else 1f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, tween(220, easing = SgEaseOut)) }
-    val mine = message.fromMe
     val shape = if (mine) {
         RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp, bottomStart = 18.dp, bottomEnd = 6.dp)
     } else {
@@ -310,6 +392,7 @@ private fun TypingBubble() {
 private fun Composer(
     draft: String,
     canSend: Boolean,
+    quick: List<String>,
     onDraftChange: (String) -> Unit,
     onSend: () -> Unit,
     onQuick: (String) -> Unit,
@@ -327,15 +410,15 @@ private fun Composer(
             contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            items(QuickQuestion.entries) { q ->
+            items(quick) { q ->
                 Text(
-                    q.text,
+                    q,
                     style = SgTextStyle.Label.copy(fontSize = 13.sp),
                     color = SgColor.Brand700,
                     modifier = Modifier
                         .clip(RoundedCornerShape(SgRadius.Pill))
                         .background(SgColor.Mint)
-                        .pressable({ onQuick(q.text) }, pressedScale = 0.95f)
+                        .pressable({ onQuick(q) }, pressedScale = 0.95f)
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }

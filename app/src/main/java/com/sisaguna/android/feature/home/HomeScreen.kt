@@ -126,6 +126,8 @@ fun HomeScreen(
     onUploadClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     showNotificationBadge: Boolean = false,
+    onSellerChatsClick: () -> Unit = {},
+    sellerUnreadChats: Int = 0,
     addressLabel: String = "Rumah",
     onAddressClick: () -> Unit = {},
     onCartClick: () -> Unit = {},
@@ -166,6 +168,8 @@ fun HomeScreen(
                 unreadNotifications = if (showNotificationBadge) unread else 0,
                 onMyCatalogClick = onMyCatalogClick,
                 onListingClick = onListingClick,
+                onChatsClick = onSellerChatsClick,
+                unreadChats = sellerUnreadChats,
             )
         } else HomeScreenContent(
             mode = m,
@@ -658,23 +662,7 @@ internal fun NotificationBell(unread: Int, onClick: () -> Unit) {
                 .align(Alignment.TopEnd)
                 .offset(x = 4.dp, y = (-2).dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .defaultMinSize(minWidth = 18.dp, minHeight = 18.dp)
-                    .border(2.dp, SgColor.Page, CircleShape)
-                    .padding(2.dp)
-                    .background(SgColor.RedStatus, CircleShape)
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = if (unread > 9) "9+" else unread.toString(),
-                    color = SgColor.OnBrand,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 14.sp,
-                )
-            }
+            com.sisaguna.android.ui.components.CountBadge(unread, color = SgColor.RedStatus, ring = SgColor.Page)
         }
     }
 }

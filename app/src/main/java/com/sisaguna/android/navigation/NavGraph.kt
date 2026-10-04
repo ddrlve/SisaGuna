@@ -225,7 +225,14 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Home.route) {
+                val sellerChats: com.sisaguna.android.feature.chat.SellerInboxViewModel = hiltViewModel()
+                val sellerUnread by sellerChats.unreadTotal.collectAsStateWithLifecycle()
                 HomeScreen(
+                    onSellerChatsClick = {
+                        if (authStatus == AuthStatus.GUEST) showGuestGate = true
+                        else navController.navigate(Screen.SellerChatInbox.route) { launchSingleTop = true }
+                    },
+                    sellerUnreadChats = sellerUnread,
                     onListingClick = { openListing(it.id) },
                     onCategoryClick = { tier -> navController.navigate(Screen.CategoryList.routeFor(tier)) },
                     onUploadClick = { openUpload() },
@@ -307,6 +314,21 @@ fun SgNavGraph(navController: NavHostController) {
                 com.sisaguna.android.feature.chat.ChatInboxScreen(
                     onBack = { navController.popBackStack() },
                     onOpenChat = { openChat(it) },
+                )
+            }
+            composable(Screen.SellerChatInbox.route) {
+                com.sisaguna.android.feature.chat.SellerChatInboxScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenChat = { buyer -> navController.navigate(Screen.SellerChat.routeFor(buyer)) { launchSingleTop = true } },
+                )
+            }
+            composable(
+                route = Screen.SellerChat.route,
+                arguments = listOf(navArgument(Screen.SellerChat.ARG_BUYER) { type = NavType.StringType }),
+            ) {
+                com.sisaguna.android.feature.chat.SellerChatScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenListing = ::openListing,
                 )
             }
             composable(Screen.Checkout.route) {

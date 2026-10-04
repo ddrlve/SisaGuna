@@ -25,7 +25,7 @@ Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung,
 
 ## Coba Aplikasinya
 
-**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases), lalu unduh file `SisaGuna-v0.3.0-debug.apk`.
+**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases), lalu unduh file `SisaGuna-v0.4.0-debug.apk`.
 
 **Cara install di HP Android (minimal Android 8.0):**
 
@@ -72,8 +72,9 @@ Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung,
 | Ringkasan pesanan | Ambil sendiri atau kurir (GoSend, GrabExpress, SPX Instant, Lalamove) dengan pilihan Prioritas, Standar, atau Hemat; alamat tujuan bisa diubah; tambah menu lain dari toko yang sama; voucher; rincian biaya |
 | Pembayaran | QRIS, GoPay, OVO, DANA (simulasi) |
 | Aktivitas | Status pesanan, kode pickup, rating, dan komplain |
+| Chat ke toko | Tanya stok, jam masak, halal, atau pengantaran sebelum pesan, dengan pertanyaan cepat sekali ketuk |
 | Tersimpan dan notifikasi | Toko favorit, notifikasi pesanan dan promo, pengaturan per kategori |
-| Profil | Edit profil, alamat, riwayat, metode bayar, bantuan, privasi |
+| Profil | Avatar buah atau foto sendiri, level penyelamat dan dampak, alamat, riwayat, metode bayar, bantuan, privasi |
 
 ### Untuk mitra (penjual)
 
@@ -82,6 +83,7 @@ Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung,
 | Dashboard | Pendapatan bersih hari ini (sudah dipotong komisi), pesanan masuk, listing aktif |
 | Posting makanan | Siap santap (per porsi) atau pakan dan kompos (per gram/kg), dengan checklist kelayakan |
 | Konfirmasi pickup | Cocokkan kode dari pembeli sebelum menyerahkan pesanan |
+| Chat pembeli | Balas pertanyaan pembeli, dengan balasan cepat untuk penjual yang sedang sibuk |
 | Notifikasi | Pemberitahuan pesanan dan pengambilan |
 
 ### Umum
@@ -106,14 +108,15 @@ Biaya platform dibagi antara pembeli dan mitra:
 
 ## Status Pengerjaan
 
-**Versi saat ini: 0.3.0 (demo)**
+**Versi saat ini: 0.4.0 (demo)**
 
 | Bagian | Status |
 |---|---|
 | Alur pembeli end to end | Selesai, memakai data contoh |
 | Dashboard dan posting mitra | Selesai, memakai data contoh |
 | Bahasa Inggris dan mode gelap | Selesai |
-| Unit test | 97 test, semua lulus |
+| Chat pembeli dan mitra | Selesai, balasan toko masih otomatis dari data contoh |
+| Unit test | 106 test, semua lulus |
 | Integrasi backend (Supabase) | Belum, dikerjakan di repo backend |
 | Pembayaran asli (payment gateway) dan API kurir | Belum |
 | Panel admin | Belum |

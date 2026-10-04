@@ -94,3 +94,13 @@ object ChatReplies {
 
     private fun String.hasAny(vararg words: String) = words.any { it in this }
 }
+
+/** Partner side: short answers a seller can send without typing, mid-service. */
+enum class SellerQuickReply(val id: String, val en: String) {
+    AVAILABLE("Masih ada kak, silakan checkout", "Still available, go ahead and check out"),
+    READY("Sudah siap diambil", "Ready for pickup"),
+    COOKED("Dimasak tadi pagi, masih aman", "Cooked this morning, still safe"),
+    SOLD_OUT("Maaf, sudah habis", "Sorry, it's sold out");
+
+    val text: String get() = l(id, en)
+}

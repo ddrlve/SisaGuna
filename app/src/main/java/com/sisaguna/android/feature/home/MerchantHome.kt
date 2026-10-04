@@ -1,4 +1,7 @@
 package com.sisaguna.android.feature.home
+import com.sisaguna.android.ui.components.CountBadge
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
+import androidx.compose.foundation.layout.offset
 
 import com.sisaguna.android.data.model.AppFees
 
@@ -118,6 +121,8 @@ fun MerchantHome(
     onNotificationsClick: () -> Unit,
     unreadNotifications: Int,
     onMyCatalogClick: () -> Unit,
+    onChatsClick: () -> Unit = {},
+    unreadChats: Int = 0,
     onListingClick: (Listing) -> Unit,
     viewModel: MerchantHomeViewModel = hiltViewModel(),
 ) {
@@ -148,6 +153,9 @@ fun MerchantHome(
                 }
                 Spacer(Modifier.size(8.dp))
                 ModeSwitch(mode = UserMode.MERCHANT, onChange = onModeChange)
+                Spacer(Modifier.size(8.dp))
+                // Buyer questions land here; unanswered ones show as a count.
+                ChatButton(unread = unreadChats, onClick = onChatsClick)
                 Spacer(Modifier.size(8.dp))
                 // Partners get order, pickup and payout alerts too, same bell as buyer Home.
                 NotificationBell(unread = unreadNotifications, onClick = onNotificationsClick)
@@ -251,6 +259,31 @@ fun MerchantHome(
                 }
                 Text(formatPrice(listing.unitPrice), style = SgTextStyle.Label)
             }
+        }
+    }
+}
+
+@Composable
+private fun ChatButton(unread: Int, onClick: () -> Unit) {
+    Box(Modifier.size(40.dp)) {
+        Box(
+            Modifier.fillMaxSize().clip(CircleShape).background(SgColor.BaseWhite).pressable(onClick, pressedScale = 0.92f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Rounded.ChatBubbleOutline,
+                contentDescription = if (unread > 0) l("Chat pembeli, $unread belum dibaca", "Buyer chats, $unread unread") else l("Chat pembeli", "Buyer chats"),
+                tint = SgColor.Ink,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        if (unread > 0) {
+            // Same placement as the bell's badge next to it, so the two line up.
+            CountBadge(
+                unread,
+                ring = SgColor.Page,
+                modifier = Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-2).dp),
+            )
         }
     }
 }

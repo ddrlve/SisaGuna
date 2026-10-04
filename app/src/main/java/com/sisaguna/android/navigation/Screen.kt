@@ -57,6 +57,15 @@ sealed class Screen(val route: String) {
     /** Every conversation with stores, opened from Activity. */
     data object ChatInbox : Screen("chats")
 
+    /** Partner mode: buyers who wrote to the user's store, opened from the dashboard. */
+    data object SellerChatInbox : Screen("seller/chats")
+
+    /** Partner mode: the store answering one buyer. */
+    data object SellerChat : Screen("seller/chat/{buyer}") {
+        const val ARG_BUYER = "buyer"
+        fun routeFor(buyer: String) = "seller/chat/" + android.net.Uri.encode(buyer)
+    }
+
     data object OrderDetail : Screen("order/{orderId}?justPlaced={justPlaced}") {
         const val ARG_ID = "orderId"
         const val ARG_JUST_PLACED = "justPlaced"
