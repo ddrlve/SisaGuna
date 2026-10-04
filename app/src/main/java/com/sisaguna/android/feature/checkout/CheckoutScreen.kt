@@ -9,6 +9,19 @@ import androidx.compose.material.icons.rounded.DeliveryDining
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Storefront
 import androidx.compose.ui.draw.alpha
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
+import com.sisaguna.android.data.model.AppFees
+import com.sisaguna.android.data.model.Listing
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.sisaguna.android.data.model.Courier
@@ -56,7 +69,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -118,6 +131,7 @@ fun CheckoutScreen(
     onBack: () -> Unit,
     onExplore: () -> Unit,
     onPlaced: (String) -> Unit,
+    onChangeAddress: () -> Unit = {},
     viewModel: CheckoutViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -139,8 +153,8 @@ fun CheckoutScreen(
         containerColor = SgColor.Page,
         // Renamed from "Keranjang" after user testing: by the time people land here they're
         // reviewing an order, not browsing a basket.
-        topBar = { SgTopBar(title = "Order Summary", onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbar) },
+        topBar = { SgTopBar(title = l("Ringkasan Pesanan", "Order Summary"), onBack = onBack) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             if (!state.isEmpty) {
@@ -152,12 +166,12 @@ fun CheckoutScreen(
                         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Lg),
                     ) {
                         Column {
-                            Text(if (state.selectedQuote != null) l("Total + ongkir", "Total incl. delivery") else "Total", style = SgTextStyle.Caption)
+                            Text(l("Total bayar", "Total to pay"), style = SgTextStyle.Caption)
                             Text(formatPrice(state.total), style = SgTextStyle.Title, color = SgColor.Brand700)
                         }
                         val cta = when {
-                            state.effectivePayment == PaymentKind.CASH -> "Pesan sekarang"
-                            else -> "Bayar dengan ${paymentLabel(state.effectivePayment)}"
+                            state.effectivePayment == PaymentKind.CASH -> l("Pesan sekarang", "Place order")
+                            else -> l("Bayar dengan ", "Pay with ") + paymentLabel(state.effectivePayment)
                         }
                         SgButton(text = cta, onClick = viewModel::pay, modifier = Modifier.weight(1f))
                     }
@@ -186,6 +200,7 @@ fun CheckoutScreen(
                     onFulfillment = viewModel::setFulfillment,
                     onCourier = viewModel::setCourier,
                     onSpeed = viewModel::setSpeed,
+                    onChangeAddress = onChangeAddress,
                 )
             }
             item { SectionTitle(l("Pesanan dari ", "Items from ") + state.merchant?.name.orEmpty()) }
@@ -217,12 +232,21 @@ fun CheckoutScreen(
                     }
                 }
             }
+            if (state.moreFromStore.isNotEmpty()) {
+                item(key = "more") {
+                    AddMoreRail(
+                        storeName = state.merchant?.name.orEmpty(),
+                        listings = state.moreFromStore,
+                        onAdd = viewModel::addMore,
+                    )
+                }
+            }
             item {
-                SectionTitle("Catatan untuk penyedia")
+                SectionTitle(l("Catatan untuk toko", "Note for the store"))
                 OutlinedTextField(
                     value = state.note,
                     onValueChange = viewModel::onNoteChange,
-                    placeholder = { Text("Contoh: saya ambil jam 6 sore", style = SgTextStyle.Body) },
+                    placeholder = { Text(l("Contoh: saya ambil jam 6 sore", "E.g. I'll pick it up at 6pm"), style = SgTextStyle.Body) },
                     textStyle = SgTextStyle.TextSmRegular.copy(color = SgColor.Ink),
                     shape = RoundedCornerShape(SgRadius.Thumb),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -236,7 +260,7 @@ fun CheckoutScreen(
                 )
             }
             if (state.total > 0) {
-                item { SectionTitle("Metode pembayaran") }
+                item { SectionTitle(l("Metode pembayaran", "Payment method")) }
                 items(state.methods, key = { it.id }) { method ->
                     PaymentOption(method, selected = state.selected == method.kind, onSelect = { viewModel.select(method.kind) })
                 }
@@ -248,11 +272,11 @@ fun CheckoutScreen(
                 }
             }
             item {
-                SectionTitle("Ringkasan")
+                SectionTitle(l("Rincian pembayaran", "Payment details"))
                 Card {
                     Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-                        SummaryRow("Harga normal (${state.itemCount} item)", formatRupiah(state.itemsTotal + state.savings))
-                        SummaryRow("Diskon surplus", "−" + formatRupiah(state.savings - state.voucherDiscount), valueColor = SgColor.Brand600)
+                        SummaryRow(l("Harga normal (${state.itemCount} item)", "Regular price (${state.itemCount} items)"), formatRupiah(state.itemsTotal + state.savings))
+                        SummaryRow(l("Diskon dari toko", "Store discount"), "−" + formatRupiah(state.savings - state.voucherDiscount), valueColor = SgColor.Brand600)
                         if (state.voucherDiscount > 0) {
                             SummaryRow("Voucher ${state.voucher?.code.orEmpty()}", "−" + formatRupiah(state.voucherDiscount), valueColor = SgColor.Brand600)
                         }
@@ -260,8 +284,9 @@ fun CheckoutScreen(
                             SummaryRow(l("Ongkir ", "Delivery ") + "${q.courier.label} · ${l(q.speed.label, q.speed.labelEn)}", formatRupiah(q.fee))
                             if (q.discount > 0) SummaryRow(l("Diskon ongkir", "Delivery discount"), "−" + formatRupiah(q.discount), valueColor = SgColor.Brand600)
                         }
+                        if (state.serviceFee > 0) ServiceFeeRow(state.serviceFee)
                         HorizontalDivider(color = SgColor.Hairline)
-                        SummaryRow("Total bayar", formatPrice(state.total), bold = true)
+                        SummaryRow(l("Total bayar", "Total to pay"), formatPrice(state.total), bold = true)
                     }
                 }
             }
@@ -305,6 +330,103 @@ private fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit)
 @Composable
 private fun SectionTitle(text: String) {
     Text(text, style = SgTextStyle.Title, modifier = Modifier.padding(top = SgSpacing.Md, bottom = SgSpacing.Xs))
+}
+
+/** New fee, so it explains itself on tap instead of feeling hidden. */
+@Composable
+private fun ServiceFeeRow(fee: Int) {
+    var open by remember { mutableStateOf(false) }
+    Column {
+        Row(
+            Modifier.fillMaxWidth().pressable({ open = !open }, pressedScale = 0.99f),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(l("Biaya layanan", "Service fee"), style = SgTextStyle.Body)
+            Icon(
+                Icons.Rounded.Info,
+                contentDescription = l("Tentang biaya layanan", "About the service fee"),
+                tint = SgColor.InkMuted,
+                modifier = Modifier.padding(start = 4.dp).size(14.dp),
+            )
+            Box(Modifier.weight(1f))
+            Text(formatRupiah(fee), style = SgTextStyle.Label)
+        }
+        AnimatedVisibility(
+            visible = open,
+            enter = fadeIn(tween(160, easing = SgEaseOut)) + expandVertically(tween(200, easing = SgEaseOut)),
+            exit = fadeOut(tween(100)) + shrinkVertically(tween(160, easing = SgEaseOut)),
+        ) {
+            Text(
+                l(
+                    "Rp 1.000-3.000 per pesanan, sesuai total belanja, untuk menjalankan SisaGuna. Toko juga menanggung ${AppFees.MERCHANT_COMMISSION_PERCENT}% dari penjualan, jadi biayanya dibagi.",
+                    "Rp 1,000-3,000 per order, based on your basket, to keep SisaGuna running. Stores also pay ${AppFees.MERCHANT_COMMISSION_PERCENT}% of each sale, so the cost is shared.",
+                ),
+                style = SgTextStyle.Caption,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+/** "Mau tambah lagi?": other food from the same store; one tap adds a portion to this order. */
+@Composable
+private fun AddMoreRail(storeName: String, listings: List<Listing>, onAdd: (Listing) -> Unit) {
+    Column {
+        SectionTitle(l("Mau tambah lagi?", "Want to add more?"))
+        Text(
+            l("Masih ada dari $storeName, sekalian ambil.", "More from $storeName, same order."),
+            style = SgTextStyle.Caption,
+            modifier = Modifier.padding(bottom = SgSpacing.Sm),
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
+            items(listings, key = { it.id }) { listing ->
+                Column(
+                    Modifier
+                        .animateItem()
+                        .width(140.dp)
+                        .clip(RoundedCornerShape(SgRadius.Tile))
+                        .background(SgColor.BaseWhite)
+                        .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile)),
+                ) {
+                    ListingImage(
+                        imageUrl = listing.imageUrl,
+                        tier = listing.tier,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f),
+                    )
+                    Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(listing.title, style = SgTextStyle.Label.copy(fontSize = 13.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(formatPrice(listing.unitPrice), style = SgTextStyle.Label.copy(fontSize = 13.sp), color = SgColor.Brand700)
+                                if (listing.unitOriginalPrice > listing.unitPrice) {
+                                    Text(
+                                        formatRupiah(listing.unitOriginalPrice),
+                                        style = SgTextStyle.Caption.copy(fontSize = 11.sp, textDecoration = TextDecoration.LineThrough),
+                                    )
+                                }
+                            }
+                            Box(
+                                Modifier
+                                    .size(32.dp)
+                                    .clip(CircleShape)
+                                    .background(SgColor.Brand500)
+                                    .pressable({ onAdd(listing) }, pressedScale = 0.9f),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    Icons.Rounded.Add,
+                                    contentDescription = l("Tambah ", "Add ") + listing.title,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -419,15 +541,15 @@ private fun VoucherRow(state: CheckoutUiState, onClick: () -> Unit) {
             when {
                 v == null -> {
                     Text("Pakai voucher", style = SgTextStyle.Label)
-                    Text("${state.vouchers.size} voucher tersedia", style = SgTextStyle.Caption)
+                    Text(l("${state.vouchers.size} voucher tersedia", "${state.vouchers.size} vouchers available"), style = SgTextStyle.Caption)
                 }
                 state.voucherDiscount > 0 -> {
                     Text(v.title, style = SgTextStyle.Label)
-                    Text("Hemat ${formatRupiah(state.voucherDiscount)}", style = SgTextStyle.Caption, color = SgColor.Brand700)
+                    Text(l("Hemat ", "Save ") + formatRupiah(state.voucherDiscount), style = SgTextStyle.Caption, color = SgColor.Brand700)
                 }
                 else -> {
                     Text(v.title, style = SgTextStyle.Label)
-                    Text("Belum memenuhi ${v.description.lowercase()}", style = SgTextStyle.Caption, color = SgColor.RedStatus)
+                    Text(l("Belum memenuhi ${v.description.lowercase()}", "Not eligible yet: ${v.description.lowercase()}"), style = SgTextStyle.Caption, color = SgColor.RedStatus)
                 }
             }
         }
@@ -457,7 +579,7 @@ private fun VoucherSheet(state: CheckoutUiState, onSelect: (String?) -> Unit, on
                 VoucherTicket(
                     title = v.title,
                     subtitle = v.description,
-                    trailing = if (discount > 0) "Hemat ${formatRupiah(discount)}" else "Belum memenuhi syarat",
+                    trailing = if (discount > 0) l("Hemat ", "Save ") + formatRupiah(discount) else l("Belum memenuhi syarat", "Not eligible yet"),
                     trailingColor = if (discount > 0) SgColor.Brand700 else SgColor.InkMuted,
                     selected = selected,
                     onClick = { onSelect(if (selected) null else v.code) },
@@ -482,6 +604,7 @@ private fun FulfillmentSection(
     onFulfillment: (Fulfillment) -> Unit,
     onCourier: (Courier) -> Unit,
     onSpeed: (DeliverySpeed) -> Unit,
+    onChangeAddress: () -> Unit,
 ) {
     val delivery = state.delivery.fulfillment == Fulfillment.DELIVERY && state.deliveryAvailable
     Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
@@ -544,8 +667,25 @@ private fun FulfillmentSection(
                             }
                             Column(Modifier.weight(1f)) {
                                 Text(l("Kirim ke ", "Deliver to ") + (state.address?.label ?: l("lokasi kamu", "your location")), style = SgTextStyle.Label)
-                                Text(state.address?.fullAddress.orEmpty(), style = SgTextStyle.Caption, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                Text(
+                                    state.address?.fullAddress?.ifBlank { null } ?: l("Belum ada alamat. Ketuk Ubah untuk memilih.", "No address yet. Tap Change to pick one."),
+                                    style = SgTextStyle.Caption,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
                                 Text("%.1f km ".format(state.distanceKm) + l("dari toko", "from the store"), style = SgTextStyle.Caption)
+                            }
+                            Row(
+                                Modifier
+                                    .clip(RoundedCornerShape(SgRadius.Pill))
+                                    .border(1.dp, SgColor.Brand500, RoundedCornerShape(SgRadius.Pill))
+                                    .pressable(onChangeAddress, pressedScale = 0.95f)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(Icons.Rounded.Edit, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(14.dp))
+                                Text(l("Ubah", "Change"), style = SgTextStyle.Label.copy(fontSize = 13.sp), color = SgColor.Brand600)
                             }
                         }
                     }
@@ -554,7 +694,7 @@ private fun FulfillmentSection(
                             SpeedCard(q, selected = q.speed == state.delivery.speed, onClick = { onSpeed(q.speed) }, modifier = Modifier.weight(1f))
                         }
                     }
-                    Text(l(state.delivery.speed.blurb, state.delivery.speed.blurb), style = SgTextStyle.Caption)
+                    Text(l(state.delivery.speed.blurb, state.delivery.speed.blurbEn), style = SgTextStyle.Caption)
                     state.quotes.forEach { q ->
                         CourierRow(q, selected = q.courier == state.delivery.courier, onClick = { onCourier(q.courier) })
                     }
@@ -625,13 +765,22 @@ private fun CourierRow(q: DeliveryQuote, selected: Boolean, onClick: () -> Unit)
             .padding(horizontal = SgSpacing.Md, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(36.dp).background(Color(q.courier.brandColor), RoundedCornerShape(10.dp)), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.DeliveryDining, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+        // Fixed white tile so the brand marks read the same in dark mode.
+        Box(
+            Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color.White)
+                .border(1.dp, Color(q.courier.brandColor).copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+                .padding(5.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(model = q.courier.logoUrl, contentDescription = q.courier.app, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
         }
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(q.courier.label, style = SgTextStyle.Label)
             Text(
-                l("Tiba ", "Arrives in ") + "${q.etaMinMinutes}-${q.etaMaxMinutes} " + l("mnt", "min") + (q.promoLabel?.let { " · $it" } ?: ""),
+                l("Tiba ", "Arrives in ") + "${q.etaMinMinutes}-${q.etaMaxMinutes} " + l("mnt", "min") + (q.promoLabel?.let { " · " + l(it, q.promoLabelEn ?: it) } ?: ""),
                 style = SgTextStyle.Caption,
                 color = if (q.promoLabel != null) SgColor.Brand700 else SgColor.InkMuted,
                 maxLines = 1,

@@ -1,6 +1,7 @@
 package com.sisaguna.android.feature.checkout
 
 import com.sisaguna.android.data.model.Address
+import com.sisaguna.android.data.model.AppFees
 import com.sisaguna.android.data.model.Courier
 import com.sisaguna.android.data.model.DeliveryPricing
 import com.sisaguna.android.data.model.DeliveryQuote
@@ -67,6 +68,8 @@ data class CheckoutUiState(
     val delivery: DeliveryChoice = DeliveryChoice(),
     val address: Address? = null,
     val now: Instant = Instant.now(),
+    /** Other listings from the same store that aren't in the order yet ("Mau tambah lagi?"). */
+    val moreFromStore: List<Listing> = emptyList(),
 ) {
     val isEmpty: Boolean get() = lines.isEmpty()
     val subtotal: Int get() = lines.sumOf { it.total }
@@ -91,7 +94,8 @@ data class CheckoutUiState(
         } else null
 
     val deliveryFee: Int get() = selectedQuote?.payable ?: 0
-    val total: Int get() = itemsTotal + deliveryFee
+    val serviceFee: Int get() = AppFees.buyerServiceFee(itemsTotal)
+    val total: Int get() = itemsTotal + deliveryFee + serviceFee
 
     /** Pickup: arrive within the grace window, but never after the listing closes. */
     val pickupBy: Instant?
@@ -105,6 +109,13 @@ data class CheckoutUiState(
     val effectivePayment: PaymentKind get() = if (total == 0) PaymentKind.CASH else selected
     val earliestPickupEnd get() = lines.minOfOrNull { it.listing.pickupEnd }
 }
+
+private data class CheckoutBase(
+    val merchant: Merchant?,
+    val lines: List<CheckoutLine>,
+    val methods: List<PaymentMethod>,
+    val more: List<Listing>,
+)
 
 @HiltViewModel
 class CheckoutViewModel @Inject constructor(
@@ -134,10 +145,14 @@ class CheckoutViewModel @Inject constructor(
 
     private val base = combine(cartRepository.cart, listingRepository.listings, paymentRepository.methods) { cart, all, methods ->
         val byId = all.associateBy { it.id }
-        Triple(
-            cart.merchantId?.let { listingRepository.merchant(it) },
-            cart.quantities.mapNotNull { (id, q) -> byId[id]?.let { CheckoutLine(it, q) } },
-            methods,
+        val now = Instant.now()
+        CheckoutBase(
+            merchant = cart.merchantId?.let { listingRepository.merchant(it) },
+            lines = cart.quantities.mapNotNull { (id, q) -> byId[id]?.let { CheckoutLine(it, q) } },
+            methods = methods,
+            more = all.filter {
+                it.merchantId == cart.merchantId && it.id !in cart.quantities && it.stock > 0 && it.pickupEnd.isAfter(now)
+            },
         )
     }
 
@@ -146,8 +161,11 @@ class CheckoutViewModel @Inject constructor(
         mine to mine.firstOrNull { it.code == code }
     }
 
-    private val core = combine(base, selected, note, step, vouchersFlow) { (merchant, lines, methods), sel, n, st, (mine, v) ->
-        CheckoutUiState(merchant, lines, methods, if (methods.any { it.kind == sel }) sel else PaymentKind.QRIS, n, st, mine, v)
+    private val core = combine(base, selected, note, step, vouchersFlow) { b, sel, n, st, (mine, v) ->
+        CheckoutUiState(
+            b.merchant, b.lines, b.methods, if (b.methods.any { it.kind == sel }) sel else PaymentKind.QRIS, n, st, mine, v,
+            moreFromStore = b.more,
+        )
     }
 
     val uiState: StateFlow<CheckoutUiState> = combine(core, delivery, addressFlow) { s, d, a ->
@@ -171,6 +189,11 @@ class CheckoutViewModel @Inject constructor(
     fun setQuantity(listingId: String, quantity: Int) {
         val line = uiState.value.lines.firstOrNull { it.listing.id == listingId } ?: return
         cartRepository.setQuantity(listingId, quantity.coerceAtMost(line.listing.stock))
+    }
+
+    /** "Mau tambah lagi?" rail: one portion of another item from the same store. */
+    fun addMore(listing: Listing) {
+        cartRepository.add(listing, 1)
     }
 
     /** Pay button. QRIS shows the code first; everything else places the order now. */
@@ -201,6 +224,7 @@ class CheckoutViewModel @Inject constructor(
                         fulfillment = if (s.selectedQuote != null) Fulfillment.DELIVERY else Fulfillment.PICKUP,
                         delivery = s.selectedQuote,
                         deliveryAddress = s.address,
+                        serviceFee = s.serviceFee,
                     ),
                 )
                 applied?.let { voucherRepository.consume(it.code) }

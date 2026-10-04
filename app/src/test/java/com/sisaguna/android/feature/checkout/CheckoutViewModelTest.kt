@@ -30,7 +30,7 @@ class CheckoutViewModelTest {
     fun `qris waits for confirmation then places order and clears cart`() {
         cart.add(listing("l1"), 2)
         val vm = vm()
-        assertEquals(16000, vm.uiState.value.total)
+        assertEquals(17000, vm.uiState.value.total) // 16.000 + Rp 1.000 service fee
         assertEquals(34000, vm.uiState.value.savings)
         vm.pay()
         assertEquals(PaymentStep.AwaitingQris, vm.uiState.value.step)
@@ -75,13 +75,26 @@ class CheckoutViewModelTest {
         val vm = vm()
         vm.selectVoucher("HEMAT5K")
         assertEquals(5000, vm.uiState.value.voucherDiscount)
-        assertEquals(11000, vm.uiState.value.total)
+        assertEquals(12000, vm.uiState.value.total) // incl. Rp 1.000 service fee
         vm.select(PaymentKind.CASH)
         vm.pay()
         val order = orders.orders.value.first()
-        assertEquals(11000, order.total)
+        assertEquals(12000, order.total)
+        assertEquals(1000, order.serviceFee)
         assertEquals("HEMAT5K", order.voucherCode)
         assertTrue(vouchers.vouchers.value.none { it.code == "HEMAT5K" })
+    }
+
+    @Test
+    fun `add more offers the same store's other food and adds one portion`() {
+        cart.add(listing("l1"), 1)
+        val vm = vm()
+        val more = vm.uiState.value.moreFromStore
+        assertTrue(more.isNotEmpty())
+        assertTrue(more.all { it.merchantId == listing("l1").merchantId && it.id != "l1" })
+        vm.addMore(more.first())
+        assertEquals(2, vm.uiState.value.lines.size)
+        assertTrue(vm.uiState.value.moreFromStore.none { it.id == more.first().id })
     }
 
     @Test
@@ -90,6 +103,6 @@ class CheckoutViewModelTest {
         val vm = vm()
         vm.selectVoucher("HEMAT5K")
         assertEquals(0, vm.uiState.value.voucherDiscount)
-        assertEquals(5000, vm.uiState.value.total)
+        assertEquals(6000, vm.uiState.value.total)
     }
 }

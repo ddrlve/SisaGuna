@@ -87,7 +87,7 @@ fun SgNavGraph(navController: NavHostController) {
     var showLocationSheet by remember { mutableStateOf(false) }
     // Frosted backdrop: blur the app behind the location sheet instead of a black scrim.
     // RenderEffect blur needs API 31+; older devices just get the light scrim.
-    val backdropBlur by animateDpAsState(if (showLocationSheet) 14.dp else 0.dp, tween(220), label = "backdropBlur")
+    val backdropBlur by animateDpAsState(if (showLocationSheet) 6.dp else 0.dp, tween(220), label = "backdropBlur")
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // Nested routes (category/…, saved/merchant/…, profile/edit) keep the bottom nav visible
@@ -278,6 +278,7 @@ fun SgNavGraph(navController: NavHostController) {
             composable(Screen.Checkout.route) {
                 CheckoutScreen(
                     onBack = { navController.popBackStack() },
+                    onChangeAddress = { showLocationSheet = true },
                     onExplore = { navigateOrGate(Screen.Home) },
                     onPlaced = { orderId ->
                         // Replace checkout (and the listing pages under it) with the order, so
