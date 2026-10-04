@@ -1,125 +1,209 @@
 # SisaGuna
 
-Aplikasi mobile redistribusi makanan berlebih untuk mitra FnB, khususnya UMKM kuliner Indonesia. Warung, kantin, bakery, dan resto kecil memposting makanan berlebih sebelum terbuang. Pembeli di sekitar memesan lewat app, lalu mengambil dan membayar langsung di lokasi.
+Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung, kantin, bakery, dan resto kecil memposting makanan yang masih layak sebelum toko tutup, dengan harga jauh lebih murah atau gratis. Pembeli di sekitar memesan lewat aplikasi, lalu mengambil sendiri atau memakai kurir. Sisa yang tidak layak dimakan manusia disalurkan untuk pakan ternak dan kompos.
 
-Repo ini adalah versi native Android (Kotlin, Jetpack Compose) dari SisaGuna, dibangun paralel dengan app Expo React Native tim. Repo ini khusus frontend. Backend Supabase dikerjakan terpisah oleh anggota tim lain.
+**Mata kuliah:** Venture Creation (ENPR6312), BINUS University
+**Kelompok:** Group 4, Kelas LZ01
+**Tema:** Lingkungan Alam
 
-Lecture Venture Creation (ENPR6312), BINUS. Group 4. Class LZ01. Theme: Lingkungan Alam.
+---
 
-## Link Terkait
+## Daftar Isi
 
-- Canva: [PPT](https://canva.link/d403zux6vbz05gn)
-- Figma: [Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1)
-- Figma: [Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1)
-- Front End: https://github.com/ddrlve/SisaGuna
-- Back End: https://github.com/FadhRach/sisaguna-be
+1. [Coba Aplikasinya](#coba-aplikasinya)
+2. [Masalah dan Solusi](#masalah-dan-solusi)
+3. [Fitur Utama](#fitur-utama)
+4. [Model Bisnis](#model-bisnis)
+5. [Status Pengerjaan](#status-pengerjaan)
+6. [Tech Stack](#tech-stack)
+7. [Struktur Project](#struktur-project)
+8. [Menjalankan dari Source Code](#menjalankan-dari-source-code)
+9. [Tim](#tim)
+10. [Link Terkait](#link-terkait)
 
-## Contributors
+---
 
-- Fadhlan Nur Rachman (2802491690)
-- Dian Rakhmawati Lestari (2802539085)
-- Nasauramecca Nour Haqqanshah Shodiqin (2802541921)
-- Catherine Zaneta Adji (2802512442)
+## Coba Aplikasinya
+
+**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases/latest), lalu unduh file `SisaGuna-v0.3.0-debug.apk`.
+
+**Cara install di HP Android (minimal Android 8.0):**
+
+1. Buka file APK yang sudah diunduh.
+2. Jika muncul *"Install unknown apps"*, izinkan untuk browser atau aplikasi file yang dipakai.
+3. Jika Google Play Protect memberi peringatan, pilih **More details**, lalu **Install anyway**. Peringatan ini muncul karena aplikasi tidak dipasang dari Play Store.
+
+**Cara mencoba:**
+
+| Ingin mencoba | Caranya |
+|---|---|
+| Langsung melihat isi aplikasi | Di halaman awal pilih **Jelajahi tanpa akun** |
+| Alur lengkap sebagai pembeli | Pilih **Masuk**, isi email dan password apa saja (login masih simulasi) |
+| Sisi mitra / penjual | Profil, lalu Pengaturan, lalu ubah mode ke **Mitra / penjual** |
+| Bahasa Inggris dan mode gelap | Profil, lalu Pengaturan |
+
+> Semua data di aplikasi ini masih data contoh dan belum tersambung ke server. Pembayaran QRIS dan e-wallet hanya simulasi, tidak ada uang yang ditarik.
+
+---
+
+## Masalah dan Solusi
+
+**Masalah.** Banyak UMKM kuliner membuang makanan yang masih layak setiap hari karena tidak terjual sebelum tutup. Ini merugikan penjual dan menambah sampah organik.
+
+**Solusi.** SisaGuna mempertemukan penjual dengan pembeli di sekitar dalam waktu singkat:
+
+- Penjual memposting makanan berlebih dengan diskon 50-70% atau gratis.
+- Pembeli memesan dan membayar di aplikasi, lalu mengambil sendiri atau memakai kurir.
+- Makanan yang sudah tidak layak dikonsumsi manusia dialihkan menjadi pakan ternak atau bahan kompos.
+- Setiap posting makanan wajib melewati checklist kelayakan, dan sistem menghitung batas aman konsumsi dari waktu masak serta cara penyimpanan.
+
+---
+
+## Fitur Utama
+
+### Untuk pembeli
+
+| Fitur | Keterangan |
+|---|---|
+| Beranda | Pilih lokasi, banner promo, voucher, filter, makanan terdekat, terlaris, dan diskon terbesar |
+| Kategori | Siap santap, pakan ternak, dan kompos |
+| Detail produk | Foto, harga normal dan diskon, stok, label halal, alergen, status kelayakan, review |
+| Halaman toko | Profil toko, jam buka, menu tersedia, dan review pembeli |
+| Ringkasan pesanan | Ambil sendiri atau kurir (GoSend, GrabExpress, SPX Instant, Lalamove) dengan pilihan Prioritas, Standar, atau Hemat; alamat tujuan bisa diubah; tambah menu lain dari toko yang sama; voucher; rincian biaya |
+| Pembayaran | QRIS, GoPay, OVO, DANA (simulasi) |
+| Aktivitas | Status pesanan, kode pickup, rating, dan komplain |
+| Tersimpan dan notifikasi | Toko favorit, notifikasi pesanan dan promo, pengaturan per kategori |
+| Profil | Edit profil, alamat, riwayat, metode bayar, bantuan, privasi |
+
+### Untuk mitra (penjual)
+
+| Fitur | Keterangan |
+|---|---|
+| Dashboard | Pendapatan bersih hari ini (sudah dipotong komisi), pesanan masuk, listing aktif |
+| Posting makanan | Siap santap (per porsi) atau pakan dan kompos (per gram/kg), dengan checklist kelayakan |
+| Konfirmasi pickup | Cocokkan kode dari pembeli sebelum menyerahkan pesanan |
+| Notifikasi | Pemberitahuan pesanan dan pengambilan |
+
+### Umum
+
+- Bahasa Indonesia dan Inggris, bisa diganti di Pengaturan.
+- Mode terang dan gelap.
+- Mode tamu: bisa melihat-lihat tanpa akun, aksi tertentu meminta login.
+
+---
+
+## Model Bisnis
+
+Biaya platform dibagi antara pembeli dan mitra:
+
+| Pihak | Biaya | Keterangan |
+|---|---|---|
+| Pembeli | Biaya layanan Rp1.000-3.000 per pesanan | Rp1.000 untuk belanja di bawah Rp25.000, Rp2.000 di bawah Rp75.000, Rp3.000 di atasnya. Makanan gratis tidak dikenakan biaya |
+| Mitra | Komisi 10% dari penjualan | Ditampilkan langsung di dashboard sebagai pendapatan bersih |
+| Kurir | Ongkir diteruskan penuh ke penyedia kurir | Tidak dikenakan komisi |
+
+---
 
 ## Status Pengerjaan
 
-Alur utama pembeli sudah bisa dicoba end to end: splash, landing, login, home, detail produk, checkout, status pesanan, aktivitas, notifikasi, tersimpan, dan profil. Semua data masih dari repository mock (in-memory). App belum tersambung ke Supabase.
+**Versi saat ini: 0.3.0 (demo)**
 
-Belum dikerjakan: integrasi backend, dashboard mitra penuh, dan panel admin.
+| Bagian | Status |
+|---|---|
+| Alur pembeli end to end | Selesai, memakai data contoh |
+| Dashboard dan posting mitra | Selesai, memakai data contoh |
+| Bahasa Inggris dan mode gelap | Selesai |
+| Unit test | 97 test, semua lulus |
+| Integrasi backend (Supabase) | Belum, dikerjakan di repo backend |
+| Pembayaran asli (payment gateway) dan API kurir | Belum |
+| Panel admin | Belum |
+
+---
 
 ## Tech Stack
 
-| Layer | Teknologi | Catatan |
-|---|---|---|
-| UI | Jetpack Compose + Material3 (BOM 2024.09.02) | Animasi halus sesuai desain |
-| Bahasa | Kotlin 2.0.21 | |
-| Navigasi | Navigation Compose 2.8.0 | Route dalam sealed class `Screen` |
-| Async / DI | Coroutines + Flow, Hilt 2.51.1 | |
-| State | ViewModel + StateFlow | Bukan LiveData |
-| Image loading | Coil 2.7.0 | |
-| Peta | osmdroid 6.1.20 | Peta OpenStreetMap untuk pilih alamat, tanpa API key |
-| Backend | Supabase | Repo terpisah, app ini masih pakai mock repository |
-| Build | Gradle 8.9, AGP 8.5.2, JDK 17, compileSdk 34, minSdk 26 | |
+| Bagian | Teknologi |
+|---|---|
+| Bahasa | Kotlin 2.0.21 |
+| UI | Jetpack Compose, Material 3 |
+| Navigasi | Navigation Compose |
+| Arsitektur | MVVM: Repository, ViewModel, StateFlow |
+| Dependency injection | Hilt |
+| Gambar | Coil |
+| Peta | osmdroid (OpenStreetMap, tanpa API key) |
+| Build | Gradle 8.9, AGP 8.5.2, JDK 17 |
+| Android | minSdk 26 (Android 8.0), targetSdk 34 |
 
-## Halaman
-
-| Layar | Status | Deskripsi |
-|---|---|---|
-| Splash & Landing | Selesai | Animasi logo, hero mengambang, CTA |
-| Login & Register | Selesai (mock) | Email / HP, password, pilih peran pengguna atau mitra |
-| Mode tamu | Selesai | Bisa jelajah tanpa login, aksi tertentu minta login lewat sheet |
-| Home | Selesai (mock) | Pilih lokasi, carousel banner, strip voucher, filter, tab sticky, seksi Siap Santap dan Pakan Ternak & Kompos |
-| Category list | Selesai (mock) | Filter chip 3 tier, grid 2 kolom |
-| Detail produk & toko | Selesai (mock) | Info produk, keranjang, profil merchant |
-| Checkout | Selesai (mock) | Pilih voucher, ringkasan potongan, metode bayar |
-| Aktivitas & detail pesanan | Selesai (mock) | Riwayat pesanan, timeline status, QR kode pickup |
-| Tersimpan | Selesai (mock) | Daftar merchant favorit |
-| Notifikasi | Selesai (mock) | Daftar notifikasi dan pengaturan per kategori |
-| Profil | Selesai (mock) | Edit profil, alamat, riwayat penyelamatan, metode bayar, ubah password, bantuan, privasi, katalog saya |
-| Alamat | Selesai | Multi alamat, cari lokasi, GPS, pin di peta |
-| Upload (mitra) | Selesai (mock) | Form posting makanan berlebih |
+---
 
 ## Struktur Project
 
 ```
-SisaGuna/
-├── app/
-│   ├── build.gradle.kts              Konfigurasi module: dependency, SDK
-│   └── src/
-│       ├── main/java/com/sisaguna/android/
-│       │   ├── MainActivity.kt       Entry point, memasang tema dan NavGraph
-│       │   ├── SisaGunaApp.kt        Application class Hilt
-│       │   ├── core/session/         Sesi login dan guest gate
-│       │   ├── data/
-│       │   │   ├── model/            Domain model: Listing, Merchant, Commerce, UserProfile, AppNotification
-│       │   │   └── repository/       Interface repository + implementasi mock
-│       │   ├── di/                   Module Hilt, binding repository
-│       │   ├── navigation/           Screen, NavGraph, SgBottomNav
-│       │   ├── feature/              Satu folder per fitur (Screen + ViewModel)
-│       │   │   ├── splash/  auth/  home/  category/  listing/
-│       │   │   ├── checkout/  activity/  saved/  notifications/
-│       │   │   └── profile/  address/  upload/
-│       │   └── ui/
-│       │       ├── theme/            Color, Type, Shape, Spacing, Theme
-│       │       ├── components/       Komponen primitif: SgButtons, SgChip, SgInput, SgBadge, SgMotion
-│       │       └── domain/           Komponen domain: ListingCard, VoucherTicket, CartBar, TierBadge
-│       ├── main/res/                 strings, font Inter, drawable, ikon launcher
-│       └── test/                     Unit test ViewModel dan repository
-│
-├── docs/superpowers/                 Spec desain dan rencana implementasi
-├── figma/                            Screenshot referensi Figma
-├── gradle/libs.versions.toml         Version catalog dependency
-└── build.gradle.kts, settings.gradle.kts, gradle.properties
+app/src/main/java/com/sisaguna/android/
+├── MainActivity.kt        Titik masuk aplikasi
+├── core/session/          Sesi login dan mode tamu
+├── data/
+│   ├── model/             Model data: produk, toko, pesanan, kurir, biaya, keamanan pangan
+│   └── repository/        Sumber data (saat ini data contoh di memori)
+├── di/                    Konfigurasi Hilt
+├── navigation/            Daftar layar, navigasi, bottom bar
+├── feature/               Satu folder per fitur, berisi Screen dan ViewModel
+│   ├── auth/  home/  category/  listing/  checkout/
+│   ├── activity/  saved/  notifications/  profile/
+│   └── address/  upload/  settings/  splash/
+└── ui/
+    ├── theme/             Warna, tipografi, bentuk, jarak
+    ├── components/        Komponen dasar (tombol, input, chip)
+    ├── domain/            Komponen khusus aplikasi (kartu produk, voucher)
+    └── i18n/              Terjemahan Indonesia dan Inggris
 ```
 
-Alur data: Repository, lalu ViewModel, lalu StateFlow, lalu Composable collect. Composable tidak pernah memanggil backend langsung. Saat Supabase siap, cukup ganti implementasi repository di `di/RepositoryModule.kt`.
+**Alur data:** Repository, lalu ViewModel, lalu tampilan. Tampilan tidak pernah memanggil server langsung. Saat backend siap, cukup ganti implementasi repository di `di/RepositoryModule.kt` tanpa mengubah tampilan.
 
-## Setup Lokal
+---
+
+## Menjalankan dari Source Code
+
+**Kebutuhan:** Android Studio (versi terbaru) dan JDK 17.
 
 ```
 git clone https://github.com/ddrlve/SisaGuna.git
 cd SisaGuna
 ```
 
-Buka folder project di Android Studio dan tunggu Gradle sync selesai. Sambungkan HP fisik (USB debugging aktif) atau siapkan emulator, lalu tekan Run.
+1. Buka folder project di Android Studio dan tunggu Gradle sync selesai.
+2. Sambungkan HP (USB debugging aktif) atau jalankan emulator.
+3. Tekan **Run**.
 
-Atau lewat terminal:
-
-```
-./gradlew installDebug
-```
-
-Jalankan unit test:
+Lewat terminal:
 
 ```
-./gradlew testDebugUnitTest
+./gradlew installDebug        # pasang ke HP yang tersambung
+./gradlew assembleDebug       # buat APK di app/build/outputs/apk/debug/
+./gradlew testDebugUnitTest   # jalankan unit test
 ```
 
-## Deploy Production
+---
 
-Belum ada build production. Setelah backend Supabase tersambung, app didistribusikan lewat Play Store internal testing untuk kebutuhan demo.
+## Tim
 
-## Catatan
-- File `local.properties`, folder `.gradle/`, `app/build/`, dan config lokal lain tidak masuk repo (lihat `.gitignore`).
+| Nama | NIM |
+|---|---|
+| Fadhlan Nur Rachman | 2802491690 |
+| Dian Rakhmawati Lestari | 2802539085 |
+| Nasauramecca Nour Haqqanshah Shodiqin | 2802541921 |
+| Catherine Zaneta Adji | 2802512442 |
 
-Made with care by Group 4
+---
+
+## Link Terkait
+
+| | |
+|---|---|
+| Presentasi | [Canva](https://canva.link/d403zux6vbz05gn) |
+| Desain | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
+| Prototype | [Figma Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1) |
+| Frontend (repo ini) | https://github.com/ddrlve/SisaGuna |
+| Backend | https://github.com/FadhRach/sisaguna-be |
+
+Foto makanan dan logo kurir berasal dari Wikimedia Commons; sumber lengkap ada di `app/src/main/assets/img/CREDITS.txt`.
