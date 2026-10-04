@@ -43,7 +43,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -126,7 +126,7 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = SgColor.Page,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         LazyColumn(
@@ -171,7 +171,7 @@ fun ProfileScreen(
                     title = stringResource(R.string.profile_section_account),
                     rows = listOf(
                         SettingRow(Icons.Rounded.Place, stringResource(R.string.profile_row_address), "${state.addressCount} tersimpan", onAddresses),
-                        SettingRow(Icons.Rounded.History, stringResource(R.string.profile_row_history), "${state.rescueCount} selesai", onHistory),
+                        SettingRow(Icons.Rounded.History, stringResource(R.string.profile_row_history), l("${state.rescueCount} selesai", "${state.rescueCount} done"), onHistory),
                         SettingRow(Icons.Rounded.CreditCard, stringResource(R.string.profile_row_payment), "${state.paymentCount} aktif", onPayments),
                         SettingRow(Icons.Rounded.Lock, stringResource(R.string.profile_row_password), stringResource(R.string.profile_row_password_hint), onPassword),
                         SettingRow(

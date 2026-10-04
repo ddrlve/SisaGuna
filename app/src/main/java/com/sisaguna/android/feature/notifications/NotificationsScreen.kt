@@ -36,7 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SwipeToDismissBox
@@ -99,7 +99,7 @@ fun NotificationsScreen(
 
     Scaffold(
         containerColor = SgColor.Page,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
         topBar = {
             SgTopBar(title = stringResource(R.string.notif_title), onBack = onBack) {

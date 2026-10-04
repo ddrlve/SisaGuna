@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.saved
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -30,7 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import com.sisaguna.android.ui.i18n.Text
@@ -82,7 +84,7 @@ fun SavedScreen(
 
     Scaffold(
         containerColor = SgColor.Page,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
     ) { padding ->
         when (val s = state) {
@@ -178,7 +180,7 @@ private fun SavedSummary(merchantCount: Int, available: Int) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("$available makanan tersedia", style = SgTextStyle.Title, color = SgColor.OnBrand)
+            Text(l("$available makanan tersedia", "$available items available"), style = SgTextStyle.Title, color = SgColor.OnBrand)
             Text("dari $merchantCount penyedia favoritmu hari ini", style = SgTextStyle.Caption, color = SgColor.OnBrand.copy(alpha = 0.85f))
         }
         Box(Modifier.size(44.dp).background(SgColor.OnBrand.copy(alpha = 0.2f), CircleShape), contentAlignment = Alignment.Center) {
@@ -222,8 +224,8 @@ private fun SavedMerchantCard(
             horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
         ) {
             if (entry.availableCount > 0) {
-                InfoChip("${entry.availableCount} makanan tersedia", SgColor.Mint, SgColor.Brand700)
-                entry.nextPickupEnd?.let { InfoChip("Ambil s/d ${formatClock(it)}", SgColor.Farm, SgColor.FarmInk) }
+                InfoChip(l("${entry.availableCount} makanan tersedia", "${entry.availableCount} items available"), SgColor.Mint, SgColor.Brand700)
+                entry.nextPickupEnd?.let { InfoChip(l("Ambil s/d ", "Pick up by ") + formatClock(it), SgColor.Farm, SgColor.FarmInk) }
             } else {
                 InfoChip("Belum ada makanan hari ini", SgColor.Page, SgColor.InkMuted)
             }
@@ -257,7 +259,7 @@ private fun SuggestionRow(entry: SavedMerchantUi, onClick: () -> Unit, onSave: (
         InitialAvatar(initial = entry.merchant.name.first().uppercaseChar(), size = 40.dp, verified = entry.merchant.isVerified)
         Column(Modifier.weight(1f)) {
             Text(entry.merchant.name, style = SgTextStyle.Label)
-            Text("${entry.availableCount} tersedia · ${entry.merchant.location}", style = SgTextStyle.Caption)
+            Text(l("${entry.availableCount} tersedia · ", "${entry.availableCount} available · ") + entry.merchant.location, style = SgTextStyle.Caption)
         }
         SgButton("Simpan", onClick = onSave, style = SgButtonStyle.Secondary, height = 36.dp)
     }

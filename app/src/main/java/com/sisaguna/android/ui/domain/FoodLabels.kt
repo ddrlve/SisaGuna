@@ -167,7 +167,10 @@ fun SafetyCard(
         }
         Text(
             l(
-                "Dicek oleh mitra saat upload + aturan waktu simpan SisaGuna. Bukan uji lab, kalau ada yang janggal, laporkan lewat Komplain.",
+                l(
+                    "Dicek oleh mitra saat upload + aturan waktu simpan SisaGuna. Bukan uji lab, kalau ada yang janggal, laporkan lewat Komplain.",
+                    "Checked by the seller at upload plus SisaGuna's storage-time rules. Not a lab test; if anything seems off, report it via Complaint.",
+                ),
                 "Checked by the seller at upload + SisaGuna storage-time rules. Not a lab test, report anything off via Complaint.",
             ),
             style = SgTextStyle.Caption.copy(fontSize = 11.sp),
@@ -180,8 +183,8 @@ fun humanDuration(d: Duration): String {
     val h = d.toHours()
     val m = d.toMinutes() % 60
     return when {
-        h >= 24 -> "${h / 24} hari ${h % 24} jam"
-        h > 0 -> "$h jam $m mnt"
+        h >= 24 -> l("${h / 24} hari ${h % 24} jam", "${h / 24}d ${h % 24}h")
+        h > 0 -> l("$h jam $m mnt", "${h}h ${m}m")
         else -> "$m mnt"
     }
 }

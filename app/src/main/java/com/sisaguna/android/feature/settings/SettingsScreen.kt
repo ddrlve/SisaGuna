@@ -80,7 +80,7 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = hiltViewMo
             }
             Group(l("Mode aplikasi", "App mode"), Icons.Rounded.Storefront) {
                 OptionRow(l("Pembeli", "Buyer"), l("Cari & selamatkan makanan di sekitar", "Find and rescue food nearby"), Icons.Rounded.ShoppingBag, settings.mode == UserMode.BUYER) { viewModel.setMode(UserMode.BUYER) }
-                OptionRow(l("Mitra / penjual", "Seller"), l("Posting sisa, kelola pesanan masuk", "Post surplus, manage incoming orders"), Icons.Rounded.Storefront, settings.mode == UserMode.MERCHANT) { viewModel.setMode(UserMode.MERCHANT) }
+                OptionRow(l("Mitra / penjual", "Seller"), l("Posting sisa, kelola pesanan masuk", "Post leftovers, manage incoming orders"), Icons.Rounded.Storefront, settings.mode == UserMode.MERCHANT) { viewModel.setMode(UserMode.MERCHANT) }
             }
             Box(Modifier.height(SgSpacing.Xl))
         }

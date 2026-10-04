@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.notifications
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.AppNotification
@@ -40,10 +42,10 @@ fun relativeTime(at: Instant, now: Instant, zone: ZoneId): String {
         DayGroup.TODAY -> when {
             minutes < 1 -> "Baru saja"
             minutes < 60 -> "$minutes mnt lalu"
-            else -> "${minutes / 60} jam lalu"
+            else -> l("${minutes / 60} jam lalu", "${minutes / 60}h ago")
         }
         DayGroup.YESTERDAY -> "Kemarin"
-        else -> "${daysBetween(at, now, zone)} hari lalu"
+        else -> l("${daysBetween(at, now, zone)} hari lalu", "${daysBetween(at, now, zone)}d ago")
     }
 }
 

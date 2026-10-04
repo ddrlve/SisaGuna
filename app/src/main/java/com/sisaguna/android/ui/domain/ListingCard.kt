@@ -1,5 +1,7 @@
 package com.sisaguna.android.ui.domain
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -159,7 +161,7 @@ fun DiscountBadge(listing: Listing, modifier: Modifier = Modifier) {
     val pct = listing.discountPercent
     if (pct < 10) return
     Text(
-        text = if (listing.isFree) "GRATIS" else "-$pct%",
+        text = if (listing.isFree) l("GRATIS", "FREE") else "-$pct%",
         fontSize = 11.sp,
         fontWeight = FontWeight.ExtraBold,
         color = SgColor.OnBrand,

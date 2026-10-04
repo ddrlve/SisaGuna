@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.listing
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -101,7 +103,7 @@ class ListingDetailViewModel @Inject constructor(
                 AddOutcome.Added(s.quantity)
             }
             is AddToCartResult.DifferentMerchant -> AddOutcome.NeedsReplace(
-                listingRepository.merchant(result.currentMerchantId)?.name ?: "penyedia lain",
+                listingRepository.merchant(result.currentMerchantId)?.name ?: l("toko lain", "another store"),
             )
         }
     }

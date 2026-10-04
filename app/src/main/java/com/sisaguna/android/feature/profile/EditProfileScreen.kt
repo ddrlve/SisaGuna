@@ -28,7 +28,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -82,7 +82,7 @@ fun EditProfileScreen(
     Scaffold(
         containerColor = SgColor.Page,
         topBar = { SgTopBar(title = stringResource(R.string.edit_profile_title), onBack = attemptBack) },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             Button(

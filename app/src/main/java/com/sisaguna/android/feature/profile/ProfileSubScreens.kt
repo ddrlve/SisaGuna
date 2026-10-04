@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.profile
 
+import com.sisaguna.android.ui.i18n.l
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
@@ -53,7 +55,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -117,7 +119,7 @@ private fun SubPage(
     Scaffold(
         containerColor = SgColor.Page,
         topBar = { SgTopBar(title = title, onBack = onBack) },
-        snackbarHost = { if (snackbar != null) SnackbarHost(snackbar) },
+        snackbarHost = { if (snackbar != null) SgSnackbarHost(snackbar) },
         bottomBar = bottomBar,
         contentWindowInsets = WindowInsets(0),
         content = content,
@@ -204,10 +206,10 @@ fun AddressesScreen(onBack: () -> Unit, viewModel: AddressViewModel = hiltViewMo
                             }
                         }
                         IconButton(onClick = { editing = address to Place(address.label, address.fullAddress, address.latitude, address.longitude) }) {
-                            Icon(Icons.Rounded.Edit, contentDescription = "Ubah ${address.label}", tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Rounded.Edit, contentDescription = l("Ubah ", "Edit ") + address.label, tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = { confirmDelete = address }) {
-                            Icon(Icons.Rounded.DeleteOutline, contentDescription = "Hapus ${address.label}", tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Rounded.DeleteOutline, contentDescription = l("Hapus ", "Delete ") + address.label, tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -247,7 +249,7 @@ fun AddressesScreen(onBack: () -> Unit, viewModel: AddressViewModel = hiltViewMo
     confirmDelete?.let { a ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Hapus ${a.label}?", style = SgTextStyle.Title) },
+            title = { Text(l("Hapus ${a.label}?", "Delete ${a.label}?"), style = SgTextStyle.Title) },
             text = { Text(a.fullAddress, style = SgTextStyle.Body) },
             confirmButton = {
                 TextButton(onClick = {
@@ -310,7 +312,7 @@ fun RescueHistoryScreen(
                         ListingImage(first.imageUrl, first.tier, null, Modifier.size(52.dp).clip(RoundedCornerShape(SgRadius.Thumb)))
                         Column(Modifier.weight(1f)) {
                             Text(order.merchant.name, style = SgTextStyle.Label)
-                            Text("${order.itemCount} porsi · hemat ${formatRupiah(order.savings)}", style = SgTextStyle.Body)
+                            Text(l("${order.itemCount} porsi · hemat ", "${order.itemCount} portions · saved ") + formatRupiah(order.savings), style = SgTextStyle.Body)
                             Text(order.completedAt?.let { formatDate(it) } ?: formatDate(order.createdAt), style = SgTextStyle.Caption)
                         }
                         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.InkMuted)
@@ -406,7 +408,7 @@ fun PaymentMethodsScreen(onBack: () -> Unit, viewModel: PaymentMethodsViewModel 
             title = { Text("Hubungkan ${paymentLabel(kind)}", style = SgTextStyle.Title) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-                    Text("Masukkan nomor HP yang terdaftar di ${paymentLabel(kind)}.", style = SgTextStyle.Body)
+                    Text(l("Masukkan nomor HP yang terdaftar di ", "Enter the phone number registered with ") + paymentLabel(kind) + ".", style = SgTextStyle.Body)
                     OutlinedTextField(
                         value = phone,
                         onValueChange = { phone = it.filter { c -> c.isDigit() || c == '+' }.take(15); error = null },
@@ -645,14 +647,14 @@ fun MyCatalogScreen(
             contentPadding = PaddingValues(SgSpacing.Gutter),
             verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
-            item { Text("${state.activeCount} aktif dari ${state.items.size} listing", style = SgTextStyle.Body) }
+            item { Text(l("${state.activeCount} aktif dari ${state.items.size} listing", "${state.activeCount} of ${state.items.size} listings live"), style = SgTextStyle.Body) }
             if (state.items.isEmpty()) {
                 item { SgEmptyState(Icons.Rounded.Inventory2, "Katalog masih kosong", "Punya makanan berlebih? Upload supaya bisa diselamatkan orang lain.") }
             }
             items(state.items, key = { it.listing.id }) { item ->
                 val l = item.listing
                 val (label, fg, bg) = when (item.status) {
-                    CatalogStatus.ACTIVE -> Triple("Aktif · sampai ${formatClock(l.pickupEnd)}", SgColor.Brand700, SgColor.Mint)
+                    CatalogStatus.ACTIVE -> Triple(com.sisaguna.android.ui.i18n.l("Aktif · sampai ", "Live · until ") + formatClock(l.pickupEnd), SgColor.Brand700, SgColor.Mint)
                     CatalogStatus.SOLD_OUT -> Triple("Habis", SgColor.FarmInk, SgColor.Farm)
                     CatalogStatus.EXPIRED -> Triple("Berakhir", SgColor.InkMuted, SgColor.Page)
                 }
@@ -669,7 +671,7 @@ fun MyCatalogScreen(
                             Text(label, style = SgTextStyle.TextXsMedium, color = fg, modifier = Modifier.background(bg, RoundedCornerShape(SgRadius.Pill)).padding(horizontal = 8.dp, vertical = 2.dp))
                         }
                         IconButton(onClick = { confirm = item }) {
-                            Icon(Icons.Rounded.DeleteOutline, contentDescription = "Hapus ${l.title}", tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
+                            Icon(Icons.Rounded.DeleteOutline, contentDescription = com.sisaguna.android.ui.i18n.l("Hapus ", "Delete ") + l.title, tint = SgColor.RedStatus, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -680,7 +682,7 @@ fun MyCatalogScreen(
         AlertDialog(
             onDismissRequest = { confirm = null },
             title = { Text("Hapus listing?", style = SgTextStyle.Title) },
-            text = { Text("\"${item.listing.title}\" akan hilang dari Beranda dan tokomu.", style = SgTextStyle.Body) },
+            text = { Text(l("\"${item.listing.title}\" akan hilang dari Beranda dan tokomu.", "\"${item.listing.title}\" will be removed from Home and your store."), style = SgTextStyle.Body) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.delete(item.listing.id)

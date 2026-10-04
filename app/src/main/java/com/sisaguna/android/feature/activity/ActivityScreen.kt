@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.activity
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -175,9 +177,9 @@ private fun ImpactStrip(impact: ActivityImpact) {
             .padding(SgSpacing.Lg),
         horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
     ) {
-        ImpactStat(Icons.Rounded.Eco, impact.portions.toString(), "porsi\ndiselamatkan", Modifier.weight(1f))
-        ImpactStat(Icons.Rounded.Savings, formatRupiah(impact.savedRupiah), "kamu\nhemat", Modifier.weight(1.3f))
-        ImpactStat(Icons.Rounded.ReceiptLong, impact.completedOrders.toString(), "pesanan\nselesai", Modifier.weight(1f))
+        ImpactStat(Icons.Rounded.Eco, impact.portions.toString(), l("porsi\ndiselamatkan", "portions\nrescued"), Modifier.weight(1f))
+        ImpactStat(Icons.Rounded.Savings, formatRupiah(impact.savedRupiah), l("kamu\nhemat", "you\nsaved"), Modifier.weight(1.3f))
+        ImpactStat(Icons.Rounded.ReceiptLong, impact.completedOrders.toString(), l("pesanan\nselesai", "orders\ncompleted"), Modifier.weight(1f))
     }
 }
 
@@ -245,7 +247,7 @@ fun remainingLabel(until: Instant, now: Instant): String {
     if (d.isNegative || d.isZero) return "Lewat waktu"
     val h = d.toHours()
     val m = d.toMinutes() % 60
-    return if (h > 0) "${h}j ${m}m lagi" else "${m}m lagi"
+    return if (h > 0) l("${h}j ${m}m lagi", "${h}h ${m}m left") else l("${m}m lagi", "${m}m left")
 }
 
 @Composable
@@ -269,7 +271,7 @@ private fun OngoingCard(order: Order, now: Instant, onClick: () -> Unit) {
         ) {
             Icon(Icons.Rounded.Schedule, contentDescription = null, tint = if (urgent) SgColor.RedStatus else SgColor.Brand700, modifier = Modifier.size(16.dp))
             Text(
-                "Ambil sebelum ${formatClock(order.pickupEnd)}",
+                l("Ambil sebelum ", "Pick up before ") + formatClock(order.pickupEnd),
                 style = SgTextStyle.Label,
                 color = if (urgent) SgColor.RedStatus else SgColor.Brand700,
                 modifier = Modifier.padding(start = 6.dp).weight(1f),
@@ -314,7 +316,7 @@ private fun RateNudge(count: Int) {
     ) {
         Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFF5B301))
         Text(
-            "$count pesanan menunggu rating darimu. Bantu penyedia makin baik!",
+            l("$count pesanan menunggu rating darimu. Bantu toko makin baik!", "$count orders waiting for your rating. Help stores get better!"),
             style = SgTextStyle.Body.copy(color = SgColor.Ink),
             modifier = Modifier.padding(start = SgSpacing.Sm),
         )
