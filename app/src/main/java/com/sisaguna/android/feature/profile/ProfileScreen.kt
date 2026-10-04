@@ -1,5 +1,25 @@
 package com.sisaguna.android.feature.profile
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Recycling
+import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import com.sisaguna.android.data.model.RescueTier
+import com.sisaguna.android.ui.components.SgEaseOut
+import com.sisaguna.android.ui.domain.FruitAvatar
+import com.sisaguna.android.ui.domain.FruitAvatarBadge
+import com.sisaguna.android.ui.domain.UserAvatar
+
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.PhotoCamera
@@ -133,7 +153,7 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = SgSpacing.Xl),
         ) {
-            item { ProfileHeader(state, onEditProfile, onPhoto = viewModel::setPhoto) }
+            item { ProfileHeader(state, onEditProfile, onPhoto = viewModel::setPhoto, onAvatar = viewModel::setAvatar) }
             item {
                 ImpactCard(
                     impact = state.impact,
@@ -145,12 +165,28 @@ fun ProfileScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = SgSpacing.Gutter, end = SgSpacing.Sm, top = SgSpacing.Xl),
+                            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Xl, bottom = SgSpacing.Xs),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.profile_catalog_title), style = SgTextStyle.Title, modifier = Modifier.weight(1f))
-                        TextButton(onClick = onCatalog) {
-                            Text(stringResource(R.string.home_see_all), style = SgTextStyle.TextXsMedium, color = SgColor.Brand600)
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.profile_catalog_title), style = SgTextStyle.Title)
+                            Text(
+                                l("${state.catalog.size} makanan sedang dijual", "${state.catalog.size} items on sale"),
+                                style = SgTextStyle.Caption,
+                            )
+                        }
+                        // A real button: 40dp tall pill, label + chevron, instead of a tiny text link.
+                        Row(
+                            Modifier
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(SgRadius.Pill))
+                                .background(SgColor.Mint)
+                                .pressable(onCatalog, pressedScale = 0.95f)
+                                .padding(start = 16.dp, end = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(stringResource(R.string.home_see_all), style = SgTextStyle.Label, color = SgColor.Brand700)
+                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, tint = SgColor.Brand700, modifier = Modifier.size(20.dp))
                         }
                     }
                 }
@@ -237,7 +273,12 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit, onPhoto: (String?) -> Unit) {
+private fun ProfileHeader(
+    state: ProfileUiState,
+    onEditProfile: () -> Unit,
+    onPhoto: (String?) -> Unit,
+    onAvatar: (String) -> Unit,
+) {
     var choosing by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val media = com.sisaguna.android.ui.components.rememberMediaCapture(
@@ -251,132 +292,233 @@ private fun ProfileHeader(state: ProfileUiState, onEditProfile: () -> Unit, onPh
         modifier = Modifier
             .fillMaxWidth()
             .background(SgColor.BaseWhite)
-            .padding(start = SgSpacing.Gutter, end = SgSpacing.Sm, top = SgSpacing.Xl, bottom = SgSpacing.Xl),
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Sm, top = SgSpacing.Xl, bottom = SgSpacing.Lg),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Lg),
     ) {
-        // Tap the avatar to take or pick a profile photo; a small camera badge says so.
-        // Only the photo is clipped to a circle; the camera badge sits on the outer box so it can
-        // hang over the edge instead of being cut off.
-        Box(Modifier.size(76.dp).pressable({ choosing = true }, pressedScale = 0.95f)) {
-            if (state.profile.photoUri != null) {
-                coil.compose.AsyncImage(
-                    state.profile.photoUri,
-                    contentDescription = l("Foto profil", "Profile photo"),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.size(72.dp).clip(CircleShape).border(2.dp, SgColor.Brand300, CircleShape),
-                )
-            } else {
-                InitialAvatar(
-                    initial = state.profile.initial,
-                    size = 72.dp,
-                    verified = false,
-                    fill = SgColor.Mint,
-                    ring = SgColor.Brand300,
-                    textColor = SgColor.Brand700,
-                )
-            }
+        // Tap the avatar to pick a fruit, take a photo or choose one. The camera badge sits on
+        // the outer box so it can hang over the circle's edge.
+        Box(Modifier.pressable({ choosing = true }, pressedScale = 0.95f)) {
+            UserAvatar(state.profile, size = 76.dp, ring = SgColor.Brand300)
             Box(
-                Modifier.align(Alignment.BottomEnd).size(26.dp).border(2.dp, SgColor.BaseWhite, CircleShape).padding(2.dp).background(SgColor.Brand500, CircleShape),
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(28.dp)
+                    .border(2.dp, SgColor.BaseWhite, CircleShape)
+                    .padding(2.dp)
+                    .background(SgColor.Brand500, CircleShape),
                 contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Rounded.PhotoCamera, contentDescription = null, tint = SgColor.OnBrand, modifier = Modifier.size(13.dp)) }
+            ) { Icon(Icons.Rounded.PhotoCamera, contentDescription = l("Ganti foto profil", "Change profile photo"), tint = SgColor.OnBrand, modifier = Modifier.size(14.dp)) }
         }
-        if (choosing) {
-            AlertDialog(
-                onDismissRequest = { choosing = false },
-                title = { Text(l("Foto profil", "Profile photo"), style = SgTextStyle.Title) },
-                text = {
-                    Column {
-                        PhotoOption(Icons.Rounded.PhotoCamera, l("Ambil foto", "Take a photo")) { choosing = false; media.takePhoto() }
-                        PhotoOption(Icons.Rounded.PhotoLibrary, l("Pilih dari galeri", "Choose from gallery")) { choosing = false; media.pickPhotos() }
-                        if (state.profile.photoUri != null) {
-                            PhotoOption(Icons.Rounded.DeleteOutline, l("Hapus foto", "Remove photo"), destructive = true) { choosing = false; onPhoto(null) }
-                        }
-                    }
-                },
-                confirmButton = {},
-                dismissButton = { TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.common_cancel), style = SgTextStyle.Label, color = SgColor.Ink) } },
-                containerColor = SgColor.BaseWhite,
-            )
-        }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(state.profile.name, style = SgTextStyle.Display, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Column(
+            modifier = Modifier.weight(1f).padding(start = SgSpacing.Lg),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Text(state.profile.name, style = SgTextStyle.Display.copy(fontSize = 22.sp, lineHeight = 28.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = SgColor.Brand500, modifier = Modifier.size(14.dp))
-                Text(state.profile.location, style = SgTextStyle.Body, modifier = Modifier.padding(start = 2.dp))
+                Text(state.profile.location, style = SgTextStyle.Body, modifier = Modifier.padding(start = 3.dp), maxLines = 1)
             }
             Text(stringResource(R.string.profile_member_since, memberSince), style = SgTextStyle.Caption)
         }
         IconButton(onClick = onEditProfile) {
             Box(
-                modifier = Modifier.size(36.dp).background(SgColor.Mint, CircleShape),
+                modifier = Modifier.size(40.dp).background(SgColor.Mint, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Rounded.Edit, contentDescription = stringResource(R.string.profile_edit_cd), tint = SgColor.Brand600, modifier = Modifier.size(18.dp))
             }
         }
     }
+    if (choosing) {
+        AvatarSheet(
+            profile = state.profile,
+            onAvatar = { onAvatar(it); choosing = false },
+            onTakePhoto = { choosing = false; media.takePhoto() },
+            onPickPhoto = { choosing = false; media.pickPhotos() },
+            onRemovePhoto = { choosing = false; onPhoto(null) },
+            onDismiss = { choosing = false },
+        )
+    }
 }
 
+/** Fruit grid first (the fun, zero-effort option), then camera and gallery. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(SgRadius.Card))
-            .background(SgColor.BaseWhite)
-            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Card))
-            .padding(SgSpacing.Lg),
-        verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
+private fun AvatarSheet(
+    profile: com.sisaguna.android.data.model.UserProfile,
+    onAvatar: (String) -> Unit,
+    onTakePhoto: () -> Unit,
+    onPickPhoto: () -> Unit,
+    onRemovePhoto: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val current = if (profile.photoUri == null) FruitAvatar.of(profile.avatar) ?: FruitAvatar.defaultFor(profile.name) else null
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = SgColor.BaseWhite,
+        scrimColor = SgColor.Ink.copy(alpha = 0.32f),
     ) {
-        Text(stringResource(R.string.profile_impact_title), style = SgTextStyle.Title)
-        // IntrinsicSize.Min + fillMaxHeight: all three tiles take the tallest one's height, so
-        // "porsi" and "kg" tiles line up whatever their label length.
-        Row(Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-            StatTile("${impact?.portions ?: "…"}", stringResource(R.string.profile_impact_portions_unit), stringResource(R.string.profile_impact_portions_label), Modifier.weight(1f))
-            StatTile("${impact?.compostKg ?: "…"}", "kg", stringResource(R.string.profile_impact_compost_label), Modifier.weight(1f))
-            StatTile("${impact?.carbonKg ?: "…"}", "kg", stringResource(R.string.profile_impact_carbon_label), Modifier.weight(1f))
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(SgRadius.Tile))
-                .background(SgColor.Yellow50)
-                .padding(SgSpacing.Md),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
-        ) {
-            Box(
-                modifier = Modifier.size(36.dp).background(SgColor.Yellow300, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("Rp", fontFamily = SgFont, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color(0xFF854D0E))
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SgSpacing.Gutter).padding(bottom = SgSpacing.Lg)) {
+            Text(l("Foto profil", "Profile photo"), style = SgTextStyle.Title)
+            Text(
+                l("Pilih avatar buah, atau pakai fotomu sendiri.", "Pick a fruit avatar, or use your own photo."),
+                style = SgTextStyle.Body,
+                modifier = Modifier.padding(top = 4.dp, bottom = SgSpacing.Lg),
+            )
+            FruitAvatar.entries.chunked(4).forEach { rowFruits ->
+                Row(Modifier.fillMaxWidth().padding(bottom = SgSpacing.Md), horizontalArrangement = Arrangement.SpaceBetween) {
+                    rowFruits.forEach { fruit ->
+                        val selected = fruit == current
+                        val ring by animateColorAsState(if (selected) SgColor.Brand500 else Color.Transparent, tween(150), label = "fruitRing")
+                        val scale by animateFloatAsState(if (selected) 1f else 0.92f, spring(dampingRatio = 0.7f, stiffness = 500f), label = "fruitScale")
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(SgRadius.Tile))
+                                .pressable({ onAvatar(fruit.key) }, pressedScale = 0.92f)
+                                .padding(vertical = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Box(
+                                Modifier
+                                    .graphicsLayer { scaleX = scale; scaleY = scale }
+                                    .border(2.5.dp, ring, CircleShape)
+                                    .padding(4.dp),
+                            ) { FruitAvatarBadge(fruit, 56.dp) }
+                            Text(
+                                fruit.label,
+                                style = SgTextStyle.Caption,
+                                color = if (selected) SgColor.Brand700 else SgColor.InkMuted,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
+                        }
+                    }
+                }
             }
-            Column {
-                Text(
-                    stringResource(R.string.profile_saved_money, impact?.let { formatRupiah(it.savedRupiah) } ?: "-"),
-                    style = SgTextStyle.Label,
-                )
-                Text(stringResource(R.string.profile_saved_money_body), style = SgTextStyle.Caption)
+            HorizontalDivider(color = SgColor.Hairline, modifier = Modifier.padding(vertical = SgSpacing.Sm))
+            PhotoOption(Icons.Rounded.PhotoCamera, l("Ambil foto", "Take a photo"), onClick = onTakePhoto)
+            PhotoOption(Icons.Rounded.PhotoLibrary, l("Pilih dari galeri", "Choose from gallery"), onClick = onPickPhoto)
+            if (profile.photoUri != null) {
+                PhotoOption(Icons.Rounded.DeleteOutline, l("Hapus foto", "Remove photo"), destructive = true, onClick = onRemovePhoto)
             }
         }
     }
 }
 
+/**
+ * Hero card: portions rescued as the headline, the rescue level with progress to the next one,
+ * and the three supporting numbers underneath. The count and the bar fill once when the
+ * numbers arrive; they don't replay on recomposition.
+ */
 @Composable
-private fun StatTile(value: String, unit: String, label: String, modifier: Modifier = Modifier) {
+private fun ImpactCard(impact: ImpactStats?, modifier: Modifier = Modifier) {
+    val portions = impact?.portions ?: 0
+    val tier = RescueTier.of(portions)
+    val count = remember { Animatable(0f) }
+    val fill = remember { Animatable(0f) }
+    LaunchedEffect(impact) {
+        if (impact != null) {
+            launch { count.animateTo(portions.toFloat(), tween(700, easing = SgEaseOut)) }
+            fill.animateTo(tier.progress(portions), tween(800, delayMillis = 120, easing = SgEaseOut))
+        }
+    }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(SgRadius.Card))
+                .background(Brush.linearGradient(listOf(SgColor.Brand600, SgColor.Brand700)))
+                .padding(SgSpacing.Lg),
+        ) {
+            Row(verticalAlignment = Alignment.Top) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.profile_impact_title), style = SgTextStyle.Caption, color = Color.White.copy(alpha = 0.8f))
+                    Row(verticalAlignment = Alignment.Bottom, modifier = Modifier.padding(top = 4.dp)) {
+                        androidx.compose.material3.Text(
+                            if (impact == null) "…" else count.value.toInt().toString(),
+                            style = SgTextStyle.Display.copy(fontSize = 40.sp, lineHeight = 44.sp),
+                            color = Color.White,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                        Text(
+                            l("porsi diselamatkan", "portions rescued"),
+                            style = SgTextStyle.Label,
+                            color = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.alignByBaseline().padding(start = 6.dp),
+                        )
+                    }
+                }
+                Row(
+                    Modifier.background(Color.White.copy(alpha = 0.16f), RoundedCornerShape(SgRadius.Pill)).padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.material3.Text(tier.emoji, fontSize = 13.sp)
+                    Text(l(tier.label, tier.labelEn), style = SgTextStyle.TextXsMedium, color = Color.White, modifier = Modifier.padding(start = 4.dp))
+                }
+            }
+            // Progress to the next level.
+            Box(
+                Modifier
+                    .padding(top = SgSpacing.Md)
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(SgRadius.Pill))
+                    .background(Color.White.copy(alpha = 0.2f)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = fill.value
+                            transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
+                        }
+                        .background(SgColor.Brand300, RoundedCornerShape(SgRadius.Pill)),
+                )
+            }
+            Text(
+                tier.next?.let { n ->
+                    val left = (n.minPortions - portions).coerceAtLeast(0)
+                    l("$left porsi lagi menuju ${n.emoji} ${n.label}", "$left more portions to ${n.emoji} ${n.labelEn}")
+                } ?: l("Level tertinggi. Terima kasih sudah ikut menyelamatkan makanan!", "Top level. Thanks for rescuing food!"),
+                style = SgTextStyle.Caption,
+                color = Color.White.copy(alpha = 0.85f),
+                modifier = Modifier.padding(top = 6.dp),
+            )
+        }
+        Row(
+            Modifier.padding(top = SgSpacing.Sm).height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
+        ) {
+            StatTile(Icons.Rounded.Cloud, "${impact?.carbonKg ?: "…"} kg", stringResource(R.string.profile_impact_carbon_label), SgColor.Mint, SgColor.Brand700, Modifier.weight(1f))
+            StatTile(Icons.Rounded.Recycling, "${impact?.compostKg ?: "…"} kg", stringResource(R.string.profile_impact_compost_label), SgColor.Farm, SgColor.FarmInk, Modifier.weight(1f))
+            StatTile(Icons.Rounded.Savings, impact?.let { formatRupiah(it.savedRupiah) } ?: "…", l("uang dihemat", "money saved"), SgColor.Yellow50, Color(0xFF854D0E), Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun StatTile(icon: ImageVector, value: String, label: String, tint: Color, ink: Color, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(SgRadius.Thumb))
-            .background(SgColor.Mint)
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile))
             .padding(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = SgTextStyle.Display, color = SgColor.Brand600, modifier = Modifier.alignByBaseline())
-            Text(unit, style = SgTextStyle.Caption.copy(fontWeight = FontWeight.Bold), color = SgColor.Brand600, modifier = Modifier.alignByBaseline().padding(start = 3.dp))
+        Box(Modifier.size(30.dp).background(tint, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = ink, modifier = Modifier.size(16.dp))
         }
-        Text(label, style = SgTextStyle.Caption, minLines = 2, maxLines = 2, modifier = Modifier.padding(top = 2.dp))
+        androidx.compose.material3.Text(
+            value,
+            style = SgTextStyle.Label.copy(fontSize = 15.sp),
+            color = SgColor.Ink,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Text(label, style = SgTextStyle.Caption, minLines = 2, maxLines = 2)
     }
 }
 
