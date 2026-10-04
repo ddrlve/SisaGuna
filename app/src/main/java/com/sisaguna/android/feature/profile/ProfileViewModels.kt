@@ -48,6 +48,8 @@ class ProfileViewModel @Inject constructor(
 
     fun setPhoto(uri: String?) = profileRepository.setPhoto(uri)
 
+    fun setAvatar(key: String) = profileRepository.setAvatar(key)
+
     /** Live: an upload or delete in Katalog saya shows up here without reopening Profile. */
     private val catalog = listingRepository.listings.map { all ->
         val me = listingRepository.merchant(ListingRepository.MY_MERCHANT_ID)
@@ -125,6 +127,9 @@ class EditProfileViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val original = profileRepository.profile.value
+
+    /** For the avatar preview: photo or fruit, matching Profile. */
+    val profile = profileRepository.profile
 
     private val _form = MutableStateFlow(EditProfileForm(original.name, original.email, original.phone))
     val form: StateFlow<EditProfileForm> = _form.asStateFlow()

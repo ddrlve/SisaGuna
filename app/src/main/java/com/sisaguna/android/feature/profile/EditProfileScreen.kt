@@ -114,10 +114,11 @@ fun EditProfileScreen(
                 .padding(horizontal = SgSpacing.Gutter),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            InitialAvatar(
-                initial = form.name.trim().firstOrNull()?.uppercaseChar() ?: '?',
+            val profile by viewModel.profile.collectAsStateWithLifecycle()
+            com.sisaguna.android.ui.domain.UserAvatar(
+                profile = profile,
                 size = 88.dp,
-                verified = false,
+                ring = SgColor.Brand300,
                 modifier = Modifier.padding(top = SgSpacing.Lg),
             )
             Text(

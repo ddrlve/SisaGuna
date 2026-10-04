@@ -15,6 +15,9 @@ interface ProfileRepository {
     val profile: StateFlow<UserProfile>
     fun update(name: String, email: String, phone: String)
     fun setPhoto(uri: String?)
+
+    /** Picks a fruit avatar and drops the photo, so the avatar is what shows. */
+    fun setAvatar(key: String)
     suspend fun getImpact(): ImpactStats
     suspend fun getMyCatalog(): List<Listing>
 
@@ -48,6 +51,10 @@ class FakeProfileRepository @Inject constructor(
 
     override fun setPhoto(uri: String?) {
         _profile.value = _profile.value.copy(photoUri = uri)
+    }
+
+    override fun setAvatar(key: String) {
+        _profile.value = _profile.value.copy(avatar = key, photoUri = null)
     }
 
     override suspend fun getImpact(): ImpactStats {
