@@ -14,9 +14,9 @@ android {
         applicationId = "com.sisaguna.android"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3.0"
-        // APK file name: SisaGuna-v0.3.0-debug.apk instead of app-debug.apk.
+        versionCode = 4
+        versionName = "0.4.0"
+        // APK file name: SisaGuna-v<versionName>-debug.apk instead of app-debug.apk.
         base.archivesName.set("SisaGuna-v$versionName")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

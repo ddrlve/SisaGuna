@@ -1,5 +1,6 @@
 package com.sisaguna.android.feature.activity
 
+import com.sisaguna.android.ui.components.CountBadge
 import com.sisaguna.android.ui.i18n.l
 
 import androidx.compose.animation.AnimatedContent
@@ -186,17 +187,7 @@ private fun ChatPill(unread: Int, onClick: () -> Unit) {
     ) {
         Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(18.dp))
         Text("Chat", style = SgTextStyle.Label, modifier = Modifier.padding(start = 6.dp))
-        if (unread > 0) {
-            Text(
-                unread.toString(),
-                style = SgTextStyle.TextXsMedium,
-                color = Color.White,
-                modifier = Modifier
-                    .padding(start = 6.dp)
-                    .background(SgColor.Brand500, CircleShape)
-                    .padding(horizontal = 7.dp, vertical = 1.dp),
-            )
-        }
+        if (unread > 0) CountBadge(unread, size = 18.dp, modifier = Modifier.padding(start = 6.dp))
     }
 }
 

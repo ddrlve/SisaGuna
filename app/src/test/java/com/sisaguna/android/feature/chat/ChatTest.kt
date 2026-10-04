@@ -49,9 +49,29 @@ class ChatTest {
         val before = repo.messages.value.size
         repo.send("m3", "Masih ada?", "l3", "Masih kak")
         val added = repo.messages.value.drop(before)
-        assertEquals(listOf(true, false), added.map { it.fromMe })
+        assertEquals(listOf(true, false), added.map { it.fromBuyer })
         assertEquals("l3", added.first().listingId)
         assertFalse("m3" in repo.typing.value)
+    }
+
+    @Test
+    fun `store reply lands in that buyer's thread and the buyer thanks once`() = runTest {
+        val repo = FakeChatRepository(now, 0, 0)
+        val store = com.sisaguna.android.data.repository.ListingRepository.MY_MERCHANT_ID
+        repo.replyAsStore(store, "Clara T.", "Masih ada kak")
+        repo.replyAsStore(store, "Clara T.", "Sudah siap diambil")
+        val thread = repo.messages.value.filter { it.merchantId == store && it.buyer == "Clara T." }
+        assertEquals(2, thread.count { !it.fromBuyer })
+        assertEquals(1, thread.count { it.fromBuyer && it.text == "Siap, makasih kak!" })
+    }
+
+    @Test
+    fun `store opening a thread marks only that buyer's messages read`() {
+        val repo = FakeChatRepository(now, 0, 0)
+        val store = com.sisaguna.android.data.repository.ListingRepository.MY_MERCHANT_ID
+        repo.markReadByStore(store, "Clara T.")
+        assertTrue(repo.messages.value.none { it.buyer == "Clara T." && !it.isRead })
+        assertTrue(repo.messages.value.any { it.merchantId == "m2" && !it.isRead }) // buyer-side thread untouched
     }
 
     @Test
