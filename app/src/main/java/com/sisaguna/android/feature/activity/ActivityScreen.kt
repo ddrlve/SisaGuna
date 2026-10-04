@@ -174,24 +174,51 @@ private fun ImpactStrip(impact: ActivityImpact) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(SgRadius.Card))
             .background(Brush.linearGradient(listOf(SgColor.Brand500, SgColor.Brand700)))
-            .padding(SgSpacing.Lg),
-        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
+            .padding(vertical = SgSpacing.Lg, horizontal = SgSpacing.Sm)
+            // Equal thirds with hairline separators, every stat centred: the old 1 / 1.3 / 1
+            // weights and left-aligned columns made the strip look lopsided.
+            .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        ImpactStat(Icons.Rounded.Eco, impact.portions.toString(), l("porsi\ndiselamatkan", "portions\nrescued"), Modifier.weight(1f))
-        ImpactStat(Icons.Rounded.Savings, formatRupiah(impact.savedRupiah), l("kamu\nhemat", "you\nsaved"), Modifier.weight(1.3f))
-        ImpactStat(Icons.Rounded.ReceiptLong, impact.completedOrders.toString(), l("pesanan\nselesai", "orders\ncompleted"), Modifier.weight(1f))
+        ImpactStat(Icons.Rounded.Eco, impact.portions.toString(), l("porsi diselamatkan", "portions rescued"), Modifier.weight(1f))
+        StatDivider()
+        ImpactStat(Icons.Rounded.Savings, formatRupiah(impact.savedRupiah), l("kamu hemat", "you saved"), Modifier.weight(1f))
+        StatDivider()
+        ImpactStat(Icons.Rounded.ReceiptLong, impact.completedOrders.toString(), l("pesanan selesai", "orders done"), Modifier.weight(1f))
     }
 }
 
 @Composable
+private fun StatDivider() {
+    Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 6.dp).background(Color.White.copy(alpha = 0.22f)))
+}
+
+@Composable
 private fun ImpactStat(icon: ImageVector, value: String, label: String, modifier: Modifier) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    Column(
+        modifier = modifier.padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Box(
-            Modifier.size(28.dp).background(Color.White.copy(alpha = 0.18f), CircleShape),
+            Modifier.size(32.dp).background(Color.White.copy(alpha = 0.18f), CircleShape),
             contentAlignment = Alignment.Center,
-        ) { Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp)) }
-        Text(value, style = SgTextStyle.Title, color = Color.White, maxLines = 1)
-        Text(label, style = SgTextStyle.Caption, color = Color.White.copy(alpha = 0.85f))
+        ) { Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(17.dp)) }
+        Text(
+            value,
+            style = SgTextStyle.Title,
+            color = Color.White,
+            maxLines = 1,
+            softWrap = false,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Text(
+            label,
+            style = SgTextStyle.Caption,
+            color = Color.White.copy(alpha = 0.85f),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            minLines = 2,
+            maxLines = 2,
+        )
     }
 }
 
