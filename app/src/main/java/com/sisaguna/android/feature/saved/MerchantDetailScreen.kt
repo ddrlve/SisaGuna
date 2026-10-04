@@ -73,6 +73,7 @@ fun MerchantDetailScreen(
     onBack: () -> Unit,
     onListingClick: (String) -> Unit,
     onCartClick: () -> Unit,
+    onChatClick: (String) -> Unit = {},
     /** Fixed title ("Disimpan" when opened from Saved); null shows the merchant's name. */
     title: String? = null,
     viewModel: MerchantDetailViewModel = hiltViewModel(),
@@ -137,6 +138,7 @@ fun MerchantDetailScreen(
                         distanceKm = s.distanceKm ?: s.merchant.distanceKm,
                         listingCount = s.totalListings,
                         saved = s.isSaved,
+                        onChat = { onChatClick(s.merchant.id) },
                         onToggleSave = {
                             val nowSaved = viewModel.toggleSave()
                             scope.launch {

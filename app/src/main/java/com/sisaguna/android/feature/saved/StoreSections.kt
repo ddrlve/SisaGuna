@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.AddAPhoto
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Favorite
@@ -97,11 +98,26 @@ fun StoreHero(
     saved: Boolean,
     onToggleSave: () -> Unit,
     modifier: Modifier = Modifier,
+    onChat: (() -> Unit)? = null,
 ) {
     Column(modifier.fillMaxWidth().background(SgColor.BaseWhite)) {
         Box(Modifier.fillMaxWidth().height(190.dp)) {
             AsyncImage(merchant.bannerUrl, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.45f)))))
+            if (onChat != null) {
+                Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 62.dp)
+                        .size(42.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                        .pressable(onChat, pressedScale = 0.88f),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = l("Chat toko", "Chat store"), tint = Color(0xFF1F2A1C), modifier = Modifier.size(21.dp))
+                }
+            }
             Box(
                 Modifier
                     .align(Alignment.TopEnd)

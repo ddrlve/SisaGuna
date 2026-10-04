@@ -40,6 +40,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Inventory2
@@ -107,6 +108,7 @@ fun ListingDetailScreen(
     onMerchantClick: (String) -> Unit,
     onListingClick: (String) -> Unit,
     onCartClick: () -> Unit,
+    onChatClick: (merchantId: String, listingId: String) -> Unit = { _, _ -> },
     viewModel: ListingDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -158,7 +160,7 @@ fun ListingDetailScreen(
                 FloatingBack(onBack, Modifier.padding(SgSpacing.Lg))
                 SgEmptyState(Icons.Rounded.SearchOff, "Makanan tidak ditemukan", "Mungkin sudah habis atau dihapus penyedianya.")
             }
-            is ListingDetailUiState.Success -> DetailBody(s, padding, onBack, onMerchantClick, onListingClick)
+            is ListingDetailUiState.Success -> DetailBody(s, padding, onBack, onMerchantClick, onListingClick, onChatClick)
         }
     }
 
@@ -197,6 +199,7 @@ private fun DetailBody(
     onBack: () -> Unit,
     onMerchantClick: (String) -> Unit,
     onListingClick: (String) -> Unit,
+    onChatClick: (String, String) -> Unit,
 ) {
     val listing = s.listing
     val listState = rememberLazyListState()
@@ -235,7 +238,7 @@ private fun DetailBody(
                         .padding(top = SgSpacing.Xl),
                 ) {
                     HeaderBlock(s)
-                    MerchantRow(s, onMerchantClick)
+                    MerchantRow(s, onMerchantClick, onChat = { onChatClick(s.detail.merchant.id, s.listing.id) })
                     Section(l("Cek kelayakan", "Is it safe to eat?")) {
                         SafetyCard(
                             assessment = FoodSafety.assess(listing, s.now),
@@ -391,7 +394,7 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
  * store banner, name, rating and halal status sit in a card with a full-width outlined
  * "Lihat Toko" button (48dp tall), unmistakably a button.
  */
-private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (String) -> Unit) {
+private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (String) -> Unit, onChat: () -> Unit) {
     val m = s.detail.merchant
     Column(
         modifier = Modifier
@@ -416,14 +419,25 @@ private fun MerchantRow(s: ListingDetailUiState.Success, onMerchantClick: (Strin
                 }
             }
         }
-        SgButton(
-            text = l("Lihat Toko", "Visit Store"),
-            onClick = { onMerchantClick(m.id) },
-            style = SgButtonStyle.Secondary,
-            height = 48.dp,
-            modifier = Modifier.padding(top = SgSpacing.Md).fillMaxWidth(),
-            leading = { Icon(Icons.Rounded.Storefront, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp)) },
-        )
+        // Chat first: interviewees wanted to ask the seller before paying.
+        Row(Modifier.padding(top = SgSpacing.Md).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
+            SgButton(
+                text = l("Chat toko", "Chat store"),
+                onClick = onChat,
+                style = SgButtonStyle.Secondary,
+                height = 48.dp,
+                modifier = Modifier.weight(1f),
+                leading = { Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp)) },
+            )
+            SgButton(
+                text = l("Lihat Toko", "Visit Store"),
+                onClick = { onMerchantClick(m.id) },
+                style = SgButtonStyle.Secondary,
+                height = 48.dp,
+                modifier = Modifier.weight(1f),
+                leading = { Icon(Icons.Rounded.Storefront, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(20.dp)) },
+            )
+        }
     }
 }
 
