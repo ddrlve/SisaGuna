@@ -35,6 +35,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.History
@@ -87,6 +88,8 @@ import kotlinx.coroutines.delay
 fun ActivityScreen(
     onOrderClick: (String) -> Unit,
     onExplore: () -> Unit,
+    onChatsClick: () -> Unit = {},
+    unreadChats: Int = 0,
     viewModel: ActivityViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -104,11 +107,13 @@ fun ActivityScreen(
         contentPadding = PaddingValues(bottom = SgSpacing.Xl),
     ) {
         item {
-            Text(
-                "Aktivitas",
-                style = SgTextStyle.Display,
-                modifier = Modifier.padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg),
-            )
+            Row(
+                Modifier.fillMaxWidth().padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Aktivitas", style = SgTextStyle.Display, modifier = Modifier.weight(1f))
+                ChatPill(unreadChats, onChatsClick)
+            }
         }
         item { ImpactStrip(state.impact) }
         item {
@@ -162,6 +167,35 @@ fun ActivityScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Entry to store chats; the count shows unread replies from sellers. */
+@Composable
+private fun ChatPill(unread: Int, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(SgRadius.Pill))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
+            .pressable(onClick, pressedScale = 0.95f)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(18.dp))
+        Text("Chat", style = SgTextStyle.Label, modifier = Modifier.padding(start = 6.dp))
+        if (unread > 0) {
+            Text(
+                unread.toString(),
+                style = SgTextStyle.TextXsMedium,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(start = 6.dp)
+                    .background(SgColor.Brand500, CircleShape)
+                    .padding(horizontal = 7.dp, vertical = 1.dp),
+            )
         }
     }
 }

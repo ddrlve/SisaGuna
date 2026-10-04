@@ -517,6 +517,11 @@ internal object EnDictionary {
         "Porsi pas" to "Right portion",
         "Masih fresh" to "Still fresh",
         "Bersih" to "Clean",
+        // Demo chat history (FakeChatRepository).
+        "Bu, nasi kuningnya masih ada?" to "Is the nasi kuning still available?",
+        "Masih ada kak, sampai jam 7 malam ya. Lauknya lengkap." to "Yes, until 7pm. All the sides are there.",
+        "Oke bu, saya ambil sore ini. Terima kasih!" to "Great, I'll pick it up this afternoon. Thank you!",
+        "Halo kak, roti gandum pesananmu sudah siap diambil ya. Tunjukkan kode SG-4821 di kasir." to "Hi! Your wholewheat loaf is ready. Show code SG-4821 at the counter.",
     )
 }
 

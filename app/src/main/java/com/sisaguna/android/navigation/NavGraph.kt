@@ -94,6 +94,10 @@ fun SgNavGraph(navController: NavHostController) {
 
     fun openListing(id: String) = navController.navigate(Screen.ListingDetail.routeFor(id))
     fun openStore(id: String) = navController.navigate(Screen.Store.routeFor(id)) { launchSingleTop = true }
+    fun openChat(merchantId: String, listingId: String? = null) {
+        if (authStatus == AuthStatus.GUEST) showGuestGate = true
+        else navController.navigate(Screen.Chat.routeFor(merchantId, listingId)) { launchSingleTop = true }
+    }
     fun openCart() {
         if (authStatus == AuthStatus.GUEST) showGuestGate = true
         else navController.navigate(Screen.Checkout.route) { launchSingleTop = true }
@@ -251,9 +255,13 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Activity.route) {
+                val chats: com.sisaguna.android.feature.chat.ChatInboxViewModel = hiltViewModel()
+                val unreadChats by chats.unreadTotal.collectAsStateWithLifecycle()
                 ActivityScreen(
                     onOrderClick = { id -> navController.navigate(Screen.OrderDetail.routeFor(id)) },
                     onExplore = { navigateOrGate(Screen.Home) },
+                    onChatsClick = { navController.navigate(Screen.ChatInbox.route) { launchSingleTop = true } },
+                    unreadChats = unreadChats,
                 )
             }
             composable(
@@ -265,6 +273,7 @@ fun SgNavGraph(navController: NavHostController) {
                     onMerchantClick = ::openStore,
                     onListingClick = ::openListing,
                     onCartClick = ::openCart,
+                    onChatClick = { merchantId, listingId -> openChat(merchantId, listingId) },
                 )
             }
             composable(
@@ -275,6 +284,29 @@ fun SgNavGraph(navController: NavHostController) {
                     onBack = { navController.popBackStack() },
                     onListingClick = ::openListing,
                     onCartClick = ::openCart,
+                    onChatClick = { openChat(it) },
+                )
+            }
+            composable(
+                route = Screen.Chat.route,
+                arguments = listOf(
+                    navArgument(Screen.Chat.ARG_MERCHANT) { type = NavType.StringType },
+                    navArgument(Screen.Chat.ARG_LISTING) {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    },
+                ),
+            ) {
+                com.sisaguna.android.feature.chat.ChatScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenStore = ::openStore,
+                    onOpenListing = ::openListing,
+                )
+            }
+            composable(Screen.ChatInbox.route) {
+                com.sisaguna.android.feature.chat.ChatInboxScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenChat = { openChat(it) },
                 )
             }
             composable(Screen.Checkout.route) {
@@ -303,7 +335,7 @@ fun SgNavGraph(navController: NavHostController) {
                     },
                 ),
             ) {
-                OrderDetailScreen(onBack = { navController.popBackStack() })
+                OrderDetailScreen(onBack = { navController.popBackStack() }, onChatClick = { openChat(it) })
             }
             composable(Screen.Saved.route) {
                 SavedScreen(
@@ -319,6 +351,7 @@ fun SgNavGraph(navController: NavHostController) {
                     onBack = { navController.popBackStack() },
                     onListingClick = ::openListing,
                     onCartClick = ::openCart,
+                    onChatClick = { openChat(it) },
                     title = stringResource(R.string.saved_title),
                 )
             }

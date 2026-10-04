@@ -43,6 +43,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Directions
+import androidx.compose.material.icons.rounded.ChatBubbleOutline
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material3.AlertDialog
@@ -105,6 +106,7 @@ private val Gold = Color(0xFFF5B301)
 @Composable
 fun OrderDetailScreen(
     onBack: () -> Unit,
+    onChatClick: (String) -> Unit = {},
     viewModel: OrderDetailViewModel = hiltViewModel(),
 ) {
     val order by viewModel.order.collectAsStateWithLifecycle()
@@ -146,7 +148,7 @@ fun OrderDetailScreen(
             o.rating?.let { r -> item { RatedCard(r.stars, r.tags, r.comment) } }
             o.complaint?.let { c -> item { ComplaintStatusCard(c) } }
             if (o.canComplain) item { ComplaintPrompt(onClick = { showComplaint = true }) }
-            item { MerchantCard(o) }
+            item { MerchantCard(o, onChat = { onChatClick(o.merchant.id) }) }
             item { ItemsCard(o) }
             item { Timeline(o) }
         }
@@ -316,7 +318,7 @@ private fun RatedCard(stars: Int, tags: List<String>, comment: String) {
 }
 
 @Composable
-private fun MerchantCard(o: Order) {
+private fun MerchantCard(o: Order, onChat: () -> Unit) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -331,8 +333,19 @@ private fun MerchantCard(o: Order) {
             Text(o.merchant.name, style = SgTextStyle.Label)
             Text(o.merchant.location, style = SgTextStyle.Body)
         }
+        Box(
+            Modifier
+                .padding(end = 8.dp)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(SgColor.Mint)
+                .pressable(onChat, pressedScale = 0.9f),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Rounded.ChatBubbleOutline, contentDescription = l("Chat toko", "Chat store"), tint = SgColor.Brand600, modifier = Modifier.size(19.dp))
+        }
         SgButton(
-            "Rute",
+            l("Rute", "Directions"),
             onClick = {
                 val uri = Uri.parse("geo:0,0?q=" + Uri.encode("${o.merchant.name}, ${o.merchant.location}"))
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }

@@ -47,6 +47,16 @@ sealed class Screen(val route: String) {
 
     data object Checkout : Screen("checkout")
 
+    /** Chat with one store; [ARG_LISTING] pins the item the buyer is asking about. */
+    data object Chat : Screen("chat/{merchantId}?listing={listing}") {
+        const val ARG_MERCHANT = "merchantId"
+        const val ARG_LISTING = "listing"
+        fun routeFor(merchantId: String, listingId: String? = null) = "chat/$merchantId?listing=${listingId.orEmpty()}"
+    }
+
+    /** Every conversation with stores, opened from Activity. */
+    data object ChatInbox : Screen("chats")
+
     data object OrderDetail : Screen("order/{orderId}?justPlaced={justPlaced}") {
         const val ARG_ID = "orderId"
         const val ARG_JUST_PLACED = "justPlaced"
