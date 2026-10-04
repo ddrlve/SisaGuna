@@ -1,5 +1,11 @@
 package com.sisaguna.android.feature.upload
 
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.windowInsetsPadding
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -133,7 +139,7 @@ fun UploadScreen(
         topBar = { SgTopBar(title = if (form.isFood) l("Upload siap santap", "Post ready-to-eat food") else l("Upload pakan & kompos", "Post feed & compost"), onBack = leave) },
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
-            Column(Modifier.background(SgColor.BaseWhite).navigationBarsPadding().imePadding()) {
+            Column(Modifier.background(SgColor.BaseWhite).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.ime.union(androidx.compose.foundation.layout.WindowInsets.navigationBars).only(androidx.compose.foundation.layout.WindowInsetsSides.Bottom))) {
                 HorizontalDivider(color = SgColor.Hairline)
                 SgButton(
                     l("Publikasikan", "Publish"),

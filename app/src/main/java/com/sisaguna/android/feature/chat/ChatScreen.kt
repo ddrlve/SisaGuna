@@ -18,8 +18,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -82,6 +88,7 @@ import java.time.ZoneId
  * whether the food is still there, when it was cooked and whether it's halal. Those questions
  * sit as one-tap chips above the keyboard; the item being asked about is pinned at the top.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ChatScreen(
     onBack: () -> Unit,
@@ -100,7 +107,13 @@ fun ChatScreen(
         if (rows > 0) listState.animateScrollToItem(rows - 1)
     }
 
-    Column(Modifier.fillMaxSize().background(SgColor.Page).imePadding()) {
+    // Keyboard opening shrinks the list; keep the newest message in view.
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(imeVisible) {
+        if (imeVisible && rows > 0) listState.animateScrollToItem(rows - 1)
+    }
+
+    Column(Modifier.fillMaxSize().background(SgColor.Page)) {
         ChatTopBar(merchant, typing = state.storeTyping, onBack = onBack, onOpenStore = { merchant?.let { onOpenStore(it.id) } })
         state.listing?.let { ListingContext(it, onClick = { onOpenListing(it.id) }) }
 
@@ -301,7 +314,14 @@ private fun Composer(
     onSend: () -> Unit,
     onQuick: (String) -> Unit,
 ) {
-    Column(Modifier.background(SgColor.BaseWhite).navigationBarsPadding()) {
+    // One bottom inset: the keyboard when it's open, otherwise the nav bar. imePadding() plus
+    // navigationBarsPadding() stacked both (the IME inset already includes the nav bar) and
+    // lifted the box a nav bar's height above the keyboard.
+    Column(
+        Modifier
+            .background(SgColor.BaseWhite)
+            .windowInsetsPadding(WindowInsets.ime.union(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom)),
+    ) {
         HorizontalDivider(color = SgColor.Hairline)
         LazyRow(
             contentPadding = PaddingValues(horizontal = SgSpacing.Gutter, vertical = 10.dp),
