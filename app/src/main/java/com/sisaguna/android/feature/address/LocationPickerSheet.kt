@@ -74,8 +74,8 @@ private const val DEFAULT_LAT = -6.2275
 private const val DEFAULT_LNG = 106.6544
 
 /**
- * Home's location sheet (Figma 43:6960, rebuilt after device feedback). Light scrim — the
- * screen behind is blurred by the caller instead of blacked out — real address search, a GPS
+ * Home's location sheet (Figma 43:6960, rebuilt after device feedback). Dimmed backdrop like
+ * the app's other sheets, real address search, a GPS
  * action that reports progress and errors inline, an in-app map picker, and saved addresses
  * with a clear selected state.
  */
@@ -132,7 +132,9 @@ fun LocationPickerSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor = SgColor.BaseWhite,
-        scrimColor = SgColor.Ink.copy(alpha = 0.18f),
+        // Same dim scrim as the other sheets (avatar, voucher). The old blurred backdrop was
+        // costly to render and read as smudged on device.
+        scrimColor = SgColor.Ink.copy(alpha = 0.32f),
     ) {
         Column(
             modifier = Modifier

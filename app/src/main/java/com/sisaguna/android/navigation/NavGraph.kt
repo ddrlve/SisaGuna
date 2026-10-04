@@ -85,9 +85,6 @@ fun SgNavGraph(navController: NavHostController) {
     val addressViewModel: AddressViewModel = hiltViewModel()
     val addressState by addressViewModel.uiState.collectAsStateWithLifecycle()
     var showLocationSheet by remember { mutableStateOf(false) }
-    // Frosted backdrop: blur the app behind the location sheet instead of a black scrim.
-    // RenderEffect blur needs API 31+; older devices just get the light scrim.
-    val backdropBlur by animateDpAsState(if (showLocationSheet) 6.dp else 0.dp, tween(220), label = "backdropBlur")
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     // Nested routes (category/…, saved/merchant/…, profile/edit) keep the bottom nav visible
@@ -178,7 +175,6 @@ fun SgNavGraph(navController: NavHostController) {
                     top = padding.calculateTopPadding(),
                     bottom = if (showBottomNav) padding.calculateBottomPadding() else 0.dp,
                 )
-                .then(if (backdropBlur > 0.dp) Modifier.blur(backdropBlur) else Modifier),
         ) {
             composable(Screen.Splash.route) {
                 SplashScreen(
