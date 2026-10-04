@@ -1,5 +1,7 @@
 package com.sisaguna.android.ui.domain
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,9 +19,9 @@ import com.sisaguna.android.ui.theme.SgColor
 @Composable
 fun TierBadge(tier: ListingTier, modifier: Modifier = Modifier) {
     val label = when (tier) {
-        ListingTier.HUMAN -> "siap santap"
-        ListingTier.ANIMAL_FEED -> "untuk ternak"
-        ListingTier.COMPOST -> "untuk kompos"
+        ListingTier.HUMAN -> l("siap santap", "ready to eat")
+        ListingTier.ANIMAL_FEED -> l("untuk ternak", "animal feed")
+        ListingTier.COMPOST -> l("untuk kompos", "for compost")
     }
     Text(
         text = label,

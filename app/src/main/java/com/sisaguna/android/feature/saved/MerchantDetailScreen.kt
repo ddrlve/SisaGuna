@@ -39,7 +39,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import com.sisaguna.android.ui.i18n.Text
@@ -87,7 +87,7 @@ fun MerchantDetailScreen(
 
     Scaffold(
         containerColor = SgColor.Page,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         topBar = {
             SgTopBar(
                 title = title ?: (state as? MerchantDetailUiState.Success)?.merchant?.name.orEmpty(),

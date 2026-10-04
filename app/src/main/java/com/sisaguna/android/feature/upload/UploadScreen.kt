@@ -303,7 +303,7 @@ fun UploadScreen(
                             val pct = discountPercent(form.originalPriceValue, form.priceValue)
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    if (pct != null) "Diskon $pct% dari harga normal" else "Saran: ${formatRupiah(suggested)} (diskon 60%)",
+                                    if (pct != null) l("Diskon $pct% dari harga normal", "$pct% off the regular price") else l("Saran: ${formatRupiah(suggested)} (diskon 60%)", "Suggested: ${formatRupiah(suggested)} (60% off)"),
                                     style = SgTextStyle.Caption,
                                     color = SgColor.Brand700,
                                     modifier = Modifier.weight(1f),

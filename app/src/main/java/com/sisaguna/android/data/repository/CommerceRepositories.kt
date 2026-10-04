@@ -87,6 +87,7 @@ data class PlaceOrderRequest(
     val fulfillment: Fulfillment = Fulfillment.PICKUP,
     val delivery: DeliveryQuote? = null,
     val deliveryAddress: Address? = null,
+    val serviceFee: Int = 0,
 )
 
 /** Pickup orders get this long to collect, unless the listing window closes first. */
@@ -128,13 +129,13 @@ class FakeOrderRepository(
         listOf(
             Order(
                 id = "o4", pickupCode = "SG-4821", merchant = seedMerchant("m2"),
-                lines = listOf(OrderLine("l2", "Roti Tawar Lewat Best Before", ListingTier.HUMAN, seedImage("roti_tawar"), 2, 5000, 18000)),
+                lines = listOf(OrderLine("l2", "Roti Gandum Lewat Best Before", ListingTier.HUMAN, seedImage("roti_tawar"), 2, 5000, 18000)),
                 payment = PaymentKind.QRIS, note = "", status = OrderStatus.READY,
                 createdAt = ago(55), pickupEnd = inMinutes(95),
             ),
             Order(
                 id = "o3", pickupCode = "SG-3307", merchant = seedMerchant("m2"),
-                lines = listOf(OrderLine("l5", "Donat Reject Bentuk", ListingTier.HUMAN, seedImage("donat"), 1, 3000, 12000)),
+                lines = listOf(OrderLine("l5", "Donat Glaze Sisa Etalase", ListingTier.HUMAN, seedImage("donat"), 1, 3000, 12000)),
                 payment = PaymentKind.GOPAY, note = "", status = OrderStatus.COMPLETED,
                 createdAt = ago(30 * 60), pickupEnd = ago(27 * 60), completedAt = ago(29 * 60),
             ),
@@ -183,6 +184,7 @@ class FakeOrderRepository(
             fulfillment = request.fulfillment,
             delivery = request.delivery.takeIf { request.fulfillment == Fulfillment.DELIVERY },
             deliveryAddress = request.deliveryAddress.takeIf { request.fulfillment == Fulfillment.DELIVERY },
+            serviceFee = request.serviceFee,
             pickupBy = minOf(now.plus(Duration.ofMinutes(PICKUP_GRACE_MINUTES)), request.lines.minOf { it.first.pickupEnd })
                 .takeIf { request.fulfillment == Fulfillment.PICKUP },
         )

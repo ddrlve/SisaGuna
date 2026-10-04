@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.address
 
+import com.sisaguna.android.ui.i18n.l
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -322,7 +324,7 @@ private fun SavedAddressRow(address: Address, selected: Boolean, onSelect: () ->
             if (address.note.isNotBlank()) Text(address.note, style = SgTextStyle.Caption, color = SgColor.Brand700, maxLines = 1)
         }
         IconButton(onClick = onEdit) {
-            Icon(Icons.Rounded.Edit, contentDescription = "Ubah ${address.label}", tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
+            Icon(Icons.Rounded.Edit, contentDescription = l("Ubah ", "Edit ") + address.label, tint = SgColor.InkMuted, modifier = Modifier.size(20.dp))
         }
     }
 }

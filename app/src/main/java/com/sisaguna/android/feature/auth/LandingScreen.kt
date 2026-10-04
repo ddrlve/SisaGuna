@@ -173,8 +173,11 @@ private fun LandingContent(
             )
             Text(
                 l(
-                    "Warung, bakery, dan katering menjual sisa hari ini sebelum terbuang. Pesan, lalu ambil sendiri atau kirim pakai ojek online.",
-                    "Shops sell today's surplus before it's thrown away. Order, then pick it up or have a courier bring it.",
+                    l(
+                        "Warung, bakery, dan katering menjual sisa hari ini sebelum terbuang. Pesan, lalu ambil sendiri atau kirim pakai ojek online.",
+                        "Food stalls, bakeries and caterers sell today's extra food before it goes to waste. Order, then pick it up or have a courier bring it.",
+                    ),
+                    "Shops sell today's extra food before it's thrown away. Order, then pick it up or have a courier bring it.",
                 ),
                 style = SgTextStyle.Body,
                 modifier = Modifier.padding(top = 10.dp).enterUp(230),

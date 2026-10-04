@@ -2,11 +2,11 @@ package com.sisaguna.android.ui.i18n
 
 /**
  * Indonesian → English for exact UI phrases (see [tr]). Generated from the app's copy and
- * hand-translated; product names, store names and user reviews stay in their original
- * language on purpose. New copy written with [l] doesn't need an entry here.
+ * hand-translated; store names stay as they are. Demo seed content (listings, reviews,
+ * notifications) lives in [SeedContentEn]. New copy written with [l] doesn't need an entry here.
  */
 internal object EnDictionary {
-    val map: Map<String, String> = hashMapOf(
+    val map: Map<String, String> = SeedContentEn.map + hashMapOf(
         "Aktif" to "Active",
         "Aktivitas" to "Activity",
         "Alamat" to "Address",
@@ -14,7 +14,7 @@ internal object EnDictionary {
         "Alamat tidak ditemukan. Coba kata lain atau pilih lewat peta." to "Address not found. Try other words or pick on the map.",
         "Alihkan ke pakan ternak" to "Switch to animal feed",
         "Ambil makanan antara 16.00-18.00 dan dapat potongan tambahan dari penyedia Verified." to "Pick up between 4-6pm for an extra discount from Verified sellers.",
-        "Ambil makanan surplus lezat dari resto sekitar dengan diskon melimpah atau gratis demi misi penyelamatan lingkungan." to "Get tasty surplus food from nearby restaurants at big discounts or free, for the planet.",
+        "Ambil makanan berlebih yang lezat dari resto sekitar dengan diskon melimpah atau gratis demi misi penyelamatan lingkungan." to "Get tasty extra food from nearby restaurants at big discounts or free, for the planet.",
         "Apa itu SisaGuna?" to "What is SisaGuna?",
         "Apa yang kamu suka?" to "What did you like?",
         "Apa yang perlu diperbaiki?" to "What could be better?",
@@ -122,7 +122,6 @@ internal object EnDictionary {
         "Diskon 50%, maksimal Rp 10.000; minimum belanja Rp 10.000." to "50% off, up to Rp 10,000; minimum spend Rp 10,000.",
         "Diskon maksimal Rp 5.000 per pesanan." to "Up to Rp 5,000 off per order.",
         "Diskon ongkir 50%" to "50% off delivery",
-        "Diskon surplus" to "Surplus discount",
         "Diskon terbesar" to "Biggest discount",
         "Donat" to "Donuts",
         "Dukungan dan Hukum" to "Support & Legal",
@@ -258,7 +257,7 @@ internal object EnDictionary {
         "Makanan basi / tidak layak" to "Spoiled / unsafe food",
         "Makanan di sekitar lokasi ini yang akan ditampilkan." to "Food around this location will be shown.",
         "Makanan enak" to "Tasty food",
-        "Makanan sisa yang masih layak dikonsumsi" to "Surplus food that's still good to eat",
+        "Makanan sisa yang masih layak dikonsumsi" to "Leftover food that's still good to eat",
         "Makanan tidak ditemukan" to "Food not found",
         "Maks. Rp 10.000 · min. Rp 10.000" to "Up to Rp 10,000 · min. Rp 10,000",
         "Maks. Rp 8.000 · tanpa minimum" to "Up to Rp 8,000 · no minimum",
@@ -386,7 +385,7 @@ internal object EnDictionary {
         "Ramah" to "Friendly",
         "Rating kamu" to "Your rating",
         "Rating tertinggi" to "Top rated",
-        "Redistribusikan makanan sisa hari ini, kurangi sampah organik, dan raih profit tambahan secara cepat dan transparan." to "Sell today's surplus, cut organic waste, and earn extra income quickly and transparently.",
+        "Redistribusikan makanan sisa hari ini, kurangi sampah organik, dan raih profit tambahan secara cepat dan transparan." to "Sell today's leftovers, cut organic waste, and earn extra income quickly and transparently.",
         "Rekomendasi" to "Recommended",
         "Rekomendasi penyedia" to "Recommended sellers",
         "Ringkasan" to "Summary",
@@ -434,7 +433,7 @@ internal object EnDictionary {
         "Sinyal lokasi belum didapat. Coba di dekat jendela atau pilih lewat peta." to "No location signal yet. Try near a window or pick on the map.",
         "Sisa makanan untuk hewan ternak & bahan kompos" to "Scraps for livestock & compost",
         "Sisa waktu " to "Time left ",
-        "SisaGuna menghubungkan kamu dengan makanan berlebih dari warung, toko roti, katering, dan rumah tangga di sekitarmu. Makanan layak makan dijual murah atau gratis, sisanya disalurkan untuk pakan ternak dan kompos." to "SisaGuna connects you with surplus food from nearby food stalls, bakeries, caterers and homes. Edible food is sold cheap or free; the rest goes to animal feed and compost.",
+        "SisaGuna menghubungkan kamu dengan makanan berlebih dari warung, toko roti, katering, dan rumah tangga di sekitarmu. Makanan layak makan dijual murah atau gratis, sisanya disalurkan untuk pakan ternak dan kompos." to "SisaGuna connects you with extra food from nearby food stalls, bakeries, caterers and homes. Edible food is sold cheap or free; the rest goes to animal feed and compost.",
         "Standar" to "Standard",
         "Status pesanan" to "Order status",
         "Stok" to "Stock",
@@ -511,6 +510,13 @@ internal object EnDictionary {
         "Ayam olie" to "Ayam olie",
         "porsi" to "portions",
         "Upload" to "Post",
+        "Nikmati" to "Enjoy",
+        "makanan" to "food",
+        "GRAATIIISSS" to "FREEEE",
+        "30 menit sebelum waktu ambil berakhir" to "30 minutes before the pickup window ends",
+        "Porsi pas" to "Right portion",
+        "Masih fresh" to "Still fresh",
+        "Bersih" to "Clean",
     )
 }
 
@@ -553,5 +559,9 @@ internal object EnPatterns {
         Regex("""^S/d (.+)$""") to "Until $1",
         Regex(""" km dari kamu""") to " km from you",
         Regex("""^Gratis$""") to "Free",
+        Regex("""^(.+) dilepas$""") to "$1 disconnected",
+        Regex("""^Pesanan (SG-\d+) siap diambil$""") to "Order $1 is ready for pickup",
+        Regex("""^(.+) sudah menyiapkan (\d+) item\. Tunjukkan kode (SG-\d+) saat ambil\.$""") to "$1 has prepared $2 item(s). Show code $3 at pickup.",
+        Regex("""^(.+) terhubung$""") to "$1 connected",
     )
 }

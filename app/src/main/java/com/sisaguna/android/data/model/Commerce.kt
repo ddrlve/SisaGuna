@@ -11,6 +11,25 @@ data class Cart(
     val isEmpty: Boolean get() = quantities.isEmpty()
 }
 
+/**
+ * SisaGuna's cut, split between both sides: the buyer pays a small flat service fee per order
+ * (Rp 1.000-3.000, stepped by basket size) and the seller gives up 10% of the food sale.
+ * Courier fees are passed straight to the courier and never commissioned.
+ */
+object AppFees {
+    const val MERCHANT_COMMISSION_PERCENT = 10
+
+    fun buyerServiceFee(itemsTotal: Int): Int = when {
+        itemsTotal <= 0 -> 0 // free food stays free
+        itemsTotal < 25_000 -> 1_000
+        itemsTotal < 75_000 -> 2_000
+        else -> 3_000
+    }
+
+    fun merchantCommission(sale: Int): Int = sale * MERCHANT_COMMISSION_PERCENT / 100
+    fun merchantPayout(sale: Int): Int = sale - merchantCommission(sale)
+}
+
 enum class PaymentKind { QRIS, GOPAY, OVO, DANA, CASH }
 
 data class PaymentMethod(
@@ -88,12 +107,14 @@ data class Order(
     /** Pickup: the latest time the buyer should arrive (order time + grace, capped by the listing window). */
     val pickupBy: Instant? = null,
     val complaint: Complaint? = null,
+    val serviceFee: Int = 0,
 ) {
     val subtotal: Int get() = lines.sumOf { it.total }
     val deliveryFee: Int get() = delivery?.payable ?: 0
-    val total: Int get() = (subtotal - voucherDiscount).coerceAtLeast(0) + deliveryFee
+    val itemsTotal: Int get() = (subtotal - voucherDiscount).coerceAtLeast(0)
+    val total: Int get() = itemsTotal + deliveryFee + serviceFee
     val originalTotal: Int get() = lines.sumOf { it.originalTotal }
-    val savings: Int get() = (originalTotal - (total - deliveryFee)).coerceAtLeast(0)
+    val savings: Int get() = (originalTotal - itemsTotal).coerceAtLeast(0)
     val itemCount: Int get() = lines.sumOf { it.quantity }
     val canRate: Boolean get() = status == OrderStatus.COMPLETED && rating == null
     val canComplain: Boolean get() = status == OrderStatus.COMPLETED && complaint == null

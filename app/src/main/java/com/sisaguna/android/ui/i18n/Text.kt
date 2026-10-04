@@ -1,7 +1,17 @@
 package com.sisaguna.android.ui.i18n
 
 import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.luminance
+import com.sisaguna.android.ui.theme.SgColor
+import com.sisaguna.android.ui.theme.SgTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +52,33 @@ fun tr(text: String): String {
     var out = text
     for ((regex, replacement) in EnPatterns.rules) out = regex.replace(out, replacement)
     return out
+}
+
+/**
+ * Material's SnackbarHost draws its message with its own Text, so messages would skip [tr]
+ * and stay Indonesian in English mode. This host renders through the translating [Text].
+ */
+@Composable
+fun SgSnackbarHost(hostState: SnackbarHostState, modifier: Modifier = Modifier) {
+    SnackbarHost(hostState, modifier) { data ->
+        // Ink surface inverts with the theme; the action takes a brand green that keeps
+        // contrast on either.
+        val action = if (SgColor.Ink.luminance() > 0.5f) SgColor.Brand700 else SgColor.Brand300
+        Snackbar(
+            // Sits just above whatever bottom bar the Scaffold placed it over.
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            shape = RoundedCornerShape(14.dp),
+            containerColor = SgColor.Ink,
+            contentColor = SgColor.Page,
+            action = data.visuals.actionLabel?.let { label ->
+                {
+                    TextButton(onClick = data::performAction) {
+                        Text(label, color = action, style = SgTextStyle.Label)
+                    }
+                }
+            },
+        ) { Text(data.visuals.message, style = SgTextStyle.Label, color = SgColor.Page) }
+    }
 }
 
 /** Pick between an Indonesian and English string inline, for copy built in code. */

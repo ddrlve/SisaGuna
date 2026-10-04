@@ -106,7 +106,7 @@ private fun AccountTypeStep(
                 AccountTypeCard(
                     emoji = "😋",
                     title = "Pengguna Biasa",
-                    description = "Ambil makanan surplus lezat dari resto sekitar dengan diskon melimpah atau gratis demi misi penyelamatan lingkungan.",
+                    description = "Ambil makanan berlebih yang lezat dari resto sekitar dengan diskon melimpah atau gratis demi misi penyelamatan lingkungan.",
                     selected = selected == AccountType.REGULAR,
                     onClick = { onSelect(AccountType.REGULAR) },
                 )

@@ -22,7 +22,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.rememberCoroutineScope
@@ -216,7 +216,7 @@ fun HomeScreen(
             onClick = onCartClick,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
-        SnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (cart != null) 72.dp else 0.dp))
+        SgSnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (cart != null) 72.dp else 0.dp))
     }
 
     openVoucher?.let { v ->
@@ -627,7 +627,7 @@ private fun HomeTopBar(
 }
 
 @Composable
-private fun NotificationBell(unread: Int, onClick: () -> Unit) {
+internal fun NotificationBell(unread: Int, onClick: () -> Unit) {
     val cd = if (unread > 0) {
         stringResource(R.string.home_notifications_unread_cd, unread)
     } else {

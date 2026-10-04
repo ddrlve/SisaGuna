@@ -53,7 +53,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import com.sisaguna.android.ui.i18n.Text
@@ -117,14 +117,14 @@ fun ListingDetailScreen(
     fun confirmAdded(qty: Int) {
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
-            val r = snackbar.showSnackbar("$qty item masuk keranjang", "Lihat", duration = SnackbarDuration.Short)
+            val r = snackbar.showSnackbar(l("$qty item masuk keranjang", "$qty item(s) added to your order"), l("Lihat", "View"), duration = SnackbarDuration.Short)
             if (r == SnackbarResult.ActionPerformed) onCartClick()
         }
     }
 
     Scaffold(
         containerColor = SgColor.Page,
-        snackbarHost = { SnackbarHost(snackbar, modifier = Modifier.padding(bottom = 72.dp)) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             val s = state as? ListingDetailUiState.Success
@@ -168,7 +168,10 @@ fun ListingDetailScreen(
             title = { Text("Ganti isi keranjang?", style = SgTextStyle.Title) },
             text = {
                 Text(
-                    "Keranjangmu berisi makanan dari $other. Satu pesanan hanya bisa diambil di satu tempat, jadi keranjang lama akan dikosongkan.",
+                    l(
+                        "Keranjangmu berisi makanan dari $other. Satu pesanan hanya bisa diambil di satu tempat, jadi keranjang lama akan dikosongkan.",
+                        "Your order has food from $other. One order can only be collected from one place, so the old one will be cleared.",
+                    ),
                     style = SgTextStyle.Body,
                 )
             },
@@ -282,7 +285,7 @@ private fun DetailBody(
                             val start = listing.pickupStart?.let { formatClock(it) }
                             InfoLine(Icons.Rounded.Schedule, "Waktu ambil", if (start != null) "Hari ini, $start sampai ${formatClock(listing.pickupEnd)}" else "Sampai ${formatClock(listing.pickupEnd)}")
                             InfoLine(Icons.Rounded.LocationOn, "Lokasi", s.detail.merchant.location + (listing.distanceKm?.let { " · %.1f km dari kamu".format(it) } ?: ""))
-                            InfoLine(Icons.Rounded.Inventory2, "Stok", "Sisa ${listing.stock} ${unitWord(listing.unit)}" + if (s.inCart > 0) " · ${s.inCart} di keranjangmu" else "")
+                            InfoLine(Icons.Rounded.Inventory2, l("Stok", "Stock"), l("Sisa ", "") + "${listing.stock} ${unitWord(listing.unit)}" + l("", " left") + if (s.inCart > 0) l(" · ${s.inCart} di keranjangmu", " · ${s.inCart} in your order") else "")
                         }
                     }
                     TipsCard(listing.tier)
@@ -370,7 +373,7 @@ private fun HeaderBlock(s: ListingDetailUiState.Success) {
             val pct = if (listing.isFree) 100 else discountPercent(listing.priceOriginal, listing.priceDiscounted)
             if (pct != null) {
                 Text(
-                    "Hemat $pct%",
+                    l("Hemat $pct%", "Save $pct%"),
                     style = SgTextStyle.Label.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold),
                     color = SgColor.OnBrand,
                     modifier = Modifier

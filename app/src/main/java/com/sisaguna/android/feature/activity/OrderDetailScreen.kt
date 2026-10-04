@@ -53,7 +53,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import com.sisaguna.android.ui.i18n.Text
 import androidx.compose.material3.TextButton
@@ -118,7 +118,7 @@ fun OrderDetailScreen(
     Scaffold(
         containerColor = SgColor.Page,
         topBar = { SgTopBar(title = "Detail pesanan", onBack = onBack) },
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SgSnackbarHost(snackbar) },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         val o = order
@@ -238,11 +238,11 @@ private fun StatusHeader(o: Order) {
             )
         } else {
             "Siap diambil" to l(
-                "Ambil maks. ${formatClock(o.pickupBy ?: o.pickupEnd)} di ${o.merchant.name}.",
+                l("Ambil maks. ${formatClock(o.pickupBy ?: o.pickupEnd)} di ${o.merchant.name}.", "Pick up by ${formatClock(o.pickupBy ?: o.pickupEnd)} at ${o.merchant.name}."),
                 "Collect by ${formatClock(o.pickupBy ?: o.pickupEnd)} at ${o.merchant.name}.",
             )
         }
-        OrderStatus.COMPLETED -> "Pesanan selesai" to "Diambil ${o.completedAt?.let { formatDateTime(it) } ?: ""}."
+        OrderStatus.COMPLETED -> l("Pesanan selesai", "Order completed") to l("Diambil ", "Picked up ") + (o.completedAt?.let { formatDateTime(it) } ?: "") + "."
         OrderStatus.CANCELLED -> "Pesanan dibatalkan" to "Dibatalkan. Pembayaran online sudah dikembalikan."
     }
     Column(Modifier.padding(top = SgSpacing.Sm)) {
@@ -306,7 +306,7 @@ private fun RatedCard(stars: Int, tags: List<String>, comment: String) {
         verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
     ) {
         Text("Rating kamu", style = SgTextStyle.Label)
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             repeat(5) { i -> Icon(Icons.Rounded.Star, contentDescription = null, tint = if (i < stars) Gold else SgColor.Hairline, modifier = Modifier.size(22.dp)) }
             Text(ratingLabel(stars), style = SgTextStyle.Label, modifier = Modifier.padding(start = SgSpacing.Sm))
         }
@@ -365,8 +365,10 @@ private fun ItemsCard(o: Order) {
         HorizontalDivider(color = SgColor.Hairline)
         Row { Text("Pembayaran", style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(paymentLabel(o.payment), style = SgTextStyle.Label) }
         if (o.savings > 0) Row { Text("Kamu hemat", style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.savings), style = SgTextStyle.Label, color = SgColor.Brand600) }
-        Row { Text("Total", style = SgTextStyle.Label, modifier = Modifier.weight(1f)); Text(formatPrice(o.total), style = SgTextStyle.Title) }
-        if (o.note.isNotBlank()) Text("Catatan: ${o.note}", style = SgTextStyle.Body)
+        if (o.deliveryFee > 0) Row { Text(l("Ongkir", "Delivery"), style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.deliveryFee), style = SgTextStyle.Label) }
+        if (o.serviceFee > 0) Row { Text(l("Biaya layanan", "Service fee"), style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.serviceFee), style = SgTextStyle.Label) }
+        Row { Text("Total",style = SgTextStyle.Label, modifier = Modifier.weight(1f)); Text(formatPrice(o.total), style = SgTextStyle.Title) }
+        if (o.note.isNotBlank()) Text(l("Catatan: ", "Note: ") + o.note, style = SgTextStyle.Body)
     }
 }
 
@@ -453,7 +455,7 @@ private fun RatingSheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
-            Text("Beri rating untuk $merchantName", style = SgTextStyle.Title, textAlign = TextAlign.Center)
+            Text(l("Beri rating untuk ", "Rate ") + merchantName, style = SgTextStyle.Title, textAlign = TextAlign.Center)
             Row(horizontalArrangement = Arrangement.spacedBy(SgSpacing.Xs)) {
                 (1..5).forEach { n ->
                     val scale by animateFloatAsState(

@@ -1,5 +1,7 @@
 package com.sisaguna.android.feature.upload
 
+import com.sisaguna.android.ui.i18n.l
+
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import com.sisaguna.android.data.model.Allergen
@@ -96,7 +98,7 @@ data class UploadForm(
         }
         UploadField.STOCK -> when {
             isFood && stock < 1 -> "Minimal 1 porsi"
-            !isFood && (weightKg ?: 0.0) <= 0.0 -> "Isi berat dalam ${weightUnit.label}"
+            !isFood && (weightKg ?: 0.0) <= 0.0 -> l("Isi berat dalam ${weightUnit.label}", "Enter the weight in ${weightUnit.label}")
             !isFood && (weightKg ?: 0.0) > 500 -> "Maksimal 500 kg per listing"
             else -> null
         }

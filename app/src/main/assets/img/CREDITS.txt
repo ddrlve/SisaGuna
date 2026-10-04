@@ -33,3 +33,8 @@ ampas_kelapa.jpg <- File:Grated Coconut - Howrah 2013-10-18 3544.JPG
 daun_kering.jpg <- File:Nasu 20210724 113015.jpg
 ampas_teh.jpg <- File:Zhu-Ye-Qing-Tea-03.jpg
 kulit_pisang.jpg <- File:Banane-A-05 cropped.jpg
+couriers/ (brand marks, shown only to identify the third-party courier option; trademarks of their owners)
+couriers/courier_gosend.png <- File:Gojek logo 2022.svg (mark only)
+couriers/courier_grab.png <- File:Grab Logo.svg
+couriers/courier_lalamove.png <- File:Lalamove Logo.png (mark only)
+couriers/courier_shopee.png <- File:Shopee logo.svg (mark only)
