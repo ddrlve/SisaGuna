@@ -1,5 +1,11 @@
 package com.sisaguna.android.feature.notifications
 
+import androidx.compose.material3.HorizontalDivider
+
+import androidx.compose.foundation.border
+
+import androidx.compose.foundation.layout.offset
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -229,46 +235,56 @@ private fun SwipeableNotificationRow(
 private fun NotificationRow(notification: AppNotification, time: String, onOpen: () -> Unit) {
     val style = styleFor(notification.type)
     val background by animateColorAsState(
-        targetValue = if (notification.isRead) SgColor.Page else SgColor.Mint,
+        targetValue = if (notification.isRead) SgColor.BaseWhite else SgColor.Mint,
         animationSpec = tween(200),
         label = "notifBg",
     )
     val unreadCd = stringResource(R.string.notif_unread_cd)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(background)
-            .pressable(onOpen, pressedScale = 0.99f)
-            .semantics { if (!notification.isRead) stateDescription = unreadCd }
-            .padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
-        horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
-    ) {
-        Box(
-            modifier = Modifier.size(40.dp).background(style.tint, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(style.icon, contentDescription = null, tint = style.ink, modifier = Modifier.size(20.dp))
-        }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-                Text(
-                    notification.title,
-                    style = SgTextStyle.Label,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(time, style = SgTextStyle.Caption)
-            }
-            Text(notification.body, style = SgTextStyle.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
-        val dotAlpha by animateFloatAsState(if (notification.isRead) 0f else 1f, tween(150), label = "unreadDot")
-        Box(
+    // The unread dot rides on the icon instead of taking a trailing column, so reading a
+    // notification no longer leaves an empty 20dp gap on the right: both edges stay at the
+    // gutter whether it's read or not.
+    Column(Modifier.background(background)) {
+        Row(
             modifier = Modifier
-                .padding(top = 6.dp)
-                .size(8.dp)
-                .graphicsLayer { alpha = dotAlpha }
-                .background(SgColor.Brand500, CircleShape),
-        )
+                .fillMaxWidth()
+                .pressable(onOpen, pressedScale = 0.99f)
+                .semantics { if (!notification.isRead) stateDescription = unreadCd }
+                .padding(horizontal = SgSpacing.Gutter, vertical = 14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(Modifier.size(40.dp)) {
+                Box(
+                    modifier = Modifier.fillMaxSize().background(style.tint, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(style.icon, contentDescription = null, tint = style.ink, modifier = Modifier.size(20.dp))
+                }
+                val dot by animateFloatAsState(if (notification.isRead) 0f else 1f, tween(150), label = "unreadDot")
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                        .size(12.dp)
+                        .graphicsLayer { alpha = dot; scaleX = 0.6f + 0.4f * dot; scaleY = 0.6f + 0.4f * dot }
+                        .border(2.dp, background, CircleShape)
+                        .padding(2.dp)
+                        .background(SgColor.Brand500, CircleShape),
+                )
+            }
+            Column(modifier = Modifier.weight(1f).padding(start = SgSpacing.Md), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        notification.title,
+                        style = SgTextStyle.Label,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(end = SgSpacing.Sm),
+                    )
+                    Text(time, style = SgTextStyle.Caption, color = if (notification.isRead) SgColor.InkMuted else SgColor.Brand600)
+                }
+                Text(notification.body, style = SgTextStyle.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        HorizontalDivider(color = SgColor.Hairline, modifier = Modifier.padding(start = SgSpacing.Gutter + 40.dp + SgSpacing.Md))
     }
 }
