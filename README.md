@@ -120,8 +120,6 @@ Jalankan unit test:
 Belum ada build production. Setelah backend Supabase tersambung, app didistribusikan lewat Play Store internal testing untuk kebutuhan demo.
 
 ## Catatan
-
-- App dipaksa light mode. Warna diset eksplisit supaya tampilan tetap benar di HP yang memakai dark mode.
 - File `local.properties`, folder `.gradle/`, `app/build/`, dan config lokal lain tidak masuk repo (lihat `.gitignore`).
 
 Made with care by Group 4
