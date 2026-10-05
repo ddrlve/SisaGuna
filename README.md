@@ -190,12 +190,12 @@ Lewat terminal:
 
 ## Tim
 
-| Nama | NIM |
-|---|---|
-| Dian Rakhmawati Lestari | 2802539085 |
-| Fadhlan Nur Rachman | 2802491690 |
-| Nasauramecca Nour Haqqanshah Shodiqin | 2802541921 |
-| Catherine Zaneta Adji | 2802512442 |
+| Nama | NIM | Role | Contributions |
+|---|---|---|---|
+| Dian Rakhmawati Lestari | 2802539085 | Frontend | Built the Android app in this repo from scratch to MVP, Figma prototype, product ideas, user interviews, feedback grid, presentation deck, report |
+| Fadhlan Nur Rachman | 2802491690 | Backend | Backend ([sisaguna-be](https://github.com/FadhRach/sisaguna-be)), user interviews, feedback grid, presentation deck, report |
+| Nasauramecca Nour Haqqanshah Shodiqin | 2802541921 | Design | Figma prototype, animated video of the app workflow, product ideas, user interviews, feedback grid, presentation deck |
+| Catherine Zaneta Adji | 2802512442 | Documentation | Documents, helped with the presentation deck, product ideas |
 
 ---
 
