@@ -192,8 +192,8 @@ Lewat terminal:
 
 | Nama | NIM |
 |---|---|
-| Fadhlan Nur Rachman | 2802491690 |
 | Dian Rakhmawati Lestari | 2802539085 |
+| Fadhlan Nur Rachman | 2802491690 |
 | Nasauramecca Nour Haqqanshah Shodiqin | 2802541921 |
 | Catherine Zaneta Adji | 2802512442 |
 
