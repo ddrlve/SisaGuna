@@ -204,6 +204,9 @@ Lewat terminal:
 | Tipe | Link |
 |---|---|
 | Presentasi | [Canva](https://canva.link/d403zux6vbz05gn) |
+| Prototype Testing (Sesi 4) | [Canva PPT Prototype Testing](https://canva.link/sg2zediuy60igm0) |
+| Laporan dan dokumen kuliah | [`docs/documents_related`](docs/documents_related) |
+| Dokumentasi tim | [Google Drive Group 4](https://drive.google.com/drive/folders/1rLPFOwbirGE__xXtSGb0MGmpDF2EmlHI?usp=sharing) |
 | Desain | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
 | Prototype | [Figma Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1) |
 | Frontend (repo ini) | https://github.com/ddrlve/SisaGuna |
