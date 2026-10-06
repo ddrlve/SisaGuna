@@ -203,7 +203,7 @@ Lewat terminal:
 
 | Tipe | Link |
 |---|---|
-| Presentasi | [Canva](https://canva.link/d403zux6vbz05gn) |
+| Business Ideas | [Canva PPT Business Ideas](https://canva.link/d403zux6vbz05gn) |
 | Prototype Testing (Sesi 4) | [Canva PPT Prototype Testing](https://canva.link/sg2zediuy60igm0) |
 | Business Model Canvas | [BMC](https://canva.link/oi5wpxwzp5m5r7i) |
 | Laporan dan dokumen kuliah | [`docs/documents_related`](docs/documents_related) |
