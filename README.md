@@ -208,7 +208,7 @@ Lewat terminal:
 | Business Model Canvas | [BMC](https://canva.link/oi5wpxwzp5m5r7i) |
 | Laporan dan dokumen kuliah | [`docs/documents_related`](docs/documents_related) |
 | Dokumentasi tim | [Google Drive Group 4](https://drive.google.com/drive/folders/1rLPFOwbirGE__xXtSGb0MGmpDF2EmlHI?usp=sharing) |
-| Desain | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
+| Design App | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
 | Prototype | [Figma Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1) |
 | Frontend (repo ini) | https://github.com/ddrlve/SisaGuna |
 | Backend | https://github.com/FadhRach/sisaguna-be |
