@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t d">
+  <title id="t">Where leftover food goes</title>
+  <desc id="d">Leftover food at closing time is sorted into three paths: ready to eat, animal feed, and compost.</desc>
+  <style>
+    text { font-family: 'Plus Jakarta Sans','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif; }
+    .flow { stroke-dasharray: 6 8; animation: dash 1.6s linear infinite; }
+    @keyframes dash { to { stroke-dashoffset: -28; } }
+    @media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
+  </style>
+
+  <rect width="1200" height="380" rx="28" fill="#F6F7F4"/>
+  <rect x="0.75" y="0.75" width="1198.5" height="378.5" rx="27.5" fill="none" stroke="#E6E8E3" stroke-width="1.5"/>
+
+  <!-- Source -->
+  <g transform="translate(48 120)">
+    <rect width="230" height="140" rx="24" fill="#1F2A1C"/>
+    <text x="24" y="44" font-size="13" fill="#99D583" font-weight="600">Closing time</text>
+    <text x="24" y="78" font-size="22" font-weight="800" fill="#fff" letter-spacing="-0.4">Unsold food</text>
+    <text x="24" y="102" font-size="22" font-weight="800" fill="#fff" letter-spacing="-0.4">is posted here</text>
+    <text x="24" y="124" font-size="12" fill="#8AA183">after a freshness checklist</text>
+  </g>
+
+  <!-- Connectors -->
+  <g fill="none" stroke-width="3" stroke-linecap="round" class="flow">
+    <path d="M278 190 C 340 190, 340 70, 400 70" stroke="#55B931"/>
+    <path d="M278 190 L 400 190" stroke="#CA8A04"/>
+    <path d="M278 190 C 340 190, 340 310, 400 310" stroke="#8B6B4A"/>
+  </g>
+
+  <!-- Ready to eat -->
+  <g transform="translate(400 20)">
+    <rect width="752" height="100" rx="22" fill="#fff" stroke="#E6E8E3"/>
+    <rect x="18" y="18" width="64" height="64" rx="18" fill="#DCFCE7"/>
+    <path d="M30 46h40c0 12-9 20-20 20s-20-8-20-20Z" fill="#55B931"/>
+    <path d="M38 46c1-8 7-12 12-12s11 4 12 12Z" fill="#99D583"/>
+    <text x="102" y="44" font-size="20" font-weight="800" fill="#1F2A1C" letter-spacing="-0.3">Ready to eat</text>
+    <text x="102" y="68" font-size="14" fill="#6B7466">Still fresh and safe. Sold at 50–70% off or given away.</text>
+    <rect x="636" y="30" width="96" height="40" rx="20" fill="#DCFCE7"/>
+    <text x="684" y="55" text-anchor="middle" font-size="14" font-weight="800" fill="#408B25">For people</text>
+  </g>
+
+  <!-- Animal feed -->
+  <g transform="translate(400 140)">
+    <rect width="752" height="100" rx="22" fill="#fff" stroke="#E6E8E3"/>
+    <rect x="18" y="18" width="64" height="64" rx="18" fill="#FEF3C7"/>
+    <g fill="#CA8A04">
+      <path d="M50 66V38" stroke="#CA8A04" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="44" cy="40" rx="5" ry="8" transform="rotate(-25 44 40)"/>
+      <ellipse cx="56" cy="40" rx="5" ry="8" transform="rotate(25 56 40)"/>
+      <ellipse cx="43" cy="52" rx="5" ry="8" transform="rotate(-25 43 52)"/>
+      <ellipse cx="57" cy="52" rx="5" ry="8" transform="rotate(25 57 52)"/>
+    </g>
+    <text x="102" y="44" font-size="20" font-weight="800" fill="#1F2A1C" letter-spacing="-0.3">Animal feed</text>
+    <text x="102" y="68" font-size="14" fill="#6B7466">Not for people, fine for livestock: tofu pulp, bran, veg scraps.</text>
+    <rect x="620" y="30" width="112" height="40" rx="20" fill="#FEF3C7"/>
+    <text x="676" y="55" text-anchor="middle" font-size="14" font-weight="800" fill="#A16207">For farmers</text>
+  </g>
+
+  <!-- Compost -->
+  <g transform="translate(400 260)">
+    <rect width="752" height="100" rx="22" fill="#fff" stroke="#E6E8E3"/>
+    <rect x="18" y="18" width="64" height="64" rx="18" fill="#EFE6DC"/>
+    <path d="M32 62c0-16 10-26 26-28 0 16-8 28-26 28Z" fill="#8B6B4A"/>
+    <path d="M34 62c6-8 12-14 20-20" stroke="#EFE6DC" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <text x="102" y="44" font-size="20" font-weight="800" fill="#1F2A1C" letter-spacing="-0.3">Compost</text>
+    <text x="102" y="68" font-size="14" fill="#6B7466">Peels, coffee grounds, eggshells. Kept out of the landfill.</text>
+    <rect x="618" y="30" width="114" height="40" rx="20" fill="#EFE6DC"/>
+    <text x="675" y="55" text-anchor="middle" font-size="14" font-weight="800" fill="#6B5238">For gardens</text>
+  </g>
+</svg>
