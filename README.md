@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/hero.svg" alt="SisaGuna app preview: buyer home, product with pickup order, and partner dashboard" width="100%">
+</p>
+
 # SisaGuna
 
 Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung, kantin, bakery, dan resto kecil memposting makanan yang masih layak sebelum toko tutup, dengan harga jauh lebih murah atau gratis. Pembeli di sekitar memesan lewat aplikasi, lalu mengambil sendiri atau memakai kurir. Sisa yang tidak layak dimakan manusia disalurkan untuk pakan ternak dan kompos.
@@ -10,16 +14,52 @@ Aplikasi Android untuk menyelamatkan makanan berlebih dari UMKM kuliner. Warung,
 
 ## Daftar Isi
 
-1. [Coba Aplikasinya](#coba-aplikasinya)
-2. [Masalah dan Solusi](#masalah-dan-solusi)
-3. [Fitur Utama](#fitur-utama)
-4. [Model Bisnis](#model-bisnis)
-5. [Status Pengerjaan](#status-pengerjaan)
-6. [Tech Stack](#tech-stack)
-7. [Struktur Project](#struktur-project)
-8. [Menjalankan dari Source Code](#menjalankan-dari-source-code)
-9. [Tim](#tim)
-10. [Link Terkait](#link-terkait)
+1. [Apa Itu SisaGuna?](#apa-itu-sisaguna)
+2. [Coba Aplikasinya](#coba-aplikasinya)
+3. [Masalah dan Solusi](#masalah-dan-solusi)
+4. [Fitur Utama](#fitur-utama)
+5. [Model Bisnis](#model-bisnis)
+6. [Status Pengerjaan](#status-pengerjaan)
+7. [Tech Stack](#tech-stack)
+8. [Struktur Project](#struktur-project)
+9. [Menjalankan dari Source Code](#menjalankan-dari-source-code)
+10. [Tim](#tim)
+11. [Link Terkait](#link-terkait)
+
+---
+
+## Apa Itu SisaGuna?
+
+Bayangkan jam 8 malam di sebuah warung. Gado-gado masih banyak, tapi sebentar lagi tutup. Biasanya makanan itu dibuang. Di sisi lain, ada orang di sekitar yang mau makan enak dengan harga murah.
+
+**SisaGuna mempertemukan keduanya.** Penjual memotret makanan sisa, aplikasi mengecek kelayakannya, dan pembeli terdekat memesan dengan potongan harga 50-70% atau gratis. Makanan yang tidak lagi layak untuk manusia tidak dibuang: disalurkan ke peternak sebagai pakan atau ke tukang kebun sebagai kompos.
+
+**Tiga hasilnya:** penjual tetap dapat pemasukan, pembeli hemat, dan sampah organik berkurang.
+
+### Alur aplikasi
+
+```mermaid
+flowchart LR
+  Seller(["Mitra<br/>warung, kantin, bakery"]) --> Post["Posting makanan<br/>foto, harga, jumlah"]
+  Post --> Check["Checklist kelayakan<br/>batas aman konsumsi"]
+  Check -- "layak dimakan" --> Eat["Siap santap<br/>diskon 50-70% atau gratis"]
+  Check -- "tidak layak" --> Other["Pakan ternak<br/>atau kompos"]
+  Eat --> Buyer(["Pembeli sekitar"])
+  Other --> Buyer
+  Buyer --> Order["Pesan dan bayar<br/>QRIS atau e-wallet"]
+  Order --> Way{"Cara terima"}
+  Way -- "ambil sendiri" --> Code["Tunjukkan kode pickup"]
+  Way -- "kurir" --> Courier["GoSend, Grab,<br/>SPX, Lalamove"]
+  Code --> Confirm["Mitra cocokkan kode<br/>pesanan selesai"]
+  Courier --> Confirm
+  Confirm --> Impact["Pembeli naik level<br/>mitra dapat pemasukan"]
+```
+
+### Ke mana sisa makanan pergi
+
+<p align="center">
+  <img src="docs/images/leftover-paths.svg" alt="Leftover food is split into ready to eat, animal feed, and compost" width="100%">
+</p>
 
 ---
 
