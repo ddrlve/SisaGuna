@@ -4,12 +4,14 @@ import com.sisaguna.android.data.model.Courier
 import com.sisaguna.android.data.model.DeliveryPricing
 import com.sisaguna.android.data.model.DeliverySpeed
 import com.sisaguna.android.data.model.Listing
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.model.Merchant
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.ListingTier
+import com.sisaguna.android.data.repository.AddressRepository
 import com.sisaguna.android.data.repository.CategoryFeed
 import com.sisaguna.android.data.repository.ListingRepository
 import com.sisaguna.android.navigation.Screen
@@ -19,6 +21,8 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -30,9 +34,12 @@ import kotlinx.coroutines.launch
 class CategoryListViewModel @Inject constructor(
     private val repository: ListingRepository,
     savedStateHandle: SavedStateHandle,
+    addressRepository: AddressRepository,
 ) : ViewModel() {
 
     private var rawFeed: CategoryFeed? = null
+    private var currentTier = ListingTier.HUMAN
+    private var loadJob: Job? = null
 
     private val _uiState = MutableStateFlow<CategoryListUiState>(CategoryListUiState.Loading)
     val uiState: StateFlow<CategoryListUiState> = _uiState.asStateFlow()
@@ -41,7 +48,9 @@ class CategoryListViewModel @Inject constructor(
         val initialTier = savedStateHandle.get<String>(Screen.CategoryList.ARG_TIER)
             ?.let { runCatching { ListingTier.valueOf(it) }.getOrNull() }
             ?: ListingTier.HUMAN
-        load(initialTier)
+        currentTier = initialTier
+        // The first emission is the initial load; later ones re-measure distances from the new location.
+        viewModelScope.launch { addressRepository.searchLocation.collect { load(currentTier) } }
     }
 
     fun onTierChange(tier: ListingTier) = load(tier)
@@ -60,16 +69,20 @@ class CategoryListViewModel @Inject constructor(
     }
 
     private fun load(tier: ListingTier) {
-        viewModelScope.launch {
+        currentTier = tier
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.value = CategoryListUiState.Loading
             try {
                 val feed = repository.getListingsByTier(tier)
                 rawFeed = feed
                 val keepSort = (_uiState.value as? CategoryListUiState.Success)?.sort ?: CategorySort.RECOMMENDED
                 _uiState.value = feed.toUiState(tier, searchQuery = "", sort = keepSort, freeOnly = false)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = CategoryListUiState.Error(
-                    e.message ?: "Gagal memuat data. Periksa koneksi internet dan coba lagi.",
+                    (e as? AppException)?.userMessage ?: "Gagal memuat data. Periksa koneksi internet dan coba lagi.",
                 )
             }
         }

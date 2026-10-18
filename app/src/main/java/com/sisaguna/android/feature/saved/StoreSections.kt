@@ -88,6 +88,7 @@ import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgRadius
 import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
+import com.sisaguna.android.data.model.HalalStatus
 
 /** Store banner with the avatar overlapping its bottom edge, name, rating, hours, halal. */
 @Composable
@@ -187,7 +188,7 @@ fun StoreHero(
                 StatPill(Icons.Rounded.Star, StarGold, "%.1f".format(it), "(${merchant.ratingCount})")
             }
             if (merchant.openHours.isNotBlank()) StatPill(Icons.Rounded.Schedule, SgColor.InkMuted, merchant.openHours, null)
-            if (merchant.halal != com.sisaguna.android.data.model.HalalStatus.OTHER) HalalBadge(merchant.halal)
+            if (merchant.halal != HalalStatus.OTHER) HalalBadge(merchant.halal)
         }
     }
 }
@@ -299,7 +300,7 @@ fun StoreInfoCard(
 
 /** Average, count, and a 5→1 star distribution with bars. */
 @Composable
-fun ReviewSummary(merchant: Merchant, reviews: List<Review>, onWrite: () -> Unit, modifier: Modifier = Modifier) {
+fun ReviewSummary(merchant: Merchant, reviews: List<Review>, modifier: Modifier = Modifier) {
     Column(
         modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(SgColor.BaseWhite).padding(16.dp),
     ) {
@@ -310,9 +311,11 @@ fun ReviewSummary(merchant: Merchant, reviews: List<Review>, onWrite: () -> Unit
                 Text("${merchant.ratingCount} " + l("ulasan", "reviews"), style = SgTextStyle.Caption)
             }
             Column(Modifier.padding(start = 12.dp).weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                val total = reviews.size.coerceAtLeast(1)
+                // The store's own histogram covers every review; the loaded list is only the newest page.
+                val histogram = merchant.ratingBreakdown.ifEmpty { reviews.groupingBy { it.stars }.eachCount() }
+                val total = histogram.values.sum().coerceAtLeast(1)
                 (5 downTo 1).forEach { star ->
-                    val n = reviews.count { it.stars == star }
+                    val n = histogram[star] ?: 0
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("$star", style = SgTextStyle.Caption, modifier = Modifier.width(12.dp))
                         LinearProgressIndicator(
@@ -326,103 +329,11 @@ fun ReviewSummary(merchant: Merchant, reviews: List<Review>, onWrite: () -> Unit
                 }
             }
         }
-        SgButton(
-            text = l("Tulis ulasan + foto", "Write a review + photos"),
-            onClick = onWrite,
-            style = SgButtonStyle.Secondary,
-            height = 46.dp,
-            modifier = Modifier.padding(top = 14.dp).fillMaxWidth(),
-            leading = { Icon(Icons.Rounded.AddAPhoto, contentDescription = null, tint = SgColor.Brand600, modifier = Modifier.size(18.dp)) },
+        Text(
+            l("Ulasan hanya bisa ditulis dari pesanan yang sudah selesai.", "Reviews can only be written from a completed order."),
+            style = SgTextStyle.Caption,
+            modifier = Modifier.padding(top = 12.dp),
         )
-    }
-}
-
-/** Write-a-review sheet: tap stars, quick tags, comment, up to 3 photos (camera or gallery). */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun WriteReviewSheet(
-    storeName: String,
-    onSubmit: (stars: Int, comment: String, tags: List<String>, photos: List<String>) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var stars by remember { mutableIntStateOf(0) }
-    var comment by remember { mutableStateOf("") }
-    val photos = remember { mutableStateListOf<Uri>() }
-    val tags = remember { mutableStateListOf<String>() }
-    val media = rememberMediaCapture(onPhotos = { uris -> uris.forEach { if (photos.size < 3) photos.add(it) } }, maxPick = 3)
-    val tagOptions = listOf(l("Makanan enak", "Tasty"), l("Masih fresh", "Still fresh"), l("Porsi pas", "Good portion"), l("Kemasan rapi", "Neat packaging"), l("Ramah", "Friendly"))
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SgColor.BaseWhite,
-    ) {
-        Column(
-            Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(horizontal = SgSpacing.Gutter),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            Text(l("Ulas ", "Review ") + storeName, style = SgTextStyle.Title)
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                repeat(5) { i ->
-                    val on = i < stars
-                    val s by animateFloatAsState(if (on) 1.12f else 1f, tween(140, easing = SgEaseOut), label = "star")
-                    Icon(
-                        if (on) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                        contentDescription = "${i + 1}",
-                        tint = if (on) StarGold else SgColor.Neutral400,
-                        modifier = Modifier.size(40.dp).graphicsLayer { scaleX = s; scaleY = s }.clip(CircleShape).pressable({ stars = i + 1 }, pressedScale = 0.85f),
-                    )
-                }
-            }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(tagOptions) { t ->
-                    val on = t in tags
-                    Text(
-                        t,
-                        style = SgTextStyle.TextXsMedium,
-                        color = if (on) SgColor.Brand700 else SgColor.Ink,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(SgRadius.Pill))
-                            .background(if (on) SgColor.Mint else SgColor.Page)
-                            .border(1.dp, if (on) SgColor.Brand500 else SgColor.Hairline, RoundedCornerShape(SgRadius.Pill))
-                            .pressable({ if (on) tags.remove(t) else tags.add(t) })
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                    )
-                }
-            }
-            OutlinedTextField(
-                value = comment,
-                onValueChange = { comment = it.take(400) },
-                placeholder = { androidx.compose.material3.Text(l("Ceritakan rasa, kesegaran, dan pengalaman ambilnya…", "Taste, freshness, pickup experience…"), color = SgColor.Neutral400, style = SgTextStyle.TextSmRegular) },
-                minLines = 3,
-                textStyle = SgTextStyle.TextSmRegular.copy(color = SgColor.Ink),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SgColor.Brand500, unfocusedBorderColor = SgColor.Hairline),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                photos.forEach { uri ->
-                    Box(Modifier.size(72.dp)) {
-                        AsyncImage(uri, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)))
-                        Box(
-                            Modifier.align(Alignment.TopEnd).padding(4.dp).size(22.dp).background(Color.Black.copy(alpha = 0.55f), CircleShape).pressable({ photos.remove(uri) }),
-                            contentAlignment = Alignment.Center,
-                        ) { Icon(Icons.Rounded.Close, contentDescription = l("Hapus", "Remove"), tint = Color.White, modifier = Modifier.size(14.dp)) }
-                    }
-                }
-                if (photos.size < 3) {
-                    MediaButton(Icons.Rounded.PhotoCamera, l("Kamera", "Camera"), media.takePhoto)
-                    MediaButton(Icons.Rounded.PhotoLibrary, l("Galeri", "Gallery"), media.pickPhotos)
-                }
-            }
-            SgButton(
-                text = l("Kirim ulasan", "Post review"),
-                enabled = stars > 0,
-                onClick = { onSubmit(stars, comment.trim(), tags.toList(), photos.map { it.toString() }) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-        }
     }
 }
 

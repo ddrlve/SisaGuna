@@ -3,11 +3,16 @@ package com.sisaguna.android.feature.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sisaguna.android.data.model.GeoPoint
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
+import com.sisaguna.android.data.remote.AppException
+import com.sisaguna.android.data.repository.AddressRepository
+import com.sisaguna.android.feature.address.Place
 import com.sisaguna.android.data.repository.HomeFeed
 import com.sisaguna.android.data.repository.ListingRepository
+import com.sisaguna.android.data.repository.myMerchantId
 import com.sisaguna.android.data.repository.NotificationRepository
 import com.sisaguna.android.data.repository.Voucher
 import com.sisaguna.android.data.repository.VoucherRepository
@@ -21,7 +26,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.sisaguna.android.data.repository.CartRepository
+import com.sisaguna.android.data.settings.AppSettingsRepository
+import com.sisaguna.android.data.settings.UserMode
 
 /**
  * Loads the Home feed through [ListingRepository] (never Supabase directly, per
@@ -41,16 +51,17 @@ class HomeViewModel @Inject constructor(
     private val repository: ListingRepository,
     notificationRepository: NotificationRepository,
     private val voucherRepository: VoucherRepository,
-    cartRepository: com.sisaguna.android.data.repository.CartRepository,
-    private val settingsRepository: com.sisaguna.android.data.settings.AppSettingsRepository,
+    cartRepository: CartRepository,
+    private val settingsRepository: AppSettingsRepository,
+    private val addressRepository: AddressRepository,
 ) : ViewModel() {
 
     /** Buyer vs merchant home (user testing asked for them to be separate). */
-    val mode: StateFlow<com.sisaguna.android.data.settings.UserMode> = settingsRepository.settings
+    val mode: StateFlow<UserMode> = settingsRepository.settings
         .map { it.mode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, settingsRepository.settings.value.mode)
 
-    fun setMode(mode: com.sisaguna.android.data.settings.UserMode) = settingsRepository.setMode(mode)
+    fun setMode(mode: UserMode) = settingsRepository.setMode(mode)
 
     /** Persistent cart bar on Home — null while the cart is empty. */
     val cartSummary: StateFlow<CartSummary?> = combine(cartRepository.cart, repository.listings) { cart, listings ->
@@ -76,8 +87,12 @@ class HomeViewModel @Inject constructor(
         .map { list -> list.count { !it.isRead } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    private var loadJob: Job? = null
+
     init {
-        loadHomeFeed()
+        // Distances are measured from the chosen location, which arrives after login and can change:
+        // each new location restarts the load (the first emission is the initial load).
+        viewModelScope.launch { addressRepository.searchLocation.collect { loadHomeFeed() } }
     }
 
     fun retry() = loadHomeFeed()
@@ -93,9 +108,23 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onFilterChange(filter: HomeFilter) {
+        val radiusChanged = filter.maxDistanceKm != this.filter.maxDistanceKm
         this.filter = filter
-        render()
+        // The radius is applied by the server (so the rails refill within it); the rest is filtered here.
+        if (radiusChanged) loadHomeFeed() else render()
     }
+
+    /** True until a location is known and the user hasn't said "nanti saja". */
+    val showLocationPrompt: StateFlow<Boolean> = combine(addressRepository.searchLocation, settingsRepository.settings) { location, settings ->
+        location == null && !settings.locationPromptDismissed
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    /** A fix from the GPS: becomes the "Lokasi saat ini" the whole app measures distance from. */
+    fun useLocation(place: Place) {
+        addressRepository.selectCurrentLocation(place.shortLabel, GeoPoint(place.latitude, place.longitude))
+    }
+
+    fun dismissLocationPrompt() = settingsRepository.setLocationPromptDismissed(true)
 
     /** Vouchers for the Home strip, with whether each is already claimed. */
     val vouchers: StateFlow<List<Pair<Voucher, Boolean>>> =
@@ -111,14 +140,17 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun loadHomeFeed() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
             try {
-                rawFeed = repository.getHomeFeed(ListingTier.HUMAN)
+                rawFeed = repository.getHomeFeed(ListingTier.HUMAN, filter.maxDistanceKm)
                 render()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(
-                    e.message ?: "Gagal memuat data. Periksa koneksi internet dan coba lagi.",
+                    (e as? AppException)?.userMessage ?: "Gagal memuat data. Periksa koneksi internet dan coba lagi.",
                 )
             }
         }
@@ -147,7 +179,7 @@ class HomeViewModel @Inject constructor(
             animalFeed = animalHits.toUi(merchantsById),
             compost = compostHits.toUi(merchantsById),
             popular = popular.filter(matches).toUi(merchantsById),
-            offerMerchants = merchantsById.values.filter { it.todaysOffer != null && it.id != ListingRepository.MY_MERCHANT_ID }.sortedBy { it.distanceKm },
+            offerMerchants = merchantsById.values.filter { it.todaysOffer != null && it.id != repository.myMerchantId }.sortedBy { it.distanceKm },
             selectedTab = tab,
             otherTabMatchCount = if ((query.isNotBlank() || filter.activeCount > 0) && activeCount == 0) otherCount else 0,
             filter = filter,

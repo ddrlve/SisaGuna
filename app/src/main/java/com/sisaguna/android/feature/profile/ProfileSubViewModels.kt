@@ -2,11 +2,13 @@ package com.sisaguna.android.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.Order
 import com.sisaguna.android.data.model.OrderStatus
 import com.sisaguna.android.data.model.PaymentKind
 import com.sisaguna.android.data.model.PaymentMethod
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.ListingRepository
 import com.sisaguna.android.data.repository.OrderRepository
 import com.sisaguna.android.data.repository.PaymentMethodRepository
@@ -132,9 +134,13 @@ class ChangePasswordViewModel @Inject constructor(
         }
         _form.value = f.copy(busy = true)
         viewModelScope.launch {
-            val ok = profileRepository.changePassword(f.current, f.new)
-            _form.value = _form.value.copy(busy = false, serverError = if (ok) null else "Password saat ini salah")
-            if (ok) _done.value = true
+            try {
+                val ok = profileRepository.changePassword(f.current, f.new)
+                _form.value = _form.value.copy(busy = false, serverError = if (ok) null else "Password saat ini salah")
+                if (ok) _done.value = true
+            } catch (e: AppException) {
+                _form.value = _form.value.copy(busy = false, serverError = e.userMessage)
+            }
         }
     }
 }
@@ -152,12 +158,13 @@ data class MyCatalogUiState(val items: List<CatalogItem> = emptyList()) {
 @HiltViewModel
 class MyCatalogViewModel @Inject constructor(
     private val listingRepository: ListingRepository,
+    private val messenger: AppMessenger,
 ) : ViewModel() {
-    val uiState: StateFlow<MyCatalogUiState> = listingRepository.listings
-        .map { all ->
+    val uiState: StateFlow<MyCatalogUiState> = combine(listingRepository.listings, listingRepository.myMerchant) { all, me -> all to me?.id }
+        .map { (all, myId) ->
             val now = Instant.now()
             MyCatalogUiState(
-                all.filter { it.merchantId == ListingRepository.MY_MERCHANT_ID }.map { l ->
+                all.filter { it.merchantId == myId }.map { l ->
                     CatalogItem(
                         l,
                         when {
@@ -171,5 +178,22 @@ class MyCatalogViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, MyCatalogUiState())
 
-    fun delete(id: String) = listingRepository.deleteListing(id)
+    init {
+        refresh()
+    }
+
+    /** Pulls the server's view of the catalog (the cache may be older than the last upload elsewhere). */
+    fun refresh() = launchCatching { listingRepository.getMyListings() }
+
+    fun delete(id: String) = launchCatching { listingRepository.deleteListing(id) }
+
+    private fun launchCatching(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.sisaguna.android.feature.home
 
+import com.sisaguna.android.data.repository.FakeAddressRepository
 import com.sisaguna.android.data.repository.FakeNotificationRepository
 import com.sisaguna.android.data.repository.FakeVoucherRepository
 import com.sisaguna.android.testutil.MainDispatcherRule
@@ -8,13 +9,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import com.sisaguna.android.data.repository.InMemoryCartRepository
+import com.sisaguna.android.data.settings.AppSettingsRepository
 
 class HomeViewModelTest {
 
     @get:Rule
     val main = MainDispatcherRule()
 
-    private fun viewModel() = HomeViewModel(TestListingRepository(), FakeNotificationRepository(), FakeVoucherRepository(), com.sisaguna.android.data.repository.InMemoryCartRepository(), com.sisaguna.android.data.settings.AppSettingsRepository(null))
+    private fun viewModel() = HomeViewModel(TestListingRepository(), FakeNotificationRepository(), FakeVoucherRepository(), InMemoryCartRepository(), AppSettingsRepository(null), FakeAddressRepository())
 
     private val HomeViewModel.success get() = uiState.value as HomeUiState.Success
 

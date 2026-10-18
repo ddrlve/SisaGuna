@@ -1,5 +1,14 @@
 package com.sisaguna.android.feature.notifications
 
+import android.content.Intent
+import android.provider.Settings
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.sisaguna.android.ui.components.SgButton
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -82,6 +91,7 @@ fun NotificationSettingsScreen(
                 .padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Sm),
             verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
+            SystemBlockedCard()
             SettingsCard {
                 SwitchRow(
                     title = stringResource(R.string.notif_settings_master),
@@ -167,6 +177,39 @@ private fun SwitchRow(
                 disabledUncheckedTrackColor = SgColor.Hairline,
                 disabledUncheckedThumbColor = SgColor.OnBrand,
             ),
+        )
+    }
+}
+
+/** Shown when Android itself blocks this app's notifications: the in-app switches can't override that. */
+@Composable
+private fun SystemBlockedCard() {
+    val context = LocalContext.current
+    var blocked by remember { mutableStateOf(false) }
+    LifecycleResumeEffect(Unit) {
+        blocked = !NotificationManagerCompat.from(context).areNotificationsEnabled()
+        onPauseOrDispose { }
+    }
+    if (!blocked) return
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Card))
+            .background(SgColor.Mint)
+            .padding(SgSpacing.Lg),
+        verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
+    ) {
+        Text("Notifikasi dimatikan di pengaturan HP", style = SgTextStyle.Label)
+        Text("Aktifkan agar status pesanan dan pengingat ambil tetap sampai saat aplikasi tertutup.", style = SgTextStyle.Body)
+        SgButton(
+            "Buka pengaturan",
+            onClick = {
+                context.startActivity(
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            },
         )
     }
 }

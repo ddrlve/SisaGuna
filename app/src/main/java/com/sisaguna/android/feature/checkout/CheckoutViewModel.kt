@@ -7,10 +7,14 @@ import com.sisaguna.android.data.model.DeliveryPricing
 import com.sisaguna.android.data.model.DeliveryQuote
 import com.sisaguna.android.data.model.DeliverySpeed
 import com.sisaguna.android.data.model.Fulfillment
+import com.sisaguna.android.data.remote.ApiException
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.AddressRepository
 import com.sisaguna.android.data.repository.PICKUP_GRACE_MINUTES
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
+import kotlinx.coroutines.CancellationException
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,6 +29,7 @@ import com.sisaguna.android.data.repository.PaymentMethodRepository
 import com.sisaguna.android.data.repository.PlaceOrderRequest
 import com.sisaguna.android.data.repository.Voucher
 import com.sisaguna.android.data.repository.VoucherRepository
+import com.sisaguna.android.ui.domain.formatRupiah
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,11 +44,9 @@ data class CheckoutLine(val listing: Listing, val quantity: Int) {
     val originalTotal: Int get() = listing.unitOriginalPrice * quantity
 }
 
-/** Where the payment step is. QRIS waits for the user to confirm they scanned; e-wallets and
- * cash go straight to [Processing]. */
+/** Where the payment step is: the order is placed straight away (the backend settles a simulated payment at once). */
 sealed interface PaymentStep {
     data object Idle : PaymentStep
-    data object AwaitingQris : PaymentStep
     data class Processing(val kind: PaymentKind) : PaymentStep
     data class Done(val orderId: String) : PaymentStep
     data class Failed(val message: String) : PaymentStep
@@ -55,6 +58,9 @@ data class DeliveryChoice(
     val courier: Courier = Courier.GOSEND,
     val speed: DeliverySpeed = DeliverySpeed.STANDARD,
 )
+
+/** The server's own numbers, adopted when it answers `price_changed`; they win over the local preview. */
+data class ServerPrice(val voucherDiscount: Int, val serviceFee: Int, val deliveryFee: Int, val total: Int)
 
 data class CheckoutUiState(
     val merchant: Merchant? = null,
@@ -70,10 +76,11 @@ data class CheckoutUiState(
     val now: Instant = Instant.now(),
     /** Other listings from the same store that aren't in the order yet ("Mau tambah lagi?"). */
     val moreFromStore: List<Listing> = emptyList(),
+    val serverPrice: ServerPrice? = null,
 ) {
     val isEmpty: Boolean get() = lines.isEmpty()
     val subtotal: Int get() = lines.sumOf { it.total }
-    val voucherDiscount: Int get() = voucher?.discountFor(subtotal) ?: 0
+    val voucherDiscount: Int get() = serverPrice?.voucherDiscount ?: voucher?.discountFor(subtotal) ?: 0
     val itemsTotal: Int get() = (subtotal - voucherDiscount).coerceAtLeast(0)
 
     /** Store → buyer distance. Fake: the store's distance from the buyer's saved area. */
@@ -93,9 +100,9 @@ data class CheckoutUiState(
             DeliveryPricing.quote(delivery.courier, delivery.speed, distanceKm, subtotal, merchant?.prepMinutes ?: 15)
         } else null
 
-    val deliveryFee: Int get() = selectedQuote?.payable ?: 0
-    val serviceFee: Int get() = AppFees.buyerServiceFee(itemsTotal)
-    val total: Int get() = itemsTotal + deliveryFee + serviceFee
+    val deliveryFee: Int get() = serverPrice?.deliveryFee ?: selectedQuote?.payable ?: 0
+    val serviceFee: Int get() = serverPrice?.serviceFee ?: AppFees.buyerServiceFee(itemsTotal)
+    val total: Int get() = serverPrice?.total ?: (itemsTotal + deliveryFee + serviceFee)
 
     /** Pickup: arrive within the grace window, but never after the listing closes. */
     val pickupBy: Instant?
@@ -129,9 +136,15 @@ class CheckoutViewModel @Inject constructor(
 
     private val delivery = MutableStateFlow(DeliveryChoice())
 
-    fun setFulfillment(f: Fulfillment) { delivery.value = delivery.value.copy(fulfillment = f) }
-    fun setCourier(c: Courier) { delivery.value = delivery.value.copy(courier = c, fulfillment = Fulfillment.DELIVERY) }
-    fun setSpeed(sp: DeliverySpeed) { delivery.value = delivery.value.copy(speed = sp, fulfillment = Fulfillment.DELIVERY) }
+    /** Set after a `price_changed` answer; any edit to the basket drops it so the preview is live again. */
+    private val serverPrice = MutableStateFlow<ServerPrice?>(null)
+
+    /** One purchase intent = one key, so a retry after a timeout can't create a second order. */
+    private var attempt: Pair<PlaceOrderRequest, String>? = null
+
+    fun setFulfillment(f: Fulfillment) { serverPrice.value = null; delivery.value = delivery.value.copy(fulfillment = f) }
+    fun setCourier(c: Courier) { serverPrice.value = null; delivery.value = delivery.value.copy(courier = c, fulfillment = Fulfillment.DELIVERY) }
+    fun setSpeed(sp: DeliverySpeed) { serverPrice.value = null; delivery.value = delivery.value.copy(speed = sp, fulfillment = Fulfillment.DELIVERY) }
 
     private val addressFlow = combine(addressRepository.addresses, addressRepository.selectedId) { list, id ->
         list.firstOrNull { it.id == id } ?: list.firstOrNull()
@@ -168,13 +181,14 @@ class CheckoutViewModel @Inject constructor(
         )
     }
 
-    val uiState: StateFlow<CheckoutUiState> = combine(core, delivery, addressFlow) { s, d, a ->
-        s.copy(delivery = d, address = a, now = Instant.now())
+    val uiState: StateFlow<CheckoutUiState> = combine(core, delivery, addressFlow, serverPrice) { s, d, a, price ->
+        s.copy(delivery = d, address = a, now = Instant.now(), serverPrice = price)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, CheckoutUiState())
 
     /** null removes the voucher. One below its minimum stays selectable; the screen says why
      * it gives 0. */
     fun selectVoucher(code: String?) {
+        serverPrice.value = null
         voucherCode.value = code
     }
 
@@ -188,23 +202,22 @@ class CheckoutViewModel @Inject constructor(
 
     fun setQuantity(listingId: String, quantity: Int) {
         val line = uiState.value.lines.firstOrNull { it.listing.id == listingId } ?: return
+        serverPrice.value = null
         cartRepository.setQuantity(listingId, quantity.coerceAtMost(line.listing.stock))
     }
 
     /** "Mau tambah lagi?" rail: one portion of another item from the same store. */
     fun addMore(listing: Listing) {
+        serverPrice.value = null
         cartRepository.add(listing, 1)
     }
 
-    /** Pay button. QRIS shows the code first; everything else places the order now. */
+    /** Pay button: places the order now. */
     fun pay() {
         val s = uiState.value
         if (s.isEmpty || s.step is PaymentStep.Processing) return
-        if (s.effectivePayment == PaymentKind.QRIS) step.value = PaymentStep.AwaitingQris else place()
+        place()
     }
-
-    /** "Saya sudah bayar" on the QRIS sheet. */
-    fun confirmQrisPaid() = place()
 
     fun dismissPayment() {
         if (step.value !is PaymentStep.Processing) step.value = PaymentStep.Idle
@@ -215,24 +228,55 @@ class CheckoutViewModel @Inject constructor(
         val merchant = s.merchant ?: return
         step.value = PaymentStep.Processing(s.effectivePayment)
         viewModelScope.launch {
+            val applied = s.voucher?.takeIf { s.voucherDiscount > 0 }
+            val request = PlaceOrderRequest(
+                merchant.id, s.lines.map { it.listing to it.quantity }, s.effectivePayment, s.note,
+                voucherCode = applied?.code, voucherDiscount = s.voucherDiscount,
+                fulfillment = if (s.selectedQuote != null) Fulfillment.DELIVERY else Fulfillment.PICKUP,
+                delivery = s.selectedQuote,
+                deliveryAddress = s.address,
+                serviceFee = s.serviceFee,
+                expectedTotal = s.total,
+            )
+            val key = attempt?.takeIf { it.first == request }?.second ?: UUID.randomUUID().toString()
+            attempt = request to key
             step.value = try {
-                val applied = s.voucher?.takeIf { s.voucherDiscount > 0 }
-                val order = orderRepository.place(
-                    PlaceOrderRequest(
-                        merchant.id, s.lines.map { it.listing to it.quantity }, s.effectivePayment, s.note,
-                        voucherCode = applied?.code, voucherDiscount = s.voucherDiscount,
-                        fulfillment = if (s.selectedQuote != null) Fulfillment.DELIVERY else Fulfillment.PICKUP,
-                        delivery = s.selectedQuote,
-                        deliveryAddress = s.address,
-                        serviceFee = s.serviceFee,
-                    ),
-                )
-                applied?.let { voucherRepository.consume(it.code) }
+                val order = orderRepository.place(request, key)
+                attempt = null
                 cartRepository.clear()
+                refreshAfterOrder()
                 PaymentStep.Done(order.id)
-            } catch (e: Exception) {
-                PaymentStep.Failed(e.message ?: "Pembayaran gagal. Coba lagi.")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: ApiException) {
+                if (e.code == "price_changed") {
+                    // Adopt the server's numbers and ask again: the user must see what they will really pay.
+                    serverPrice.value = ServerPrice(
+                        voucherDiscount = e.int("voucher_discount") ?: 0,
+                        serviceFee = e.int("service_fee") ?: 0,
+                        deliveryFee = e.int("delivery_fee") ?: 0,
+                        total = e.int("total") ?: s.total,
+                    )
+                    attempt = null
+                    PaymentStep.Failed("Harga berubah. Total sekarang ${formatRupiah(e.int("total") ?: s.total)}, periksa lagi lalu bayar.")
+                } else {
+                    // The order was refused for a reason (stock, window, payment): a new tap is a new intent.
+                    attempt = null
+                    PaymentStep.Failed(e.userMessage)
+                }
+            } catch (e: AppException) {
+                // Network trouble: keep the key so tapping "Bayar" again retries the same purchase safely.
+                PaymentStep.Failed(e.userMessage)
             }
+        }
+    }
+
+    /** The server used up the voucher and stock; pull the fresh state so Home and the voucher list agree. */
+    private suspend fun refreshAfterOrder() {
+        try {
+            voucherRepository.refresh()
+        } catch (e: AppException) {
+            // Non-critical: the order is placed; the list refreshes on the next launch.
         }
     }
 }

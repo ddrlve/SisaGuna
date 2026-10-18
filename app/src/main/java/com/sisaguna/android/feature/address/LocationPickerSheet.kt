@@ -84,7 +84,7 @@ private const val DEFAULT_LNG = 106.6544
 fun LocationPickerSheet(
     state: AddressUiState,
     onSelectAddress: (String) -> Unit,
-    onUseCurrentLocation: (String) -> Unit,
+    onUseCurrentLocation: (Place) -> Unit,
     onSaveAddress: (existingId: String?, label: String, place: Place, note: String) -> Unit,
     onDeleteAddress: (String) -> Unit,
     onDismiss: () -> Unit,
@@ -94,8 +94,6 @@ fun LocationPickerSheet(
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<Place>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
-    var gpsBusy by remember { mutableStateOf(false) }
-    var gpsError by remember { mutableStateOf<String?>(null) }
     var mapFor by remember { mutableStateOf<Address?>(null) }
     var showMap by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Pair<Address?, Place>?>(null) }
@@ -111,22 +109,7 @@ fun LocationPickerSheet(
         searching = false
     }
 
-    fun fetchGps() {
-        gpsBusy = true
-        gpsError = null
-        scope.launch {
-            runCatching {
-                val loc = fetchCurrentLocation(context)
-                reverseGeocode(context, loc.latitude, loc.longitude)
-            }.onSuccess { onUseCurrentLocation(it.shortLabel) }
-                .onFailure { gpsError = it.message ?: "Gagal mengambil lokasi." }
-            gpsBusy = false
-        }
-    }
-
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-        if (grants.values.any { it }) fetchGps() else gpsError = "Izin lokasi ditolak. Kamu tetap bisa pilih lewat peta."
-    }
+    val gps = rememberLocationRequester(onPlace = onUseCurrentLocation)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -171,7 +154,7 @@ fun LocationPickerSheet(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(SgRadius.Thumb))
-                                .pressable({ onUseCurrentLocation(place.shortLabel) })
+                                .pressable({ onUseCurrentLocation(place) })
                                 .padding(vertical = SgSpacing.Sm, horizontal = SgSpacing.Xs),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md),
@@ -190,18 +173,15 @@ fun LocationPickerSheet(
                     icon = Icons.Rounded.MyLocation,
                     title = "Lokasi saat ini",
                     subtitle = when {
-                        gpsBusy -> "Mencari sinyal…"
+                        gps.busy -> "Mencari sinyal…"
                         state.currentLocationLabel != null -> state.currentLocationLabel
                         else -> "Pakai GPS"
                     },
-                    busy = gpsBusy,
+                    busy = gps.busy,
                     selected = state.currentLocationLabel != null,
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        if (gpsBusy) return@ActionTile
-                        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                        if (granted) fetchGps() else permission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                        gps.request()
                     },
                 )
                 ActionTile(
@@ -215,7 +195,7 @@ fun LocationPickerSheet(
                     },
                 )
             }
-            gpsError?.let { Text(it, style = SgTextStyle.Caption, color = SgColor.RedStatus) }
+            gps.error?.let { Text(it, style = SgTextStyle.Caption, color = SgColor.RedStatus) }
 
             Text("Alamat tersimpan", style = SgTextStyle.Label, modifier = Modifier.padding(top = SgSpacing.Sm))
             state.addresses.forEach { address ->

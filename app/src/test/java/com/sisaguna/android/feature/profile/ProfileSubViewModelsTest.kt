@@ -19,6 +19,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import com.sisaguna.android.core.ui.AppMessenger
 
 class PasswordFormTest {
     @Test
@@ -73,9 +74,9 @@ class PaymentAndCatalogViewModelTest {
     fun `catalog shows only my store with status`() {
         val repo = TestListingRepository()
         val later = Instant.now().plus(2, ChronoUnit.HOURS)
-        repo.addListing(Listing("mine1", ListingRepository.MY_MERCHANT_ID, "A", ListingTier.HUMAN, null, null, true, later, "", 0.1))
-        repo.addListing(Listing("mine2", ListingRepository.MY_MERCHANT_ID, "B", ListingTier.HUMAN, null, null, true, later, "", 0.1, stock = 0))
-        val vm = MyCatalogViewModel(repo)
+        repo.add(Listing("mine1", ListingRepository.MY_MERCHANT_ID, "A", ListingTier.HUMAN, null, null, true, later, "", 0.1))
+        repo.add(Listing("mine2", ListingRepository.MY_MERCHANT_ID, "B", ListingTier.HUMAN, null, null, true, later, "", 0.1, stock = 0))
+        val vm = MyCatalogViewModel(repo, AppMessenger())
         assertEquals(listOf(CatalogStatus.ACTIVE, CatalogStatus.SOLD_OUT), vm.uiState.value.items.map { it.status })
         vm.delete("mine1")
         assertEquals(listOf("mine2"), vm.uiState.value.items.map { it.listing.id })

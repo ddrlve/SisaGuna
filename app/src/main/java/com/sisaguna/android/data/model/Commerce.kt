@@ -39,7 +39,8 @@ data class PaymentMethod(
     val detail: String,
 )
 
-enum class OrderStatus { READY, COMPLETED, CANCELLED }
+/** [NO_SHOW]: the buyer never came (set by the server 15 min after the pickup deadline); [EXPIRED]: the order lapsed unpaid/unclaimed. */
+enum class OrderStatus { READY, COMPLETED, CANCELLED, NO_SHOW, EXPIRED }
 
 /** Snapshot of a listing at checkout — later edits to the listing don't rewrite history. */
 data class OrderLine(
@@ -76,6 +77,7 @@ enum class ComplaintStatus(val label: String) {
     SUBMITTED("Terkirim"),
     REVIEWING("Sedang ditinjau tim SisaGuna"),
     RESOLVED("Selesai · dana dikembalikan"),
+    REJECTED("Ditolak setelah ditinjau"),
 }
 
 /** Buyer-side half of the food-safety loop (see [FoodSafety]). */
@@ -108,6 +110,13 @@ data class Order(
     val pickupBy: Instant? = null,
     val complaint: Complaint? = null,
     val serviceFee: Int = 0,
+    val paymentPaid: Boolean = false,
+    /** True while the backend simulates the gateway: nothing was really charged. */
+    val paymentSimulated: Boolean = false,
+    /** The server decides what the buyer may still do (cancel window, 7-day review, 24-hour complaint). */
+    val canCancel: Boolean = status == OrderStatus.READY,
+    val canRate: Boolean = status == OrderStatus.COMPLETED && rating == null,
+    val canComplain: Boolean = status == OrderStatus.COMPLETED && complaint == null,
 ) {
     val subtotal: Int get() = lines.sumOf { it.total }
     val deliveryFee: Int get() = delivery?.payable ?: 0
@@ -116,8 +125,8 @@ data class Order(
     val originalTotal: Int get() = lines.sumOf { it.originalTotal }
     val savings: Int get() = (originalTotal - itemsTotal).coerceAtLeast(0)
     val itemCount: Int get() = lines.sumOf { it.quantity }
-    val canRate: Boolean get() = status == OrderStatus.COMPLETED && rating == null
-    val canComplain: Boolean get() = status == OrderStatus.COMPLETED && complaint == null
+    /** Finished without the food changing hands: cancelled, never collected, or lapsed. */
+    val isClosedUnfulfilled: Boolean get() = status == OrderStatus.CANCELLED || status == OrderStatus.NO_SHOW || status == OrderStatus.EXPIRED
 }
 
 data class Address(
@@ -128,3 +137,6 @@ data class Address(
     val longitude: Double,
     val note: String = "",
 )
+
+/** A coordinate pair; what the backend needs (`lat`/`lng`) to compute `distance_km`. */
+data class GeoPoint(val latitude: Double, val longitude: Double)

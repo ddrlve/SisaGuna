@@ -23,4 +23,25 @@ data class ChatMessage(
     /** Read by the recipient (the store for buyer messages, the buyer for store messages). */
     val isRead: Boolean = true,
     val buyer: String = BUYER_ME,
+    /** The server-side thread this message belongs to; empty only for in-memory demo data. */
+    val conversationId: String = "",
+)
+
+/** Which end of a conversation the signed-in user is. */
+enum class ChatSide { BUYER, MERCHANT }
+
+/**
+ * One thread. [counterpartName] is the store's name for a buyer and the buyer's name for the
+ * store owner; [counterpartId] is the matching merchant/user id.
+ */
+data class Conversation(
+    val id: String,
+    val counterpartId: String,
+    val counterpartName: String,
+    val side: ChatSide,
+    val unread: Int = 0,
+    val lastText: String = "",
+    val lastAt: Instant? = null,
+    /** Who wrote the last message; compare with [side] to know whether it was the user. */
+    val lastSender: ChatSide? = null,
 )

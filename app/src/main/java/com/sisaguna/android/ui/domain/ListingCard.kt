@@ -39,6 +39,7 @@ import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgTextStyle
 import java.time.Instant
+import com.sisaguna.android.data.model.QuantityUnit
 
 /**
  * The listing card used on Home and (once built) the category grid. Matches Figma node
@@ -173,7 +174,7 @@ fun DiscountBadge(listing: Listing, modifier: Modifier = Modifier) {
 
 /** "/kg" suffix for weight-priced feed and compost. */
 fun unitSuffix(listing: Listing): String =
-    if (listing.unit == com.sisaguna.android.data.model.QuantityUnit.KILOGRAM) "/kg" else ""
+    if (listing.unit == QuantityUnit.KILOGRAM) "/kg" else ""
 
 @Composable
 fun PriceLabel(listing: Listing) {

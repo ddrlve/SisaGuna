@@ -79,7 +79,6 @@ fun MerchantDetailScreen(
     viewModel: MerchantDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var writingReview by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val removedMessage = stringResource(R.string.saved_removed)
@@ -168,7 +167,7 @@ fun MerchantDetailScreen(
                 }
                 if (s.showReviews) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        ReviewSummary(s.merchant, s.reviews, onWrite = { writingReview = true })
+                        ReviewSummary(s.merchant, s.reviews)
                     }
                     items(s.reviews, key = { "rv-" + it.id }, span = { GridItemSpan(maxLineSpan) }) { r ->
                         ReviewCard(r, Modifier.fillMaxWidth().animateItem(), maxLines = 8)
@@ -209,18 +208,6 @@ fun MerchantDetailScreen(
         }
     }
 
-    val ok = state as? MerchantDetailUiState.Success
-    if (writingReview && ok != null) {
-        WriteReviewSheet(
-            storeName = ok.merchant.name,
-            onSubmit = { stars, comment, tags, photos ->
-                viewModel.addReview(stars, comment, tags, photos)
-                writingReview = false
-                scope.launch { snackbar.showSnackbar(l("Terima kasih! Ulasanmu sudah tampil.", "Thanks! Your review is live.")) }
-            },
-            onDismiss = { writingReview = false },
-        )
-    }
 }
 
 /** Menu | Ulasan tabs for the store page. */

@@ -99,6 +99,7 @@ import com.sisaguna.android.ui.theme.SgRadius
 import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 import kotlinx.coroutines.launch
+import com.sisaguna.android.ui.components.SgEaseOut
 
 private val HeroHeight = 300.dp
 
@@ -480,7 +481,7 @@ private fun PhotoPager(photos: List<String>, tier: ListingTier, title: String, m
             ) {
                 repeat(photos.size) { i ->
                     val active = pager.currentPage == i
-                    val w by androidx.compose.animation.core.animateDpAsState(if (active) 16.dp else 6.dp, androidx.compose.animation.core.tween(200, easing = com.sisaguna.android.ui.components.SgEaseOut), label = "dot")
+                    val w by androidx.compose.animation.core.animateDpAsState(if (active) 16.dp else 6.dp, androidx.compose.animation.core.tween(200, easing = SgEaseOut), label = "dot")
                     Box(Modifier.height(6.dp).width(w).background(Color.White.copy(alpha = if (active) 1f else 0.6f), RoundedCornerShape(SgRadius.Pill)))
                 }
             }

@@ -61,13 +61,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,6 +77,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.sisaguna.android.BuildConfig
+import coil.compose.AsyncImage
+import com.sisaguna.android.data.model.PaymentKind
 import com.sisaguna.android.data.model.Order
 import com.sisaguna.android.data.model.OrderStatus
 import com.sisaguna.android.feature.checkout.paymentLabel
@@ -100,6 +101,9 @@ import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 import java.time.Instant
 import kotlinx.coroutines.launch
+import com.sisaguna.android.feature.saved.MediaButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 private val Gold = Color(0xFFF5B301)
 
@@ -112,7 +116,6 @@ fun OrderDetailScreen(
     val order by viewModel.order.collectAsStateWithLifecycle()
     var showCancel by remember { mutableStateOf(false) }
     var showRating by remember { mutableStateOf(false) }
-    var showPickedUp by remember { mutableStateOf(false) }
     var showComplaint by remember { mutableStateOf(false) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -133,13 +136,14 @@ fun OrderDetailScreen(
             contentPadding = PaddingValues(start = SgSpacing.Gutter, end = SgSpacing.Gutter, bottom = SgSpacing.Xxl),
             verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
         ) {
-            if (viewModel.justPlaced) item { SuccessBanner() }
+            // The "placed" banner is only true while the order is still open.
+            if (viewModel.justPlaced && o.status == OrderStatus.READY) item { SuccessBanner() }
             item { StatusHeader(o) }
             if (o.status == OrderStatus.READY) {
                 item { PickupCodeCard(o) }
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm)) {
-                        SgButton("Sudah saya ambil", onClick = { showPickedUp = true }, modifier = Modifier.fillMaxWidth())
+                // The merchant completes the order by typing this code; the buyer can only cancel while allowed.
+                if (o.canCancel) {
+                    item {
                         SgButton("Batalkan pesanan", onClick = { showCancel = true }, style = SgButtonStyle.Ghost, modifier = Modifier.fillMaxWidth())
                     }
                 }
@@ -149,24 +153,12 @@ fun OrderDetailScreen(
             o.complaint?.let { c -> item { ComplaintStatusCard(c) } }
             if (o.canComplain) item { ComplaintPrompt(onClick = { showComplaint = true }) }
             item { MerchantCard(o, onChat = { onChatClick(o.merchant.id) }) }
+            if (o.fulfillment == Fulfillment.DELIVERY && o.delivery != null) item { DeliveryCard(o) }
             item { ItemsCard(o) }
             item { Timeline(o) }
         }
     }
 
-    if (showPickedUp) {
-        ConfirmDialog(
-            title = "Sudah ambil pesananmu?",
-            body = "Tandai selesai setelah makanan ada di tanganmu. Setelah ini kamu bisa memberi rating.",
-            confirm = "Ya, sudah",
-            onConfirm = {
-                showPickedUp = false
-                viewModel.markPickedUp()
-                showRating = true
-            },
-            onDismiss = { showPickedUp = false },
-        )
-    }
     if (showCancel) {
         ConfirmDialog(
             title = "Batalkan pesanan?",
@@ -183,9 +175,10 @@ fun OrderDetailScreen(
     if (showComplaint) {
         ComplaintSheet(
             onSubmit = { reason, detail, photos ->
-                viewModel.complain(reason, detail, photos)
                 showComplaint = false
-                scope.launch { snackbar.showSnackbar(l("Komplain terkirim. Kami tinjau dalam 1×24 jam.", "Complaint sent. We'll review it within 24h.")) }
+                viewModel.complain(reason, detail, photos) {
+                    scope.launch { snackbar.showSnackbar(l("Komplain terkirim. Kami tinjau dalam 1×24 jam.", "Complaint sent. We'll review it within 24h.")) }
+                }
             },
             onDismiss = { showComplaint = false },
         )
@@ -195,9 +188,10 @@ fun OrderDetailScreen(
             RatingSheet(
                 merchantName = o.merchant.name,
                 onSubmit = { stars, tags, comment ->
-                    viewModel.rate(stars, tags, comment)
                     showRating = false
-                    scope.launch { snackbar.showSnackbar("Terima kasih atas ratingnya!") }
+                    viewModel.rate(stars, tags, comment) {
+                        scope.launch { snackbar.showSnackbar("Terima kasih atas ratingnya!") }
+                    }
                 },
                 onDismiss = { showRating = false },
             )
@@ -246,9 +240,14 @@ private fun StatusHeader(o: Order) {
         }
         OrderStatus.COMPLETED -> l("Pesanan selesai", "Order completed") to l("Diambil ", "Picked up ") + (o.completedAt?.let { formatDateTime(it) } ?: "") + "."
         OrderStatus.CANCELLED -> "Pesanan dibatalkan" to "Dibatalkan. Pembayaran online sudah dikembalikan."
+        OrderStatus.NO_SHOW -> l("Tidak diambil", "Not collected") to l(
+            "Pesanan tidak diambil sampai batas waktu, jadi dibatalkan otomatis.",
+            "The order wasn't collected by the deadline, so it was cancelled automatically.",
+        )
+        OrderStatus.EXPIRED -> l("Pesanan kedaluwarsa", "Order expired") to l("Waktu pesanan ini sudah habis.", "This order ran out of time.")
     }
     Column(Modifier.padding(top = SgSpacing.Sm)) {
-        Text(title, style = SgTextStyle.Display, color = if (o.status == OrderStatus.CANCELLED) SgColor.RedStatus else SgColor.Ink)
+        Text(title, style = SgTextStyle.Display, color = if (o.isClosedUnfulfilled) SgColor.RedStatus else SgColor.Ink)
         Text(body, style = SgTextStyle.Body)
     }
 }
@@ -376,12 +375,57 @@ private fun ItemsCard(o: Order) {
             }
         }
         HorizontalDivider(color = SgColor.Hairline)
-        Row { Text("Pembayaran", style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(paymentLabel(o.payment), style = SgTextStyle.Label) }
+        Row {
+            Text("Pembayaran", style = SgTextStyle.Body, modifier = Modifier.weight(1f))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(paymentLabel(o.payment), style = SgTextStyle.Label)
+                val state = when {
+                    o.paymentPaid -> l("Sudah dibayar", "Paid")
+                    o.payment == PaymentKind.CASH -> l("Bayar saat ambil", "Pay on pickup")
+                    else -> l("Belum dibayar", "Unpaid")
+                } + if (o.paymentSimulated) l(" · simulasi", " · simulated") else ""
+                Text(state, style = SgTextStyle.Caption, color = if (o.paymentPaid) SgColor.Brand600 else SgColor.InkMuted)
+            }
+        }
         if (o.savings > 0) Row { Text("Kamu hemat", style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.savings), style = SgTextStyle.Label, color = SgColor.Brand600) }
         if (o.deliveryFee > 0) Row { Text(l("Ongkir", "Delivery"), style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.deliveryFee), style = SgTextStyle.Label) }
         if (o.serviceFee > 0) Row { Text(l("Biaya layanan", "Service fee"), style = SgTextStyle.Body, modifier = Modifier.weight(1f)); Text(formatRupiah(o.serviceFee), style = SgTextStyle.Label) }
         Row { Text("Total",style = SgTextStyle.Label, modifier = Modifier.weight(1f)); Text(formatPrice(o.total), style = SgTextStyle.Title) }
         if (o.note.isNotBlank()) Text(l("Catatan: ", "Note: ") + o.note, style = SgTextStyle.Body)
+    }
+}
+
+/** Courier, speed, ETA and destination of a delivery order, as the server quoted them. */
+@Composable
+private fun DeliveryCard(o: Order) {
+    val d = o.delivery ?: return
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(SgRadius.Tile))
+            .background(SgColor.BaseWhite)
+            .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile))
+            .padding(SgSpacing.Md),
+        verticalArrangement = Arrangement.spacedBy(SgSpacing.Sm),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(SgSpacing.Md)) {
+            AsyncImage(d.courier.logoUrl, contentDescription = d.courier.label, modifier = Modifier.size(40.dp).clip(RoundedCornerShape(SgRadius.Thumb)))
+            Column(Modifier.weight(1f)) {
+                Text(d.courier.label + " · " + l(d.speed.label, d.speed.labelEn), style = SgTextStyle.Label)
+                Text(
+                    l("Tiba ±${d.etaMinMinutes}-${d.etaMaxMinutes} menit", "Arrives in ~${d.etaMinMinutes}-${d.etaMaxMinutes} min"),
+                    style = SgTextStyle.Caption,
+                )
+            }
+            Text(formatRupiah(d.payable), style = SgTextStyle.Label)
+        }
+        o.deliveryAddress?.let { a ->
+            Text(a.label + " · " + a.fullAddress, style = SgTextStyle.Body, maxLines = 2)
+            if (a.note.isNotBlank()) Text(a.note, style = SgTextStyle.Caption)
+        }
+        if (BuildConfig.PARTNERS_SIMULATED) {
+            Text(l("Pengiriman kurir masih simulasi: tidak ada kurir sungguhan yang dipanggil.", "Courier delivery is simulated: no real courier is dispatched."), style = SgTextStyle.Caption)
+        }
     }
 }
 
@@ -393,6 +437,8 @@ private fun Timeline(o: Order) {
         when (o.status) {
             OrderStatus.COMPLETED -> add("Sudah diambil" to (o.completedAt?.let { formatDateTime(it) } ?: ""))
             OrderStatus.CANCELLED -> add("Dibatalkan" to "")
+            OrderStatus.NO_SHOW -> add(l("Tidak diambil", "Not collected") to "")
+            OrderStatus.EXPIRED -> add(l("Kedaluwarsa", "Expired") to "")
             OrderStatus.READY -> add("Menunggu diambil" to "")
         }
     }
@@ -405,7 +451,7 @@ private fun Timeline(o: Order) {
         steps.forEachIndexed { i, (label, time) ->
             val done = i < doneCount
             val color = when {
-                o.status == OrderStatus.CANCELLED && i == steps.lastIndex -> SgColor.RedStatus
+                o.isClosedUnfulfilled && i == steps.lastIndex -> SgColor.RedStatus
                 done -> SgColor.Brand500
                 else -> SgColor.Hairline
             }
@@ -521,7 +567,6 @@ private fun RatingSheet(
         }
     }
 }
-
 
 /** Entry to the complaint flow, under the rating. Quiet (outlined), because most orders are fine. */
 @Composable
@@ -641,8 +686,8 @@ private fun ComplaintSheet(
                     coil.compose.AsyncImage(uri, contentDescription = null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.size(72.dp).clip(RoundedCornerShape(14.dp)).pressable({ photos.remove(uri) }))
                 }
                 if (photos.size < 3) {
-                    com.sisaguna.android.feature.saved.MediaButton(Icons.Rounded.PhotoCamera, l("Kamera", "Camera"), media.takePhoto)
-                    com.sisaguna.android.feature.saved.MediaButton(Icons.Rounded.PhotoLibrary, l("Galeri", "Gallery"), media.pickPhotos)
+                    MediaButton(Icons.Rounded.PhotoCamera, l("Kamera", "Camera"), media.takePhoto)
+                    MediaButton(Icons.Rounded.PhotoLibrary, l("Galeri", "Gallery"), media.pickPhotos)
                 }
             }
             SgButton(

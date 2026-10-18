@@ -1,6 +1,7 @@
 package com.sisaguna.android.feature.saved
 
 import com.sisaguna.android.data.model.Review
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.ReviewRepository
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -61,22 +62,6 @@ class MerchantDetailViewModel @Inject constructor(
     fun showReviews(show: Boolean) { showReviews.value = show }
     fun acknowledgeAllergens(ack: Boolean) { allergenAck.value = ack }
 
-    fun addReview(stars: Int, comment: String, tags: List<String>, photos: List<String>) {
-        reviewRepository.add(
-            Review(
-                id = "r-" + System.currentTimeMillis(),
-                merchantId = merchantId,
-                author = "Kamu",
-                stars = stars.coerceIn(1, 5),
-                comment = comment.ifBlank { tags.joinToString() },
-                createdAt = Instant.now(),
-                photos = photos,
-                tags = tags,
-            ),
-        )
-        showReviews.value = true
-    }
-
     val merchantId: String = savedStateHandle.get<String>(Screen.MerchantDetail.ARG_ID).orEmpty()
 
     // null = still loading; Result.failure = not found.
@@ -125,8 +110,19 @@ class MerchantDetailViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val data = listingRepository.getMerchantFeed(merchantId)
-            feed.value = if (data != null) Result.success(data) else Result.failure(NoSuchElementException(merchantId))
+            try {
+                reviewRepository.load(merchantId)
+            } catch (e: AppException) {
+                // The menu still works without reviews; the empty list says enough.
+            }
+        }
+        viewModelScope.launch {
+            feed.value = try {
+                listingRepository.getMerchantFeed(merchantId)?.let { Result.success(it) }
+                    ?: Result.failure(NoSuchElementException(merchantId))
+            } catch (e: AppException) {
+                Result.failure(e)
+            }
         }
     }
 
