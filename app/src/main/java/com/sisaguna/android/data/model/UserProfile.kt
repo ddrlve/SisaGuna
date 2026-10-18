@@ -13,6 +13,8 @@ data class UserProfile(
     val photoUri: String? = null,
     /** Fruit avatar key (see FruitAvatar) shown when there's no photo; null picks one from the name. */
     val avatar: String? = null,
+    /** Set by the server; unlocks the admin panel. Never trust it for authorisation: every admin call is checked server-side. */
+    val isAdmin: Boolean = false,
 ) {
     val initial: Char get() = name.trim().firstOrNull()?.uppercaseChar() ?: '?'
 }

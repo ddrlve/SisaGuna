@@ -141,9 +141,11 @@ fun UploadScreen(
         bottomBar = {
             Column(Modifier.background(SgColor.BaseWhite).windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.ime.union(androidx.compose.foundation.layout.WindowInsets.navigationBars).only(androidx.compose.foundation.layout.WindowInsetsSides.Bottom))) {
                 HorizontalDivider(color = SgColor.Hairline)
+                val publishing by viewModel.publishing.collectAsStateWithLifecycle()
                 SgButton(
-                    l("Publikasikan", "Publish"),
-                    onClick = { viewModel.publish()?.let(onPublished) },
+                    if (publishing) l("Mengunggah…", "Uploading…") else l("Publikasikan", "Publish"),
+                    onClick = { viewModel.publish(onPublished) },
+                    enabled = !publishing,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Md),
                 )
             }

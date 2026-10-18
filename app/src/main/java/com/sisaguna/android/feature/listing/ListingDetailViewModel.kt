@@ -6,6 +6,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.Cart
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.repository.AddToCartResult
 import com.sisaguna.android.data.repository.CartRepository
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.sisaguna.android.data.model.Review
+import com.sisaguna.android.data.repository.ReviewRepository
 
 sealed interface ListingDetailUiState {
     data object Loading : ListingDetailUiState
@@ -32,7 +35,7 @@ sealed interface ListingDetailUiState {
         val cart: Cart,
         val cartTotal: Int,
         val now: Instant,
-        val reviews: List<com.sisaguna.android.data.model.Review> = emptyList(),
+        val reviews: List<Review> = emptyList(),
     ) : ListingDetailUiState {
         val listing: Listing get() = detail.listing
         val isExpired: Boolean get() = !listing.pickupEnd.isAfter(now)
@@ -59,7 +62,7 @@ class ListingDetailViewModel @Inject constructor(
     private val listingRepository: ListingRepository,
     private val cartRepository: CartRepository,
     savedStateHandle: SavedStateHandle,
-    private val reviewRepository: com.sisaguna.android.data.repository.ReviewRepository,
+    private val reviewRepository: ReviewRepository,
 ) : ViewModel() {
 
     private val listingId: String = savedStateHandle.get<String>(Screen.ListingDetail.ARG_ID).orEmpty()
@@ -67,7 +70,7 @@ class ListingDetailViewModel @Inject constructor(
     private val quantity = MutableStateFlow(1)
 
     val uiState: StateFlow<ListingDetailUiState> =
-        combine(detail, quantity, cartRepository.cart, listingRepository.listings) { result, qty, cart, all ->
+        combine(detail, quantity, cartRepository.cart, listingRepository.listings, reviewRepository.reviews) { result, qty, cart, all, _ ->
             when {
                 result == null -> ListingDetailUiState.Loading
                 result.isFailure -> ListingDetailUiState.NotFound
@@ -85,8 +88,19 @@ class ListingDetailViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val d = listingRepository.getListingDetail(listingId)
-            detail.value = if (d != null) Result.success(d) else Result.failure(NoSuchElementException(listingId))
+            detail.value = try {
+                listingRepository.getListingDetail(listingId)?.let { Result.success(it) }
+                    ?: Result.failure(NoSuchElementException(listingId))
+            } catch (e: AppException) {
+                Result.failure(e)
+            }
+            detail.value?.getOrNull()?.let { d ->
+                try {
+                    reviewRepository.load(d.merchant.id)
+                } catch (e: AppException) {
+                    // Reviews are a nicety on this page; the listing itself already loaded.
+                }
+            }
         }
     }
 

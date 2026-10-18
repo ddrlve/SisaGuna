@@ -11,6 +11,9 @@ data class AppNotification(
     val body: String,
     val createdAt: Instant,
     val isRead: Boolean,
+    /** Where a tap should go: the order or the store the notification is about (either may be null). */
+    val orderId: String? = null,
+    val merchantId: String? = null,
 )
 
 /** Per-type switches keep their value while [enabled] is off, so turning the master switch

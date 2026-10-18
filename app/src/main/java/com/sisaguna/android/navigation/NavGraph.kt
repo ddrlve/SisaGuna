@@ -10,8 +10,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.animateDpAsState
@@ -38,6 +41,10 @@ import com.sisaguna.android.feature.activity.ActivityScreen
 import com.sisaguna.android.feature.activity.OrderDetailScreen
 import com.sisaguna.android.feature.checkout.CheckoutScreen
 import com.sisaguna.android.feature.listing.ListingDetailScreen
+import com.sisaguna.android.feature.admin.AdminScreen
+import com.sisaguna.android.feature.auth.AccountType
+import com.sisaguna.android.feature.auth.AuthViewModel
+import com.sisaguna.android.feature.auth.ForgotPasswordScreen
 import com.sisaguna.android.feature.auth.LandingScreen
 import com.sisaguna.android.feature.auth.LoginScreen
 import com.sisaguna.android.feature.auth.RegisterScreen
@@ -58,7 +65,18 @@ import com.sisaguna.android.feature.upload.UploadScreen
 import com.sisaguna.android.feature.saved.MerchantDetailScreen
 import com.sisaguna.android.feature.saved.SavedScreen
 import com.sisaguna.android.feature.splash.SplashScreen
+import com.sisaguna.android.feature.store.StoreSetupScreen
 import com.sisaguna.android.ui.theme.SgColor
+import com.sisaguna.android.data.model.ListingTier
+import com.sisaguna.android.data.settings.UserMode
+import com.sisaguna.android.feature.chat.ChatInboxScreen
+import com.sisaguna.android.feature.chat.ChatInboxViewModel
+import com.sisaguna.android.feature.chat.ChatScreen
+import com.sisaguna.android.feature.chat.SellerChatInboxScreen
+import com.sisaguna.android.feature.chat.SellerChatScreen
+import com.sisaguna.android.feature.chat.SellerInboxViewModel
+import com.sisaguna.android.feature.settings.SettingsScreen
+import com.sisaguna.android.feature.settings.SettingsViewModel
 
 /** Routes that require an authenticated session — a guest tapping one of these sees
  * [GuestGateSheet] instead of navigating. Upload is gated the same way but isn't a route (it's
@@ -78,7 +96,7 @@ private fun isTabSwitch(from: String?, to: String?): Boolean =
     (from in tabRoutes && to in tabRoutes) || from == Screen.Splash.route
 
 @Composable
-fun SgNavGraph(navController: NavHostController) {
+fun SgNavGraph(navController: NavHostController, pushTaps: Int = 0) {
     val sessionViewModel: SessionViewModel = hiltViewModel()
     val authStatus by sessionViewModel.status.collectAsStateWithLifecycle()
     var showGuestGate by remember { mutableStateOf(false) }
@@ -87,6 +105,25 @@ fun SgNavGraph(navController: NavHostController) {
     var showLocationSheet by remember { mutableStateOf(false) }
 
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+    // The refresh token was rejected (revoked, or reused elsewhere): back to Login with a reason.
+    LaunchedEffect(Unit) {
+        sessionViewModel.expired.collect {
+            navController.navigate(Screen.Login.route) {
+                popUpTo(navController.graph.id) { inclusive = true }
+            }
+        }
+    }
+    // A tapped push notification opens the inbox once the app has left Splash. A guest or signed-out
+    // user has no inbox, so the tap is just consumed.
+    var handledPushTaps by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(pushTaps, currentRoute, authStatus) {
+        if (pushTaps <= handledPushTaps || currentRoute == null || currentRoute == Screen.Splash.route) return@LaunchedEffect
+        handledPushTaps = pushTaps
+        if (authStatus == AuthStatus.AUTHENTICATED && currentRoute != Screen.Notifications.route) {
+            navController.navigate(Screen.Notifications.route) { launchSingleTop = true }
+        }
+    }
     // Nested routes (category/…, saved/merchant/…, profile/edit) keep the bottom nav visible
     // with their parent tab lit — see showsBottomNav / bottomNavTabFor in Screen.kt.
     val showBottomNav = showsBottomNav(currentRoute)
@@ -103,7 +140,7 @@ fun SgNavGraph(navController: NavHostController) {
         else navController.navigate(Screen.Checkout.route) { launchSingleTop = true }
     }
 
-    fun openUpload(tier: com.sisaguna.android.data.model.ListingTier = com.sisaguna.android.data.model.ListingTier.HUMAN) {
+    fun openUpload(tier: ListingTier = ListingTier.HUMAN) {
         if (authStatus == AuthStatus.GUEST) showGuestGate = true
         else navController.navigate(Screen.Upload.routeFor(tier)) { launchSingleTop = true }
     }
@@ -183,7 +220,9 @@ fun SgNavGraph(navController: NavHostController) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     onTimeout = {
-                        navController.navigate(Screen.Landing.route) {
+                        // A stored session skips the sign-in landing.
+                        val next = if (authStatus == AuthStatus.AUTHENTICATED) Screen.Home.route else Screen.Landing.route
+                        navController.navigate(next) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
                         }
                     },
@@ -194,7 +233,6 @@ fun SgNavGraph(navController: NavHostController) {
                     onLoginClick = { navController.navigate(Screen.Login.route) },
                     onGetStartedClick = { navController.navigate(Screen.Register.route) },
                     onGuestClick = {
-                        sessionViewModel.continueAsGuest()
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Landing.route) { inclusive = true }
                         }
@@ -202,30 +240,47 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Login.route) {
+                val authViewModel: AuthViewModel = hiltViewModel()
+                val authState by authViewModel.state.collectAsStateWithLifecycle()
+                LaunchedEffect(authState.done) { if (authState.done) navigateHomeAfterAuth() }
                 LoginScreen(
-                    onLoginSuccess = {
-                        sessionViewModel.login()
-                        navigateHomeAfterAuth()
-                    },
+                    state = authState,
+                    onSubmit = authViewModel::login,
                     onRegisterClick = { navController.navigate(Screen.Register.route) },
+                    onForgotClick = { navController.navigate(Screen.ForgotPassword.route) },
+                )
+            }
+            composable(Screen.ForgotPassword.route) {
+                ForgotPasswordScreen(
+                    onBack = { navController.popBackStack() },
+                    onDone = { navigateHomeAfterAuth() },
                 )
             }
             composable(Screen.Register.route) {
-                val settingsViewModel: com.sisaguna.android.feature.settings.SettingsViewModel = hiltViewModel()
-                RegisterScreen(
-                    onRegisterComplete = { type ->
+                val settingsViewModel: SettingsViewModel = hiltViewModel()
+                val authViewModel: AuthViewModel = hiltViewModel()
+                val authState by authViewModel.state.collectAsStateWithLifecycle()
+                var registeredAs by remember { mutableStateOf(AccountType.REGULAR) }
+                LaunchedEffect(authState.done) {
+                    if (authState.done) {
                         // A new seller lands on the partner dashboard, not the buyer feed.
                         settingsViewModel.setMode(
-                            if (type == com.sisaguna.android.feature.auth.AccountType.MERCHANT) com.sisaguna.android.data.settings.UserMode.MERCHANT
-                            else com.sisaguna.android.data.settings.UserMode.BUYER,
+                            if (registeredAs == AccountType.MERCHANT) UserMode.MERCHANT
+                            else UserMode.BUYER,
                         )
-                        sessionViewModel.login()
                         navigateHomeAfterAuth()
+                    }
+                }
+                RegisterScreen(
+                    state = authState,
+                    onSubmit = { type, name, email, phone, password ->
+                        registeredAs = type
+                        authViewModel.register(type, name, email, phone, password)
                     },
                 )
             }
             composable(Screen.Home.route) {
-                val sellerChats: com.sisaguna.android.feature.chat.SellerInboxViewModel = hiltViewModel()
+                val sellerChats: SellerInboxViewModel = hiltViewModel()
                 val sellerUnread by sellerChats.unreadTotal.collectAsStateWithLifecycle()
                 HomeScreen(
                     onSellerChatsClick = {
@@ -240,6 +295,7 @@ fun SgNavGraph(navController: NavHostController) {
                     onCartClick = ::openCart,
                     onMerchantClick = ::openStore,
                     onMyCatalogClick = { navController.navigate(Screen.MyCatalog.route) { launchSingleTop = true } },
+                    onStoreSetupClick = { navController.navigate(Screen.StoreSetup.route) { launchSingleTop = true } },
                     onNotificationsClick = {
                         if (authStatus == AuthStatus.GUEST) {
                             showGuestGate = true
@@ -262,7 +318,7 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Activity.route) {
-                val chats: com.sisaguna.android.feature.chat.ChatInboxViewModel = hiltViewModel()
+                val chats: ChatInboxViewModel = hiltViewModel()
                 val unreadChats by chats.unreadTotal.collectAsStateWithLifecycle()
                 ActivityScreen(
                     onOrderClick = { id -> navController.navigate(Screen.OrderDetail.routeFor(id)) },
@@ -304,20 +360,20 @@ fun SgNavGraph(navController: NavHostController) {
                     },
                 ),
             ) {
-                com.sisaguna.android.feature.chat.ChatScreen(
+                ChatScreen(
                     onBack = { navController.popBackStack() },
                     onOpenStore = ::openStore,
                     onOpenListing = ::openListing,
                 )
             }
             composable(Screen.ChatInbox.route) {
-                com.sisaguna.android.feature.chat.ChatInboxScreen(
+                ChatInboxScreen(
                     onBack = { navController.popBackStack() },
                     onOpenChat = { openChat(it) },
                 )
             }
             composable(Screen.SellerChatInbox.route) {
-                com.sisaguna.android.feature.chat.SellerChatInboxScreen(
+                SellerChatInboxScreen(
                     onBack = { navController.popBackStack() },
                     onOpenChat = { buyer -> navController.navigate(Screen.SellerChat.routeFor(buyer)) { launchSingleTop = true } },
                 )
@@ -326,7 +382,7 @@ fun SgNavGraph(navController: NavHostController) {
                 route = Screen.SellerChat.route,
                 arguments = listOf(navArgument(Screen.SellerChat.ARG_BUYER) { type = NavType.StringType }),
             ) {
-                com.sisaguna.android.feature.chat.SellerChatScreen(
+                SellerChatScreen(
                     onBack = { navController.popBackStack() },
                     onOpenListing = ::openListing,
                 )
@@ -396,6 +452,7 @@ fun SgNavGraph(navController: NavHostController) {
                     onPrivacy = { go(Screen.Privacy) },
                     onCatalog = { go(Screen.MyCatalog) },
                     onSettings = { go(Screen.Settings) },
+                    onAdmin = { go(Screen.Admin) },
                     onListingClick = ::openListing,
                     onLogout = {
                         sessionViewModel.logout()
@@ -450,10 +507,19 @@ fun SgNavGraph(navController: NavHostController) {
                 )
             }
             composable(Screen.Settings.route) {
-                com.sisaguna.android.feature.settings.SettingsScreen(onBack = { navController.popBackStack() })
+                SettingsScreen(onBack = { navController.popBackStack() })
             }
             composable(Screen.Help.route) { HelpScreen(onBack = { navController.popBackStack() }) }
             composable(Screen.Privacy.route) { PrivacyScreen(onBack = { navController.popBackStack() }) }
+            composable(Screen.Admin.route) {
+                AdminScreen(onBack = { navController.popBackStack() })
+            }
+            composable(Screen.StoreSetup.route) {
+                StoreSetupScreen(
+                    onBack = { navController.popBackStack() },
+                    onDone = { navController.popBackStack() },
+                )
+            }
             composable(Screen.MyCatalog.route) {
                 MyCatalogScreen(
                     onBack = { navController.popBackStack() },
@@ -468,6 +534,12 @@ fun SgNavGraph(navController: NavHostController) {
                 NotificationsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenSettings = { navController.navigate(Screen.NotificationSettings.route) { launchSingleTop = true } },
+                    onOpenTarget = { n ->
+                        when {
+                            n.orderId != null -> navController.navigate(Screen.OrderDetail.routeFor(n.orderId))
+                            n.merchantId != null -> navController.navigate(Screen.MerchantDetail.routeFor(n.merchantId))
+                        }
+                    },
                 )
             }
         }

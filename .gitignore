@@ -69,3 +69,6 @@ secrets.properties
 CLAUDE.local.md
 ANDROID_CLAUDE.md
 
+
+# Nested clone of the backend repo, kept here only for reading
+sisaguna-be/

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.sisaguna.android.data.model.AppNotification
 import com.sisaguna.android.data.model.NotificationPrefs
 import com.sisaguna.android.data.model.NotificationType
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Duration
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 enum class DayGroup { TODAY, YESTERDAY, THIS_WEEK, EARLIER }
 
@@ -64,6 +66,7 @@ data class NotificationsUiState(
     val groups: List<NotificationGroup> = emptyList(),
     val unreadCount: Int = 0,
     val now: Instant = Instant.now(),
+    val hasMore: Boolean = false,
 ) {
     val isEmpty: Boolean get() = groups.isEmpty()
 }
@@ -83,7 +86,18 @@ class NotificationsViewModel(
 
     private val filter = MutableStateFlow(NotificationFilter.ALL)
 
-    val uiState: StateFlow<NotificationsUiState> = combine(repository.notifications, filter) { all, f ->
+    init {
+        // Opening the inbox pulls anything that arrived since the last refresh; a failure keeps what is shown.
+        viewModelScope.launch {
+            try {
+                repository.refresh()
+            } catch (e: AppException) {
+                // The cached list stays on screen; the bell badge already told the user what mattered.
+            }
+        }
+    }
+
+    val uiState: StateFlow<NotificationsUiState> = combine(repository.notifications, filter, repository.hasMore) { all, f, more ->
         val now = clock()
         val visible = all.filter { it.type in f.types }
         NotificationsUiState(
@@ -93,6 +107,7 @@ class NotificationsViewModel(
                 .map { (group, items) -> NotificationGroup(group, items) },
             unreadCount = all.count { !it.isRead },
             now = now,
+            hasMore = more,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, NotificationsUiState())
 
@@ -101,6 +116,16 @@ class NotificationsViewModel(
     }
 
     fun onOpen(id: String) = repository.markRead(id)
+
+    fun loadMore() {
+        viewModelScope.launch {
+            try {
+                repository.loadMore()
+            } catch (e: AppException) {
+                // Offline: the button stays, so the user can tap again.
+            }
+        }
+    }
 
     fun markAllRead() = repository.markAllRead()
 

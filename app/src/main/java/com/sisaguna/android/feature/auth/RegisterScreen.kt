@@ -76,10 +76,12 @@ private enum class RegisterStep { ACCOUNT_TYPE, DETAILS }
  * "Login", node 317:10108, is designed for this flow). Step 1 (account type) keeps its existing
  * validated layout; step 2's form fields reuse Login's exact field styling (bg #FAFAFA, border
  * #E5E5E5, radius 12dp, label style) for visual consistency rather than inventing new UI.
- * Frontend-only: "Daftar Sekarang" only does basic UI validation, no real backend call. */
+ * "Daftar Sekarang" checks the obvious locally, then [AuthViewModel] registers with the backend
+ * (format rules + server errors such as a taken email come back through [state]). */
 @Composable
 fun RegisterScreen(
-    onRegisterComplete: (AccountType) -> Unit,
+    state: AuthUiState,
+    onSubmit: (type: AccountType, name: String, email: String, phone: String, password: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var step by remember { mutableStateOf(RegisterStep.ACCOUNT_TYPE) }
@@ -94,8 +96,9 @@ fun RegisterScreen(
         )
         RegisterStep.DETAILS -> DetailsStep(
             modifier = modifier,
+            state = state,
             onBack = { step = RegisterStep.ACCOUNT_TYPE },
-            onSubmit = { onRegisterComplete(accountType) },
+            onSubmit = { name, email, phone, password -> onSubmit(accountType, name, email, phone, password) },
         )
     }
 }
@@ -269,8 +272,9 @@ private fun RadioDot(selected: Boolean) {
 
 @Composable
 private fun DetailsStep(
+    state: AuthUiState,
     onBack: () -> Unit,
-    onSubmit: () -> Unit,
+    onSubmit: (name: String, email: String, phone: String, password: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var fullName by remember { mutableStateOf("") }
@@ -318,13 +322,14 @@ private fun DetailsStep(
                     visible = passwordVisible,
                     onToggleVisible = { passwordVisible = !passwordVisible },
                 )
-                errorMessage?.let { message ->
+                (errorMessage ?: state.error)?.let { message ->
                     Text(text = message, fontSize = 12.sp, color = SgColor.RedStatus)
                 }
             }
         }
         PrimaryButton(
-            label = "Daftar Sekarang",
+            label = if (state.loading) l("Memproses…", "Processing…") else "Daftar Sekarang",
+            enabled = !state.loading,
             onClick = {
                 errorMessage = when {
                     fullName.isBlank() || email.isBlank() || phone.isBlank() -> "Lengkapi semua data terlebih dahulu."
@@ -332,7 +337,7 @@ private fun DetailsStep(
                     password != confirmPassword -> "Konfirmasi kata sandi tidak cocok."
                     else -> null
                 }
-                if (errorMessage == null) onSubmit()
+                if (errorMessage == null) onSubmit(fullName, email, phone, password)
             },
         )
     }
@@ -405,13 +410,13 @@ private fun PasswordField(
 }
 
 @Composable
-private fun PrimaryButton(label: String, onClick: () -> Unit) {
+private fun PrimaryButton(label: String, onClick: () -> Unit, enabled: Boolean = true) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(24.dp)
             .background(SgColor.Brand500, RoundedCornerShape(100.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(16.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -432,6 +437,6 @@ private fun RegisterScreenAccountTypePreview() {
 @Composable
 private fun RegisterScreenDetailsPreview() {
     SisaGunaTheme {
-        DetailsStep(onBack = {}, onSubmit = {})
+        DetailsStep(state = AuthUiState(), onBack = {}, onSubmit = { _, _, _, _ -> })
     }
 }

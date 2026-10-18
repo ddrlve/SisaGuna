@@ -1,6 +1,7 @@
 package com.sisaguna.android.data.repository
 
 import com.sisaguna.android.data.model.Address
+import com.sisaguna.android.data.model.GeoPoint
 import com.sisaguna.android.data.model.OrderRating
 import com.sisaguna.android.data.model.OrderStatus
 import com.sisaguna.android.data.model.PaymentKind
@@ -82,7 +83,7 @@ class OrderRepositoryTest {
     }
 
     @Test
-    fun `cancel only works on ready orders`() {
+    fun `cancel only works on ready orders`() = runTest {
         val repo = repo()
         repo.cancel("o3") // completed seed
         assertEquals(OrderStatus.COMPLETED, repo.orders.value.first { it.id == "o3" }.status)
@@ -94,7 +95,7 @@ class OrderRepositoryTest {
 class AddressAndPaymentRepositoryTest {
 
     @Test
-    fun `deleting selected address selects the first remaining`() {
+    fun `deleting selected address selects the first remaining`() = runTest {
         val repo = FakeAddressRepository()
         repo.select("a2")
         repo.delete("a2")
@@ -102,7 +103,7 @@ class AddressAndPaymentRepositoryTest {
     }
 
     @Test
-    fun `upsert edits in place and adds new`() {
+    fun `upsert edits in place and adds new`() = runTest {
         val repo = FakeAddressRepository()
         repo.upsert(repo.addresses.value[0].copy(label = "Rumah Ibu"))
         repo.upsert(Address("a3", "Kos", "Jl. Kos", 0.0, 0.0))
@@ -112,7 +113,7 @@ class AddressAndPaymentRepositoryTest {
     @Test
     fun `current location clears selected address`() {
         val repo = FakeAddressRepository()
-        repo.selectCurrentLocation("Pinang, Tangerang")
+        repo.selectCurrentLocation("Pinang, Tangerang", GeoPoint(-6.2, 106.6))
         assertNull(repo.selectedId.value)
         assertEquals("Pinang, Tangerang", repo.currentLocationLabel.value)
     }

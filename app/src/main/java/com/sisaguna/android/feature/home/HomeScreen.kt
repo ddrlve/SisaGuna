@@ -22,6 +22,8 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import com.sisaguna.android.feature.address.LocationPromptCard
+import com.sisaguna.android.feature.address.rememberLocationRequester
 import com.sisaguna.android.ui.i18n.SgSnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.derivedStateOf
@@ -117,6 +119,7 @@ import com.sisaguna.android.ui.theme.SgTextStyle
 import com.sisaguna.android.ui.theme.SisaGunaTheme
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import com.sisaguna.android.ui.components.CountBadge
 
 @Composable
 fun HomeScreen(
@@ -134,12 +137,14 @@ fun HomeScreen(
     onMerchantClick: (String) -> Unit = {},
     onUploadTierClick: (ListingTier) -> Unit = { onUploadClick() },
     onMyCatalogClick: () -> Unit = {},
+    onStoreSetupClick: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val unread by viewModel.unreadNotifications.collectAsStateWithLifecycle()
     val vouchers by viewModel.vouchers.collectAsStateWithLifecycle()
     val mode by viewModel.mode.collectAsStateWithLifecycle()
     val cart by viewModel.cartSummary.collectAsStateWithLifecycle()
+    val showLocationPrompt by viewModel.showLocationPrompt.collectAsStateWithLifecycle()
     var showFilter by remember { mutableStateOf(false) }
     var openVoucher by remember { mutableStateOf<Voucher?>(null) }
     val snackbar = remember { SnackbarHostState() }
@@ -167,6 +172,7 @@ fun HomeScreen(
                 onNotificationsClick = onNotificationsClick,
                 unreadNotifications = if (showNotificationBadge) unread else 0,
                 onMyCatalogClick = onMyCatalogClick,
+                onStoreSetupClick = onStoreSetupClick,
                 onListingClick = onListingClick,
                 onChatsClick = onSellerChatsClick,
                 unreadChats = sellerUnreadChats,
@@ -219,6 +225,14 @@ fun HomeScreen(
             merchantName = cart?.merchantName,
             onClick = onCartClick,
             modifier = Modifier.align(Alignment.BottomCenter),
+        )
+        val locationRequester = rememberLocationRequester(onDenied = viewModel::dismissLocationPrompt, onPlace = viewModel::useLocation)
+        LocationPromptCard(
+            visible = showLocationPrompt && mode == UserMode.BUYER,
+            requester = locationRequester,
+            onPickManually = onAddressClick,
+            onDismiss = viewModel::dismissLocationPrompt,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (cart != null) 72.dp else 0.dp),
         )
         SgSnackbarHost(snackbar, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = if (cart != null) 72.dp else 0.dp))
     }
@@ -475,7 +489,7 @@ private fun SiapSantapTab(
     Rail(
         title = stringResource(R.string.home_rail_nearby),
         subtitle = stringResource(R.string.home_rail_nearby_subtitle),
-        trailing = { RadiusTag() },
+        trailing = { state.filter.maxDistanceKm?.let { RadiusTag(it) } },
         listings = state.nearby,
         now = state.now,
         onListingClick = onListingClick,
@@ -662,7 +676,7 @@ internal fun NotificationBell(unread: Int, onClick: () -> Unit) {
                 .align(Alignment.TopEnd)
                 .offset(x = 4.dp, y = (-2).dp),
         ) {
-            com.sisaguna.android.ui.components.CountBadge(unread, color = SgColor.RedStatus, ring = SgColor.Page)
+            CountBadge(unread, color = SgColor.RedStatus, ring = SgColor.Page)
         }
     }
 }
@@ -909,9 +923,9 @@ private fun Rail(
 }
 
 @Composable
-private fun RadiusTag() {
+private fun RadiusTag(km: Double) {
     Text(
-        text = stringResource(R.string.home_radius_tag),
+        text = l("Radius < ${km.toInt()} km", "Within ${km.toInt()} km"),
         style = SgTextStyle.TextXsMedium,
         color = SgColor.Brand700,
         modifier = Modifier

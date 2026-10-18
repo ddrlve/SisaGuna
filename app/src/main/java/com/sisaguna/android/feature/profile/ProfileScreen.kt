@@ -57,6 +57,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.NotificationsNone
 import androidx.compose.material.icons.rounded.Place
+import androidx.compose.material.icons.rounded.AdminPanelSettings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -101,6 +102,7 @@ import com.sisaguna.android.ui.theme.SgTextStyle
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+import com.sisaguna.android.data.model.UserProfile
 
 
 /** Figma 273:12725. */
@@ -116,6 +118,7 @@ fun ProfileScreen(
     onPrivacy: () -> Unit,
     onCatalog: () -> Unit,
     onSettings: () -> Unit = {},
+    onAdmin: () -> Unit = {},
     onListingClick: (String) -> Unit,
     onLogout: () -> Unit,
     profileUpdated: Boolean,
@@ -223,7 +226,9 @@ fun ProfileScreen(
             item {
                 SettingsSection(
                     title = stringResource(R.string.profile_section_support),
-                    rows = listOf(
+                    rows = listOfNotNull(
+                        // Only the server marks an account as admin, and it re-checks every admin call.
+                        if (state.profile.isAdmin) SettingRow(Icons.Rounded.AdminPanelSettings, l("Panel admin", "Admin panel"), l("Toko, komplain, voucher", "Stores, complaints, vouchers"), onAdmin) else null,
                         SettingRow(Icons.Rounded.Tune, l("Pengaturan", "Settings"), l("Bahasa, tema, mode", "Language, theme, mode"), onSettings),
                         SettingRow(Icons.AutoMirrored.Rounded.HelpOutline, stringResource(R.string.profile_row_help), stringResource(R.string.profile_row_help_hint), onHelp),
                         SettingRow(Icons.Rounded.Shield, stringResource(R.string.profile_row_privacy), stringResource(R.string.profile_row_privacy_hint), onPrivacy),
@@ -345,7 +350,7 @@ private fun ProfileHeader(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AvatarSheet(
-    profile: com.sisaguna.android.data.model.UserProfile,
+    profile: UserProfile,
     onAvatar: (String) -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit,

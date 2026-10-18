@@ -29,7 +29,7 @@ import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 
-private val distanceOptions = listOf<Pair<Double?, String>>(1.0 to "< 1 km", 2.0 to "< 2 km", 5.0 to "< 5 km", null to "Semua")
+private val distanceOptions = listOf<Pair<Double?, String>>(1.0 to "< 1 km", 2.0 to "< 2 km", 5.0 to "< 5 km", 10.0 to "< 10 km", 20.0 to "< 20 km", null to "Semua")
 
 /**
  * Draft-then-apply: changes stay local until "Terapkan", so browsing options never reshuffles

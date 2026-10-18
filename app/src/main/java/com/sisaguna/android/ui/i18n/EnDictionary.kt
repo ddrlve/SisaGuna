@@ -6,7 +6,7 @@ package com.sisaguna.android.ui.i18n
  * notifications) lives in [SeedContentEn]. New copy written with [l] doesn't need an entry here.
  */
 internal object EnDictionary {
-    val map: Map<String, String> = SeedContentEn.map + hashMapOf(
+    val map: Map<String, String> = SeedContentEn.map + EnNewCopy.map + hashMapOf(
         "Aktif" to "Active",
         "Aktivitas" to "Activity",
         "Alamat" to "Address",
@@ -573,5 +573,5 @@ internal object EnPatterns {
         Regex("""^Pesanan (SG-\d+) siap diambil$""") to "Order $1 is ready for pickup",
         Regex("""^(.+) sudah menyiapkan (\d+) item\. Tunjukkan kode (SG-\d+) saat ambil\.$""") to "$1 has prepared $2 item(s). Show code $3 at pickup.",
         Regex("""^(.+) terhubung$""") to "$1 connected",
-    )
+    ) + EnNewCopy.rules
 }

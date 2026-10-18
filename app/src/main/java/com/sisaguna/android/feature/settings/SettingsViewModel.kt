@@ -8,6 +8,7 @@ import com.sisaguna.android.data.settings.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
+import com.sisaguna.android.data.settings.UserMode
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -16,5 +17,5 @@ class SettingsViewModel @Inject constructor(
     val settings: StateFlow<AppSettings> = repository.settings
     fun setLanguage(language: AppLanguage) = repository.setLanguage(language)
     fun setThemeMode(mode: ThemeMode) = repository.setThemeMode(mode)
-    fun setMode(mode: com.sisaguna.android.data.settings.UserMode) = repository.setMode(mode)
+    fun setMode(mode: UserMode) = repository.setMode(mode)
 }

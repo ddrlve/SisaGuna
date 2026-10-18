@@ -43,6 +43,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,11 +66,15 @@ import com.sisaguna.android.data.model.Fulfillment
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
+import com.sisaguna.android.data.model.MerchantStatus
 import com.sisaguna.android.data.model.QuantityUnit
 import com.sisaguna.android.data.repository.ConfirmResult
 import com.sisaguna.android.data.repository.IncomingOrder
 import com.sisaguna.android.data.repository.IncomingOrderRepository
+import com.sisaguna.android.core.ui.AppMessenger
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.IncomingStatus
+import com.sisaguna.android.data.repository.MerchantDashboard
 import com.sisaguna.android.data.repository.ListingRepository
 import com.sisaguna.android.data.settings.UserMode
 import com.sisaguna.android.ui.components.SgButton
@@ -90,23 +95,41 @@ import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class MerchantHomeViewModel @Inject constructor(
     private val listingRepository: ListingRepository,
     private val incomingRepository: IncomingOrderRepository,
+    private val messenger: AppMessenger,
 ) : ViewModel() {
-    val store: Merchant? = listingRepository.merchant(ListingRepository.MY_MERCHANT_ID)
+    val store: StateFlow<Merchant?> = listingRepository.myMerchant
 
-    val myListings: StateFlow<List<Listing>> = listingRepository.listings
-        .map { all -> all.filter { it.merchantId == ListingRepository.MY_MERCHANT_ID } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val myListings: StateFlow<List<Listing>> = combine(listingRepository.listings, listingRepository.myMerchant) { all, me ->
+        all.filter { it.merchantId == me?.id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val incoming: StateFlow<List<IncomingOrder>> = incomingRepository.orders
 
-    fun confirm(orderId: String, code: String): ConfirmResult = incomingRepository.confirmPickup(orderId, code)
+    val dashboard: StateFlow<MerchantDashboard> = incomingRepository.dashboard
+
+    init {
+        viewModelScope.launch {
+            try {
+                incomingRepository.refresh()
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
+    }
+
+    suspend fun confirm(orderId: String, code: String): ConfirmResult = try {
+        incomingRepository.confirmPickup(orderId, code)
+    } catch (e: AppException) {
+        ConfirmResult.Rejected(e.userMessage)
+    }
 }
 
 /**
@@ -121,6 +144,7 @@ fun MerchantHome(
     onNotificationsClick: () -> Unit,
     unreadNotifications: Int,
     onMyCatalogClick: () -> Unit,
+    onStoreSetupClick: () -> Unit = {},
     onChatsClick: () -> Unit = {},
     unreadChats: Int = 0,
     onListingClick: (Listing) -> Unit,
@@ -128,12 +152,13 @@ fun MerchantHome(
 ) {
     val listings by viewModel.myListings.collectAsStateWithLifecycle()
     val incoming by viewModel.incoming.collectAsStateWithLifecycle()
-    val store = viewModel.store
+    val store by viewModel.store.collectAsStateWithLifecycle()
     val now = Instant.now()
     val waiting = incoming.filter { it.status == IncomingStatus.WAITING }
     val active = listings.filter { it.pickupEnd.isAfter(now) && it.stock > 0 }
-    val todaySales = incoming.filter { it.status == IncomingStatus.HANDED_OVER }.sumOf { it.total }
-    val todayRevenue = AppFees.merchantPayout(todaySales)
+    val dashboard by viewModel.dashboard.collectAsStateWithLifecycle()
+    val todaySales = dashboard.salesToday
+    val todayRevenue = dashboard.netToday
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(SgColor.Page),
@@ -160,6 +185,11 @@ fun MerchantHome(
                 // Partners get order, pickup and payout alerts too, same bell as buyer Home.
                 NotificationBell(unread = unreadNotifications, onClick = onNotificationsClick)
             }
+        }
+        // A partner account has no store until it is registered, and can't sell until an admin approves it.
+        val storeStatus = store?.status
+        if (store == null || storeStatus != MerchantStatus.APPROVED) {
+            item { StoreStatusCard(status = storeStatus, onSetup = onStoreSetupClick) }
         }
         item {
             // Store hero: banner + today's numbers.
@@ -323,13 +353,53 @@ private fun UploadTile(icon: ImageVector, title: String, sub: String, tint: Colo
     }
 }
 
+/** Shown while the partner has no approved store: register it, wait for approval, or learn why not. */
+@Composable
+private fun StoreStatusCard(status: MerchantStatus?, onSetup: () -> Unit) {
+    val (title, body) = when (status) {
+        null -> l("Daftarkan tokomu", "Open your store") to l(
+            "Lengkapi data toko supaya kamu bisa mulai berjualan sisa makanan.",
+            "Add your store details to start selling surplus food.",
+        )
+        MerchantStatus.PENDING -> l("Toko menunggu persetujuan", "Store awaiting approval") to l(
+            "Tim SisaGuna sedang memeriksa tokomu. Kamu bisa berjualan setelah disetujui.",
+            "The SisaGuna team is reviewing your store. You can sell once it's approved.",
+        )
+        MerchantStatus.REJECTED -> l("Toko belum disetujui", "Store not approved") to l(
+            "Pendaftaran tokomu ditolak. Hubungi bantuan untuk info lebih lanjut.",
+            "Your store registration was declined. Contact support for details.",
+        )
+        else -> l("Toko dinonaktifkan", "Store suspended") to l(
+            "Tokomu sementara dinonaktifkan. Hubungi bantuan untuk info lebih lanjut.",
+            "Your store is suspended. Contact support for details.",
+        )
+    }
+    Column(
+        Modifier
+            .padding(start = SgSpacing.Gutter, end = SgSpacing.Gutter, top = SgSpacing.Lg)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(SgColor.Yellow50)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(title, style = SgTextStyle.Label)
+        Text(body, style = SgTextStyle.Body)
+        if (status == null) {
+            SgButton(l("Daftarkan toko", "Open store"), onClick = onSetup, height = 44.dp, modifier = Modifier.padding(top = 6.dp).fillMaxWidth())
+        }
+    }
+}
+
 /** One incoming order. "Konfirmasi ambil" expands an inline code field (the buyer shows
  * SG-XXXX); a wrong code shakes nothing — it just says so under the field. */
 @Composable
-private fun IncomingOrderCard(order: IncomingOrder, onConfirm: (String) -> ConfirmResult) {
+private fun IncomingOrderCard(order: IncomingOrder, onConfirm: suspend (String) -> ConfirmResult) {
     var expanded by remember { mutableStateOf(false) }
     var code by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var checking by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val done = order.status == IncomingStatus.HANDED_OVER
     Column(
         Modifier
@@ -388,28 +458,38 @@ private fun IncomingOrderCard(order: IncomingOrder, onConfirm: (String) -> Confi
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
                             value = code,
-                            onValueChange = { code = it.take(8); error = false },
+                            onValueChange = { code = it.take(8); error = null },
                             singleLine = true,
                             placeholder = { androidx.compose.material3.Text("SG-0000", style = SgTextStyle.TextSmRegular, color = SgColor.Neutral400) },
                             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                             textStyle = SgTextStyle.Label.copy(letterSpacing = 1.sp),
-                            isError = error,
+                            isError = error != null,
                             shape = RoundedCornerShape(14.dp),
                             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = SgColor.Brand500, unfocusedBorderColor = SgColor.Hairline),
                             modifier = Modifier.weight(1f),
                         )
                         Spacer(Modifier.size(8.dp))
                         SgButton(
-                            text = l("Cek", "Check"),
-                            onClick = { error = onConfirm(code) == ConfirmResult.WrongCode },
-                            enabled = code.isNotBlank(),
+                            text = if (checking) "…" else l("Cek", "Check"),
+                            onClick = {
+                                checking = true
+                                scope.launch {
+                                    error = when (val result = onConfirm(code)) {
+                                        ConfirmResult.Confirmed -> null
+                                        ConfirmResult.WrongCode -> l("Kode tidak cocok. Cek lagi layar pembeli.", "Code doesn't match. Check the buyer's screen.")
+                                        is ConfirmResult.Rejected -> result.message
+                                    }
+                                    checking = false
+                                }
+                            },
+                            enabled = code.isNotBlank() && !checking,
                             height = 52.dp,
                         )
                     }
                     Text(
-                        if (error) l("Kode tidak cocok. Cek lagi layar pembeli.", "Code doesn't match. Check the buyer's screen.") else l("Hint demo: kode pesanan ini ${order.pickupCode}", "Demo hint: this order's code is ${order.pickupCode}"),
+                        error ?: l("Minta kode dari layar pembeli (mis. SG-1234).", "Ask for the code on the buyer's screen (e.g. SG-1234)."),
                         style = SgTextStyle.Caption,
-                        color = if (error) SgColor.RedStatus else SgColor.InkMuted,
+                        color = if (error != null) SgColor.RedStatus else SgColor.InkMuted,
                         modifier = Modifier.padding(top = 6.dp),
                     )
                 }

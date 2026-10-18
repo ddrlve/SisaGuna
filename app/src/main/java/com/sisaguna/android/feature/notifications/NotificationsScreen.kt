@@ -69,6 +69,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sisaguna.android.R
 import com.sisaguna.android.data.model.AppNotification
 import com.sisaguna.android.data.model.NotificationType
+import com.sisaguna.android.ui.components.SgButton
+import com.sisaguna.android.ui.components.SgButtonStyle
 import com.sisaguna.android.ui.components.SgChip
 import com.sisaguna.android.ui.components.SgEmptyState
 import com.sisaguna.android.ui.components.SgTopBar
@@ -93,6 +95,7 @@ private fun styleFor(type: NotificationType) = when (type) {
 fun NotificationsScreen(
     onBack: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenTarget: (AppNotification) -> Unit = {},
     viewModel: NotificationsViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -179,7 +182,10 @@ fun NotificationsScreen(
                     SwipeableNotificationRow(
                         notification = notification,
                         time = relativeTime(notification.createdAt, state.now, zone),
-                        onOpen = { viewModel.onOpen(notification.id) },
+                        onOpen = {
+                            viewModel.onOpen(notification.id)
+                            onOpenTarget(notification)
+                        },
                         onDelete = {
                             val deleted = viewModel.delete(notification.id) ?: return@SwipeableNotificationRow
                             scope.launch {
@@ -189,6 +195,16 @@ fun NotificationsScreen(
                             }
                         },
                         modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            if (state.hasMore) {
+                item(key = "more") {
+                    SgButton(
+                        "Muat lebih banyak",
+                        onClick = viewModel::loadMore,
+                        style = SgButtonStyle.Secondary,
+                        modifier = Modifier.padding(horizontal = SgSpacing.Gutter, vertical = SgSpacing.Lg).fillMaxWidth(),
                     )
                 }
             }

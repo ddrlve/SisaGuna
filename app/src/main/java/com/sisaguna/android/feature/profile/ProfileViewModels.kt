@@ -2,12 +2,14 @@ package com.sisaguna.android.feature.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.data.model.ImpactStats
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.data.model.UserProfile
 import com.sisaguna.android.data.model.OrderStatus
 import com.sisaguna.android.data.repository.AddressRepository
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.ListingRepository
 import com.sisaguna.android.data.repository.OrderRepository
 import com.sisaguna.android.data.repository.PaymentMethodRepository
@@ -42,17 +44,27 @@ class ProfileViewModel @Inject constructor(
     addressRepository: AddressRepository,
     paymentRepository: PaymentMethodRepository,
     orderRepository: OrderRepository,
+    private val messenger: AppMessenger,
 ) : ViewModel() {
 
     private val impact = MutableStateFlow<ImpactStats?>(null)
 
-    fun setPhoto(uri: String?) = profileRepository.setPhoto(uri)
+    fun setPhoto(uri: String?) = launchUpdate { profileRepository.setPhoto(uri) }
 
-    fun setAvatar(key: String) = profileRepository.setAvatar(key)
+    fun setAvatar(key: String) = launchUpdate { profileRepository.setAvatar(key) }
+
+    private fun launchUpdate(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
+    }
 
     /** Live: an upload or delete in Katalog saya shows up here without reopening Profile. */
-    private val catalog = listingRepository.listings.map { all ->
-        val me = listingRepository.merchant(ListingRepository.MY_MERCHANT_ID)
+    private val catalog = combine(listingRepository.listings, listingRepository.myMerchant) { all, me ->
         if (me == null) emptyList() else all.filter { it.merchantId == me.id && it.stock > 0 }.map { it to me }
     }
 
@@ -71,7 +83,13 @@ class ProfileViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ProfileUiState(profileRepository.profile.value))
 
     init {
-        viewModelScope.launch { impact.value = profileRepository.getImpact() }
+        viewModelScope.launch {
+            try {
+                impact.value = profileRepository.getImpact()
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
     }
 }
 
@@ -124,6 +142,7 @@ data class EditProfileForm(
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
+    private val messenger: AppMessenger,
 ) : ViewModel() {
 
     private val original = profileRepository.profile.value
@@ -148,16 +167,28 @@ class EditProfileViewModel @Inject constructor(
     fun onPhoneChange(value: String) = _form.update { copy(phone = value.filter { it.isDigit() || it == '+' }.take(16)) }
     fun onBlur(field: ProfileField) = _form.update { copy(touched = touched + field) }
 
-    /** Returns true when the profile was saved; otherwise reveals every error. */
-    fun save(): Boolean {
+    private val _saving = MutableStateFlow(false)
+    val saving: StateFlow<Boolean> = _saving.asStateFlow()
+
+    /** Reveals every error when invalid; otherwise saves on the server and calls [onSaved] once it accepted. */
+    fun save(onSaved: () -> Unit) {
         val current = _form.value
         if (!current.isValid) {
             _form.value = current.copy(submitted = true)
-            return false
+            return
         }
-        if (!isDirty) return false
-        profileRepository.update(current.name, current.email, ProfileValidation.normalizePhone(current.phone))
-        return true
+        if (!isDirty || _saving.value) return
+        _saving.value = true
+        viewModelScope.launch {
+            try {
+                profileRepository.update(current.name, current.email, ProfileValidation.normalizePhone(current.phone))
+                onSaved()
+            } catch (e: AppException) {
+                messenger.show(e) // e.g. "Email sudah dipakai": stay on the form so it can be fixed
+            } finally {
+                _saving.value = false
+            }
+        }
     }
 
     private inline fun MutableStateFlow<EditProfileForm>.update(block: EditProfileForm.() -> EditProfileForm) {

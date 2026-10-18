@@ -5,6 +5,7 @@ import com.sisaguna.android.data.repository.FakeNotificationRepository
 import com.sisaguna.android.data.repository.FakeOrderRepository
 import com.sisaguna.android.data.repository.FakePaymentMethodRepository
 import com.sisaguna.android.data.repository.FakeProfileRepository
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.testutil.MainDispatcherRule
 import com.sisaguna.android.testutil.TestListingRepository
 import org.junit.Assert.assertEquals
@@ -55,13 +56,13 @@ class EditProfileViewModelTest {
 
     @Test
     fun `save disabled when unchanged`() {
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         assertFalse(vm.canSave)
     }
 
     @Test
     fun `save disabled when invalid even if dirty`() {
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         vm.onEmailChange("nope")
         assertTrue(vm.isDirty)
         assertFalse(vm.canSave)
@@ -69,14 +70,14 @@ class EditProfileViewModelTest {
 
     @Test
     fun `typing 0 prefix of the same number is not dirty`() {
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         vm.onPhoneChange("0" + repo.profile.value.phone)
         assertFalse(vm.isDirty)
     }
 
     @Test
     fun `errors hidden until blur or submit`() {
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         vm.onNameChange("")
         assertNull(vm.form.value.visibleError(ProfileField.NAME))
         vm.onBlur(ProfileField.NAME)
@@ -85,9 +86,11 @@ class EditProfileViewModelTest {
 
     @Test
     fun `failed save reveals all errors`() {
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         vm.onEmailChange("x")
-        assertFalse(vm.save())
+        var saved = false
+        vm.save { saved = true }
+        assertFalse(saved)
         assertNotNull(vm.form.value.visibleError(ProfileField.EMAIL))
     }
 
@@ -97,11 +100,14 @@ class EditProfileViewModelTest {
         val profileVm = ProfileViewModel(
             repo, listings, FakeNotificationRepository(), FakeAddressRepository(), FakePaymentMethodRepository(),
             FakeOrderRepository(listings, FakeNotificationRepository(), { java.time.Instant.now() }, 0),
+            AppMessenger(),
         )
-        val vm = EditProfileViewModel(repo)
+        val vm = EditProfileViewModel(repo, AppMessenger())
         vm.onNameChange("  Sari Dewi ")
         vm.onPhoneChange("0811111111")
-        assertTrue(vm.save())
+        var saved = false
+        vm.save { saved = true }
+        assertTrue(saved)
         assertEquals("Sari Dewi", profileVm.uiState.value.profile.name)
         assertEquals("811111111", profileVm.uiState.value.profile.phone)
         assertEquals('S', profileVm.uiState.value.profile.initial)

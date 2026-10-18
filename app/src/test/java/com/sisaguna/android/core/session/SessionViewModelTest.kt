@@ -1,51 +1,56 @@
 package com.sisaguna.android.core.session
 
+import com.sisaguna.android.data.remote.SessionEvents
+import com.sisaguna.android.data.settings.AppSettingsRepository
+import com.sisaguna.android.data.settings.UserMode
+import com.sisaguna.android.testutil.FakeAuthRepository
+import com.sisaguna.android.testutil.MainDispatcherRule
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Rule
 import org.junit.Test
 
 class SessionViewModelTest {
 
+    @get:Rule
+    val main = MainDispatcherRule()
+
+    private val auth = FakeAuthRepository()
+    private val settings = AppSettingsRepository(null)
+    private fun viewModel() = SessionViewModel(auth, settings, SessionEvents())
+
     @Test
     fun `initial status is guest`() {
-        val viewModel = SessionViewModel()
-        assertEquals(AuthStatus.GUEST, viewModel.status.value)
+        assertEquals(AuthStatus.GUEST, viewModel().status.value)
     }
 
     @Test
-    fun `login sets status to authenticated`() {
-        val viewModel = SessionViewModel()
-        viewModel.login()
+    fun `a stored session starts authenticated`() {
+        val viewModel = SessionViewModel(FakeAuthRepository(signedIn = true), settings, SessionEvents())
         assertEquals(AuthStatus.AUTHENTICATED, viewModel.status.value)
     }
 
     @Test
-    fun `login is idempotent`() {
-        val viewModel = SessionViewModel()
-        viewModel.login()
-        viewModel.login()
+    fun `status follows the auth repository`() = runTest {
+        val viewModel = viewModel()
+        auth.login("a@b.id", "password1")
         assertEquals(AuthStatus.AUTHENTICATED, viewModel.status.value)
-    }
-
-    @Test
-    fun `logout after login returns to guest`() {
-        val viewModel = SessionViewModel()
-        viewModel.login()
         viewModel.logout()
         assertEquals(AuthStatus.GUEST, viewModel.status.value)
+    }
+
+    @Test
+    fun `logout hands the next account the buyer mode`() {
+        settings.setMode(UserMode.MERCHANT)
+        viewModel().logout()
+        assertEquals(UserMode.BUYER, settings.settings.value.mode)
     }
 
     @Test
     fun `logout is idempotent when already guest`() {
-        val viewModel = SessionViewModel()
+        val viewModel = viewModel()
         viewModel.logout()
         viewModel.logout()
-        assertEquals(AuthStatus.GUEST, viewModel.status.value)
-    }
-
-    @Test
-    fun `continueAsGuest keeps status guest explicitly`() {
-        val viewModel = SessionViewModel()
-        viewModel.continueAsGuest()
         assertEquals(AuthStatus.GUEST, viewModel.status.value)
     }
 }
