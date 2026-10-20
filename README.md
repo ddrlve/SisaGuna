@@ -173,7 +173,7 @@ Biaya platform dibagi antara pembeli dan mitra:
 | Bagian | Teknologi |
 |---|---|
 | Bahasa | Kotlin 2.0.21 |
-| UI | Jetpack Compose, Material 3 |
+| UI Application | Jetpack Compose, Material 3 |
 | Navigasi | Navigation Compose |
 | Arsitektur | MVVM: Repository, ViewModel, StateFlow |
 | Jaringan | Retrofit, OkHttp, kotlinx-serialization, WebSocket (OkHttp) |
