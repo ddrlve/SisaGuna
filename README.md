@@ -263,14 +263,16 @@ Lewat terminal:
 
 | Tipe | Link |
 |---|---|
-| Business Ideas | [Canva PPT Business Ideas](https://canva.link/d403zux6vbz05gn) |
-| Prototype Testing (Sesi 4) | [Canva PPT Prototype Testing](https://canva.link/sg2zediuy60igm0) |
-| Business Model Canvas | [BMC](https://canva.link/oi5wpxwzp5m5r7i) |
-| Laporan dan dokumen pendukung | [`docs/documents_related`](docs/documents_related) |
-| Dokumentasi tim | [Google Drive Group 4](https://drive.google.com/drive/folders/1rLPFOwbirGE__xXtSGb0MGmpDF2EmlHI?usp=sharing) |
-| Design App | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=Ac735hftPAYuJkT2-1) |
-| Prototype | [Figma Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1) |
-| Frontend (repo ini) | https://github.com/ddrlve/SisaGuna |
-| Backend | https://github.com/FadhRach/sisaguna-be |
+| Presentasi | [Canva](https://canva.link/d403zux6vbz05gn) |
+| Google Drive Group 4 | [Folder tim](https://drive.google.com/drive/folders/1rLPFOwbirGE__xXtSGb0MGmpDF2EmlHI?usp=sharing) |
+| Aplikasi (SisaGuna v0.5.0) | [GitHub Releases](https://github.com/ddrlve/SisaGuna/releases) |
+| Business Model Canvas (BMC Assignment 1) | [Canva PPT, halaman 2](https://canva.link/ynk773omp5141l4) |
+| Prototype Testing | [Canva PPT Prototype Testing](https://canva.link/8yx9ox6h5lbrkn6) |
+| Product Ideas | [Canva PPT Product Ideas](https://canva.link/rq4jx6kgl2svlbn) |
+| Figma Prototype | [Figma Prototype](https://www.figma.com/proto/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=255-5689&t=FJrDzffI5BvBqfaI-1) |
+| Figma Full Design | [Figma Design](https://www.figma.com/design/LUsLvGVUhvskfA6xrAiSrP/sisaguna?node-id=0-1&t=xf2PaVveFioUuVQ3-1) |
+| Laporan dan dokumen kuliah | [`docs/documents_related`](docs/documents_related) |
+| GitHub Repository (Frontend) | https://github.com/ddrlve/SisaGuna |
+| GitHub Back-end Repository | https://github.com/FadhRach/sisaguna-be |
 
 Foto makanan dan logo kurir berasal dari Wikimedia Commons; sumber lengkap ada di `app/src/main/assets/img/CREDITS.txt`.
