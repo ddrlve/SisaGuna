@@ -24,11 +24,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import com.sisaguna.android.testutil.StockTracking
 import javax.inject.Inject
 import javax.inject.Singleton
-
-/** Bundled seed photo (assets/img). Coil loads `file:///android_asset/…` directly. */
-fun seedImage(name: String) = "file:///android_asset/img/$name.jpg"
 
 /**
  * Mock data standing in for supabase-kt until the Supabase project decision in
@@ -39,7 +37,7 @@ fun seedImage(name: String) = "file:///android_asset/img/$name.jpg"
  * Katalog saya without a restart. Every photo matches its title (see assets/img/CREDITS.txt).
  */
 @Singleton
-class FakeListingRepository @Inject constructor() : ListingRepository {
+class FakeListingRepository @Inject constructor() : ListingRepository, StockTracking {
 
     private val now = Instant.now()
     private fun hours(h: Double) = now.plus((h * 60).toLong(), ChronoUnit.MINUTES)
@@ -387,7 +385,7 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
 
     private fun visible() = _listings.value.filter { it.pickupEnd.isAfter(Instant.now()) && it.stock > 0 }
 
-    override suspend fun getHomeFeed(focusTier: ListingTier): HomeFeed {
+    override suspend fun getHomeFeed(focusTier: ListingTier, maxKm: Double?): HomeFeed {
         delay(600) // simulate network round trip so the loading state is visible in preview
 
         val visible = visible()
@@ -421,11 +419,6 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
 
     override fun merchant(id: String): Merchant? = merchants.firstOrNull { it.id == id }
 
-    override suspend fun getVisibleListings(): List<Listing> {
-        delay(300)
-        return visible()
-    }
-
     override suspend fun getMerchantFeed(merchantId: String): MerchantFeed? {
         delay(400)
         val merchant = merchant(merchantId) ?: return null
@@ -444,11 +437,45 @@ class FakeListingRepository @Inject constructor() : ListingRepository {
         )
     }
 
-    override fun addListing(listing: Listing) {
-        _listings.value = listOf(listing) + _listings.value.filterNot { it.id == listing.id }
+    override val myMerchant: StateFlow<Merchant?> =
+        MutableStateFlow(merchants.firstOrNull { it.id == ListingRepository.MY_MERCHANT_ID }).asStateFlow()
+
+    override suspend fun createStore(draft: StoreDraft): Merchant =
+        Merchant("m-new", draft.name, false, MerchantStatus.PENDING, draft.locationLabel)
+
+    override suspend fun getMyListings(): List<Listing> =
+        _listings.value.filter { it.merchantId == ListingRepository.MY_MERCHANT_ID }
+
+    /** Local-only stand-in: photos stay on-device URIs and nothing is validated server-side. */
+    override suspend fun createListing(draft: ListingDraft, idempotencyKey: String): Listing {
+        val now = Instant.now()
+        val listing = Listing(
+            id = "u-" + java.util.UUID.randomUUID().toString().take(8),
+            merchantId = ListingRepository.MY_MERCHANT_ID,
+            title = draft.title,
+            tier = draft.tier,
+            priceOriginal = draft.priceOriginal,
+            priceDiscounted = draft.price,
+            isFree = draft.isFree,
+            pickupEnd = now.plus(draft.pickupHours.toLong(), ChronoUnit.HOURS),
+            imageUrl = draft.photoUris.firstOrNull().orEmpty(),
+            distanceKm = 0.3,
+            description = draft.description,
+            stock = draft.stock,
+            pickupStart = now,
+            gallery = draft.photoUris.drop(1),
+            halal = draft.halal,
+            allergens = draft.allergens,
+            madeAt = draft.madeAt,
+            storage = draft.storage,
+            safetyChecks = draft.safetyChecks,
+            videoUrl = draft.videoUri,
+        )
+        _listings.value = listOf(listing) + _listings.value
+        return listing
     }
 
-    override fun deleteListing(listingId: String) {
+    override suspend fun deleteListing(listingId: String) {
         _listings.value = _listings.value.filterNot { it.id == listingId }
     }
 

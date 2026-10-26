@@ -24,6 +24,10 @@ data class AppSettings(
     val language: AppLanguage = AppLanguage.ID,
     val themeMode: ThemeMode = ThemeMode.LIGHT,
     val mode: UserMode = UserMode.BUYER,
+    /** The user declined (or already answered) the "turn on location" card on Home. */
+    val locationPromptDismissed: Boolean = false,
+    /** The system notification-permission dialog was already shown; never nag again. */
+    val notificationPermissionAsked: Boolean = false,
 )
 
 /**
@@ -43,6 +47,8 @@ class AppSettingsRepository(
             language = prefs?.getString(KEY_LANG, null)?.let { runCatching { AppLanguage.valueOf(it) }.getOrNull() } ?: AppLanguage.ID,
             themeMode = prefs?.getString(KEY_THEME, null)?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: ThemeMode.LIGHT,
             mode = prefs?.getString(KEY_MODE, null)?.let { runCatching { UserMode.valueOf(it) }.getOrNull() } ?: UserMode.BUYER,
+            locationPromptDismissed = prefs?.getBoolean(KEY_LOCATION_DISMISSED, false) ?: false,
+            notificationPermissionAsked = prefs?.getBoolean(KEY_NOTIF_ASKED, false) ?: false,
         ),
     )
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
@@ -62,7 +68,19 @@ class AppSettingsRepository(
         _settings.value = _settings.value.copy(mode = mode)
     }
 
+    fun setLocationPromptDismissed(dismissed: Boolean) {
+        prefs?.edit()?.putBoolean(KEY_LOCATION_DISMISSED, dismissed)?.apply()
+        _settings.value = _settings.value.copy(locationPromptDismissed = dismissed)
+    }
+
+    fun setNotificationPermissionAsked() {
+        prefs?.edit()?.putBoolean(KEY_NOTIF_ASKED, true)?.apply()
+        _settings.value = _settings.value.copy(notificationPermissionAsked = true)
+    }
+
     private companion object {
+        const val KEY_NOTIF_ASKED = "notification_permission_asked"
+        const val KEY_LOCATION_DISMISSED = "location_prompt_dismissed"
         const val KEY_MODE = "mode"
         const val KEY_LANG = "language"
         const val KEY_THEME = "theme"

@@ -532,7 +532,7 @@ private fun PasswordInput(label: String, value: String, onChange: (String) -> Un
 private val faqs = listOf(
     "Apa itu SisaGuna?" to "SisaGuna menghubungkan kamu dengan makanan berlebih dari warung, toko roti, katering, dan rumah tangga di sekitarmu. Makanan layak makan dijual murah atau gratis, sisanya disalurkan untuk pakan ternak dan kompos.",
     "Apakah makanannya aman?" to "Penyedia wajib mendeskripsikan kondisi makanan dengan jujur. Cek tampilan dan bau saat ambil, dan konsumsi di hari yang sama. Laporkan lewat rating kalau ada yang tidak sesuai.",
-    "Bagaimana cara mengambil pesanan?" to "Setelah checkout, buka Aktivitas lalu tunjukkan kode pickup (contoh SG-4821) ke penyedia sebelum waktu ambil habis. Tandai \"Sudah saya ambil\" setelah makanan di tanganmu.",
+    "Bagaimana cara mengambil pesanan?" to "Setelah checkout, buka Aktivitas lalu tunjukkan kode pickup ke penyedia sebelum waktu ambil habis. Penyedia mengonfirmasi kode itu dan pesananmu selesai.",
     "Bisa batal pesanan?" to "Bisa, selama pesanan belum diambil. Pembayaran online dikembalikan dalam 1×24 jam.",
     "Bagaimana cara jual atau bagikan makanan?" to "Ketuk Upload di Beranda, isi foto, jenis (Siap Santap, Pakan Ternak, atau Kompos), harga atau gratis, stok, dan batas waktu ambil.",
     "Kenapa ada kategori pakan ternak dan kompos?" to "Supaya tidak ada sisa yang terbuang ke TPA. Yang tidak layak untuk manusia masih berguna untuk peternak dan pembuat kompos.",

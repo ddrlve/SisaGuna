@@ -65,7 +65,7 @@ flowchart LR
 
 ## Coba Aplikasinya
 
-**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases), lalu unduh file `SisaGuna-v0.4.0-debug.apk`.
+**Download APK:** buka halaman [Releases](https://github.com/ddrlve/SisaGuna/releases), lalu unduh file `SisaGuna-v0.5.0-debug.apk`.
 
 **Cara install di HP Android (minimal Android 8.0):**
 
@@ -78,11 +78,11 @@ flowchart LR
 | Ingin mencoba | Caranya |
 |---|---|
 | Langsung melihat isi aplikasi | Di halaman awal pilih **Jelajahi tanpa akun** |
-| Alur lengkap sebagai pembeli | Pilih **Masuk**, isi email dan password apa saja (login masih simulasi) |
-| Sisi mitra / penjual | Profil, lalu Pengaturan, lalu ubah mode ke **Mitra / penjual** |
+| Alur lengkap sebagai pembeli | Pilih **Daftar**, atau **Masuk** dengan akun yang sudah ada |
+| Sisi mitra / penjual | Daftar dengan tipe **Mitra**, isi data toko (**Daftarkan toko**), lalu tunggu admin menyetujuinya. Akun yang sudah punya toko: Profil, Pengaturan, ubah mode ke **Mitra / penjual** |
 | Bahasa Inggris dan mode gelap | Profil, lalu Pengaturan |
 
-> Semua data di aplikasi ini masih data contoh dan belum tersambung ke server. Pembayaran QRIS dan e-wallet hanya simulasi, tidak ada uang yang ditarik.
+> Aplikasi terhubung ke server sungguhan (`https://sisaguna.fadh.tech`), jadi akun, makanan, pesanan, chat, dan notifikasi tersimpan terpusat dan sama di semua HP. Pembayaran non-tunai (QRIS, e-wallet) dan kurir masih disimulasikan oleh server, tidak ada uang yang ditarik.
 
 ---
 
@@ -111,8 +111,8 @@ flowchart LR
 | Halaman toko | Profil toko, jam buka, menu tersedia, dan review pembeli |
 | Ringkasan pesanan | Ambil sendiri atau kurir (GoSend, GrabExpress, SPX Instant, Lalamove) dengan pilihan Prioritas, Standar, atau Hemat; alamat tujuan bisa diubah; tambah menu lain dari toko yang sama; voucher; rincian biaya |
 | Pembayaran | QRIS, GoPay, OVO, DANA (simulasi) |
-| Aktivitas | Status pesanan, kode pickup, rating, dan komplain |
-| Chat ke toko | Tanya stok, jam masak, halal, atau pengantaran sebelum pesan, dengan pertanyaan cepat sekali ketuk |
+| Aktivitas | Status pesanan, kode pickup, batalkan pesanan (selama masih diizinkan), rating (maks. 7 hari setelah selesai), dan komplain (maks. 24 jam) |
+| Chat ke toko | Tanya stok, jam masak, halal, atau pengantaran sebelum pesan. Pesan masuk dan indikator mengetik muncul langsung (WebSocket) |
 | Tersimpan dan notifikasi | Toko favorit, notifikasi pesanan dan promo, pengaturan per kategori |
 | Profil | Avatar buah atau foto sendiri, level penyelamat dan dampak, alamat, riwayat, metode bayar, bantuan, privasi |
 
@@ -122,8 +122,9 @@ flowchart LR
 |---|---|
 | Dashboard | Pendapatan bersih hari ini (sudah dipotong komisi), pesanan masuk, listing aktif |
 | Posting makanan | Siap santap (per porsi) atau pakan dan kompos (per gram/kg), dengan checklist kelayakan |
-| Konfirmasi pickup | Cocokkan kode dari pembeli sebelum menyerahkan pesanan |
-| Chat pembeli | Balas pertanyaan pembeli, dengan balasan cepat untuk penjual yang sedang sibuk |
+| Daftarkan toko | Nama, lokasi di peta, jam buka, halal, dan alergen. Toko aktif setelah disetujui admin |
+| Konfirmasi pickup | Cocokkan kode dari pembeli sebelum menyerahkan pesanan. Hanya mitra yang bisa menyelesaikan pesanan |
+| Chat pembeli | Balas pertanyaan pembeli secara realtime, dengan balasan cepat untuk penjual yang sedang sibuk |
 | Notifikasi | Pemberitahuan pesanan dan pengambilan |
 
 ### Umum
@@ -148,18 +149,22 @@ Biaya platform dibagi antara pembeli dan mitra:
 
 ## Status Pengerjaan
 
-**Versi saat ini: 0.4.0 (demo)**
+**Versi saat ini: 0.5.0**
 
 | Bagian | Status |
 |---|---|
-| Alur pembeli end to end | Selesai, memakai data contoh |
-| Dashboard dan posting mitra | Selesai, memakai data contoh |
+| Alur pembeli end to end | Selesai, tersambung ke backend |
+| Dashboard, daftar toko, dan posting mitra | Selesai, tersambung ke backend |
+| Login, daftar, dan sesi | Selesai: token terenkripsi, refresh otomatis |
+| Chat pembeli dan mitra | Selesai, realtime lewat WebSocket |
 | Bahasa Inggris dan mode gelap | Selesai |
-| Chat pembeli dan mitra | Selesai, balasan toko masih otomatis dari data contoh |
-| Unit test | 106 test, semua lulus |
-| Integrasi backend (Supabase) | Belum, dikerjakan di repo backend |
-| Pembayaran asli (payment gateway) dan API kurir | Belum |
-| Panel admin | Belum |
+| Unit test | 180 test, semua lulus (termasuk uji kontrak terhadap respons asli server) |
+| Pembayaran asli (payment gateway) dan API kurir | Belum, disimulasikan oleh backend |
+| Notifikasi push (FCM) | Kode siap: aktif otomatis setelah `app/google-services.json` dari Firebase diletakkan (tanpa file itu app tetap berjalan tanpa push) |
+| Notifikasi dalam app | Selesai: tap membuka pesanan/toko terkait, "Muat lebih banyak", izin notifikasi Android 13+ |
+| Lupa kata sandi | Selesai: kode 6 digit lewat email, atur ulang kata sandi |
+| Lokasi dan radius | Selesai: izin lokasi, filter radius dihitung server |
+| Panel admin | Selesai (Toko, Komplain, Voucher), muncul di Profil untuk akun admin; belum diuji dengan akun admin sungguhan |
 
 ---
 
@@ -168,9 +173,11 @@ Biaya platform dibagi antara pembeli dan mitra:
 | Bagian | Teknologi |
 |---|---|
 | Bahasa | Kotlin 2.0.21 |
-| UI | Jetpack Compose, Material 3 |
+| UI Application | Jetpack Compose, Material 3 |
 | Navigasi | Navigation Compose |
 | Arsitektur | MVVM: Repository, ViewModel, StateFlow |
+| Jaringan | Retrofit, OkHttp, kotlinx-serialization, WebSocket (OkHttp) |
+| Penyimpanan token | EncryptedSharedPreferences (Keystore) |
 | Dependency injection | Hilt |
 | Gambar | Coil |
 | Peta | osmdroid (OpenStreetMap, tanpa API key) |
@@ -184,16 +191,18 @@ Biaya platform dibagi antara pembeli dan mitra:
 ```
 app/src/main/java/com/sisaguna/android/
 ├── MainActivity.kt        Titik masuk aplikasi
-├── core/session/          Sesi login dan mode tamu
+├── core/session/          Status sesi (tamu / masuk)
+├── core/ui/               AppMessenger: pesan error/sukses lintas layar
 ├── data/
 │   ├── model/             Model data: produk, toko, pesanan, kurir, biaya, keamanan pangan
-│   └── repository/        Sumber data (saat ini data contoh di memori)
+│   ├── remote/            Retrofit ApiService, DTO, mapper, token, interceptor, WebSocket
+│   └── repository/        Interface repository + implementasi Api* (yang dipakai aplikasi)
 ├── di/                    Konfigurasi Hilt
 ├── navigation/            Daftar layar, navigasi, bottom bar
 ├── feature/               Satu folder per fitur, berisi Screen dan ViewModel
 │   ├── auth/  home/  category/  listing/  checkout/
-│   ├── activity/  saved/  notifications/  profile/
-│   └── address/  upload/  settings/  splash/
+│   ├── activity/  saved/  notifications/  profile/  chat/
+│   └── address/  upload/  settings/  splash/  store/
 └── ui/
     ├── theme/             Warna, tipografi, bentuk, jarak
     ├── components/        Komponen dasar (tombol, input, chip)
@@ -201,7 +210,13 @@ app/src/main/java/com/sisaguna/android/
     └── i18n/              Terjemahan Indonesia dan Inggris
 ```
 
-**Alur data:** Repository, lalu ViewModel, lalu tampilan. Tampilan tidak pernah memanggil server langsung. Saat backend siap, cukup ganti implementasi repository di `di/RepositoryModule.kt` tanpa mengubah tampilan.
+**Alur data:** Server (sisaguna-be), lalu `ApiService` (Retrofit), lalu Repository, lalu ViewModel, lalu tampilan. Tampilan tidak pernah memanggil server langsung. Server adalah sumber kebenaran untuk harga, stok, dan aturan bisnis; aplikasi hanya menampilkan dan mengirim niat pengguna.
+
+- **Sesi:** access token (15 menit) dan refresh token (30 hari) disimpan terenkripsi. `TokenAuthenticator` menukar token otomatis saat 401, satu refresh pada satu waktu (server menganggap refresh token yang dipakai ulang sebagai pencurian).
+- **Perubahan optimistis:** simpan toko, baca notifikasi, ganti alamat, dll. langsung terlihat, lalu dibatalkan dengan pesan jika server menolak.
+- **Pesanan:** setiap niat membeli punya `Idempotency-Key`, jadi koneksi putus tidak membuat pesanan ganda. Total harga dikirim sebagai `expected_total`; jika server menjawab `price_changed`, angka terbaru ditampilkan lalu pengguna konfirmasi ulang.
+- **Realtime:** satu WebSocket terbuka selama aplikasi tampil (pesan chat, status pesanan, notifikasi, stok). Saat tersambung ulang, data yang terlewat diambil lagi lewat REST.
+- **Data contoh:** kelas `Fake*Repository` hanya ada di `app/src/test` untuk unit test, tidak ikut ke APK.
 
 ---
 
@@ -223,8 +238,13 @@ Lewat terminal:
 ```
 ./gradlew installDebug        # pasang ke HP yang tersambung
 ./gradlew assembleDebug       # buat APK di app/build/outputs/apk/debug/
+./gradlew assembleRelease     # APK rilis (R8 aktif), belum ditandatangani
 ./gradlew testDebugUnitTest   # jalankan unit test
 ```
+
+**Alamat server** diatur di `app/build.gradle.kts` (`API_BASE_URL` dan `WS_URL` di `defaultConfig`). Bawaannya mengarah ke `https://sisaguna.fadh.tech`. Untuk server lokal di emulator pakai `http://10.0.2.2:3030/api/v1/` dan `ws://10.0.2.2:3030/ws`; karena itu cleartext HTTP, tambahkan `network_security_config` khusus build debug (aplikasi sengaja menolak HTTP polos secara bawaan).
+
+**Uji kontrak:** `app/src/test/resources/contract/*.json` adalah respons asli dari server. Jika backend mengubah field, unduh ulang file itu dan `ContractFixturesTest` menunjukkan apa yang tidak lagi dipahami aplikasi.
 
 ---
 
@@ -233,9 +253,9 @@ Lewat terminal:
 | Nama | NIM | Role | Contributions |
 |---|---|---|---|
 | Dian Rakhmawati Lestari | 2802539085 | Frontend | Built the Android app in this repo from scratch to MVP, Figma prototype, product ideas, user interviews, feedback grid, presentation deck, report |
-| Fadhlan Nur Rachman | 2802491690 | Backend | Backend ([sisaguna-be](https://github.com/FadhRach/sisaguna-be)), user interviews, feedback grid, presentation deck, report |
+| Fadhlan Nur Rachman | 2802491690 | Backend | Backend ([sisaguna-be](https://github.com/FadhRach/sisaguna-be)), product ideas, user interviews, feedback grid, presentation deck, report |
 | Nasauramecca Nour Haqqanshah Shodiqin | 2802541921 | Design | Figma prototype, animated video of the app workflow, product ideas, user interviews, feedback grid, presentation deck |
-| Catherine Zaneta Adji | 2802512442 | Documentation | Documents, helped with the presentation deck, product ideas |
+| Catherine Zaneta Adji | 2802512442 | Documentation | Documents, Figma prototype, helped with the presentation deck, product ideas |
 
 ---
 

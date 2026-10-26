@@ -2,11 +2,14 @@ package com.sisaguna.android.feature.address
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.data.model.Address
+import com.sisaguna.android.data.model.GeoPoint
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.repository.AddressRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -28,6 +31,7 @@ data class AddressUiState(
 @HiltViewModel
 class AddressViewModel @Inject constructor(
     private val repository: AddressRepository,
+    private val messenger: AppMessenger,
 ) : ViewModel() {
 
     val uiState: StateFlow<AddressUiState> =
@@ -41,22 +45,35 @@ class AddressViewModel @Inject constructor(
 
     fun select(id: String) = repository.select(id)
 
-    fun useCurrentLocation(label: String) = repository.selectCurrentLocation(label)
+    fun useCurrentLocation(place: Place) =
+        repository.selectCurrentLocation(place.shortLabel, GeoPoint(place.latitude, place.longitude))
 
-    /** Saves a new or edited address and selects it. Returns the saved address. */
-    fun save(existingId: String?, label: String, place: Place, note: String): Address {
+    /** Saves a new ([existingId] null) or edited address on the server, then selects it. */
+    fun save(existingId: String?, label: String, place: Place, note: String) {
         val address = Address(
-            id = existingId ?: "a-" + UUID.randomUUID().toString().take(8),
+            id = existingId.orEmpty(), // a new address gets its id from the server
             label = label.trim().ifBlank { "Alamat" },
             fullAddress = place.fullAddress,
             latitude = place.latitude,
             longitude = place.longitude,
             note = note.trim(),
         )
-        repository.upsert(address)
-        repository.select(address.id)
-        return address
+        viewModelScope.launch {
+            try {
+                repository.select(repository.upsert(address).id)
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
     }
 
-    fun delete(id: String) = repository.delete(id)
+    fun delete(id: String) {
+        viewModelScope.launch {
+            try {
+                repository.delete(id)
+            } catch (e: AppException) {
+                messenger.show(e)
+            }
+        }
+    }
 }

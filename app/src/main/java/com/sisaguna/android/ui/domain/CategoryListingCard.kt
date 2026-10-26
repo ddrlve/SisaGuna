@@ -32,6 +32,9 @@ import com.sisaguna.android.data.model.Merchant
 import com.sisaguna.android.ui.theme.SgColor
 import com.sisaguna.android.ui.theme.SgTextStyle
 import java.time.Instant
+import com.sisaguna.android.data.model.Courier
+import com.sisaguna.android.data.model.DeliveryPricing
+import com.sisaguna.android.data.model.DeliverySpeed
 
 /**
  * Compact listing card for Category List (Figma node 45:10286 "card-home-mini" on frame
@@ -116,8 +119,8 @@ fun CategoryListingCard(
                 // Always one line (courier quote or "pickup only") so grid rows stay even.
                 if (merchant.deliveryAvailable) {
                     // Cheapest standard courier, same quote the "Ongkir termurah" sort uses.
-                    val q = com.sisaguna.android.data.model.DeliveryPricing.quote(
-                        com.sisaguna.android.data.model.Courier.GOSEND, com.sisaguna.android.data.model.DeliverySpeed.STANDARD,
+                    val q = DeliveryPricing.quote(
+                        Courier.GOSEND, DeliverySpeed.STANDARD,
                         listing.distanceKm ?: 5.0, listing.unitPrice, merchant.prepMinutes,
                     )
                     Text("🛵 ${formatRupiah(q.payable)} · ${q.etaMinMinutes}-${q.etaMaxMinutes} mnt", fontSize = 10.sp, color = SgColor.Neutral500, maxLines = 1)

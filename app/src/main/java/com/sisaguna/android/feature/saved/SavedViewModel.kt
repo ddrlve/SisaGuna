@@ -2,9 +2,12 @@ package com.sisaguna.android.feature.saved
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.sisaguna.android.data.model.Listing
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.data.model.Merchant
+import com.sisaguna.android.data.remote.AppException
+import com.sisaguna.android.data.repository.AddressRepository
 import com.sisaguna.android.data.repository.ListingRepository
+import com.sisaguna.android.data.repository.myMerchantId
 import com.sisaguna.android.data.repository.SavedMerchantRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -12,6 +15,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -40,35 +44,41 @@ sealed interface SavedUiState {
 class SavedViewModel @Inject constructor(
     private val listingRepository: ListingRepository,
     private val savedRepository: SavedMerchantRepository,
+    private val messenger: AppMessenger,
+    addressRepository: AddressRepository,
 ) : ViewModel() {
 
-    private val catalog = MutableStateFlow<Pair<List<Merchant>, List<Listing>>?>(null)
+    private val catalog = MutableStateFlow<List<Merchant>?>(null)
 
-    val uiState: StateFlow<SavedUiState> = combine(catalog, savedRepository.savedIds) { data, ids ->
-        if (data == null) return@combine SavedUiState.Loading
-        val (merchants, listings) = data
+    val uiState: StateFlow<SavedUiState> = combine(catalog, savedRepository.savedIds) { merchants, ids ->
+        if (merchants == null) return@combine SavedUiState.Loading
         val byId = merchants.associateBy { it.id }
-        fun ui(merchant: Merchant): SavedMerchantUi {
-            val own = listings.filter { it.merchantId == merchant.id }
-            return SavedMerchantUi(
-                merchant = merchant,
-                distanceKm = own.mapNotNull { it.distanceKm }.minOrNull(),
-                availableCount = own.size,
-                nextPickupEnd = own.minOfOrNull { it.pickupEnd },
-            )
-        }
+        fun ui(merchant: Merchant) = SavedMerchantUi(
+            merchant = merchant,
+            distanceKm = merchant.distanceKm,
+            availableCount = merchant.availableCount,
+            nextPickupEnd = merchant.nextPickupEnd,
+        )
         SavedUiState.Success(
             merchants = ids.mapNotNull { id -> byId[id]?.let(::ui) },
             suggestions = merchants
-                .filter { it.id !in ids && it.id != ListingRepository.MY_MERCHANT_ID }
+                .filter { it.id !in ids && it.id != listingRepository.myMerchantId }
                 .map(::ui)
                 .filter { it.availableCount > 0 },
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, SavedUiState.Loading)
 
     init {
+        // Distances depend on the chosen location; reload when it changes (the first emission is the initial load).
         viewModelScope.launch {
-            catalog.value = listingRepository.getMerchants() to listingRepository.getVisibleListings()
+            addressRepository.searchLocation.collectLatest {
+                try {
+                    catalog.value = listingRepository.getMerchants()
+                } catch (e: AppException) {
+                    if (catalog.value == null) catalog.value = emptyList() // an empty tab beats an endless spinner
+                    messenger.show(e)
+                }
+            }
         }
     }
 

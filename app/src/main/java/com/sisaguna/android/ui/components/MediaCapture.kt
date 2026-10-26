@@ -23,6 +23,7 @@ import java.io.File
 /** Upload clips are capped here: long enough to show the food from every side, short enough
  * to stay small on a prepaid data plan. */
 const val MAX_VIDEO_SECONDS = 30
+const val MAX_VIDEO_BYTES = 29L * 1024 * 1024
 
 /** System camera in video mode with a hard [MAX_VIDEO_SECONDS] limit (the stock CaptureVideo
  * contract can't pass the duration extra). */
@@ -31,6 +32,8 @@ private class CaptureShortVideo : ActivityResultContract<Uri, Boolean>() {
         Intent(MediaStore.ACTION_VIDEO_CAPTURE)
             .putExtra(MediaStore.EXTRA_OUTPUT, input)
             .putExtra(MediaStore.EXTRA_DURATION_LIMIT, MAX_VIDEO_SECONDS)
+            // The server refuses videos over 30 MB; ask the camera app to stop short of that.
+            .putExtra(MediaStore.EXTRA_SIZE_LIMIT, MAX_VIDEO_BYTES)
             .putExtra(MediaStore.EXTRA_VIDEO_QUALITY, 1)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
 

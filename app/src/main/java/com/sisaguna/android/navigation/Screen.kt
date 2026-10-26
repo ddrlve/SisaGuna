@@ -7,6 +7,7 @@ sealed class Screen(val route: String) {
     data object Landing : Screen("landing")
     data object Login : Screen("login")
     data object Register : Screen("register")
+    data object ForgotPassword : Screen("forgot-password")
 
     data object Home : Screen("home")
     data object Activity : Screen("activity")
@@ -45,6 +46,8 @@ sealed class Screen(val route: String) {
         fun routeFor(id: String) = "store/$id"
     }
 
+    data object StoreSetup : Screen("store/setup")
+    data object Admin : Screen("admin")
     data object Checkout : Screen("checkout")
 
     /** Chat with one store; [ARG_LISTING] pins the item the buyer is asking about. */

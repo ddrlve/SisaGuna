@@ -4,6 +4,7 @@ import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.Merchant
 import java.time.Instant
+import com.sisaguna.android.data.model.DeliveryPricing
 
 /** A listing paired with the merchant it belongs to, resolved once so cards don't look it up. */
 data class CategoryListingUi(
@@ -12,7 +13,7 @@ data class CategoryListingUi(
 )
 
 /** "Lihat semua" sort options. Delivery fee/time use the cheapest standard courier quote
- * ([com.sisaguna.android.data.model.DeliveryPricing]) for each store's distance. */
+ * ([DeliveryPricing]) for each store's distance. */
 enum class CategorySort(val label: String, val labelEn: String) {
     RECOMMENDED("Rekomendasi", "Recommended"),
     RATING("Rating tertinggi", "Top rated"),

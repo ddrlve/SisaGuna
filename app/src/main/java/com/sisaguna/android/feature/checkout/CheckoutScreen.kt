@@ -20,6 +20,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
+import com.sisaguna.android.BuildConfig
 import com.sisaguna.android.data.model.AppFees
 import com.sisaguna.android.data.model.Listing
 import androidx.compose.ui.text.font.FontWeight
@@ -264,6 +265,17 @@ fun CheckoutScreen(
                 items(state.methods, key = { it.id }) { method ->
                     PaymentOption(method, selected = state.selected == method.kind, onSelect = { viewModel.select(method.kind) })
                 }
+                if (BuildConfig.PARTNERS_SIMULATED && state.selected != PaymentKind.CASH) {
+                    item {
+                        Text(
+                            l(
+                                "Pembayaran QRIS dan e-wallet masih simulasi. Tidak ada uang yang ditarik.",
+                                "QRIS and e-wallet payments are simulated. No money is charged.",
+                            ),
+                            style = SgTextStyle.Caption,
+                        )
+                    }
+                }
             }
             if (state.subtotal > 0) {
                 item {
@@ -305,11 +317,6 @@ fun CheckoutScreen(
     }
 
     when (val step = state.step) {
-        PaymentStep.AwaitingQris -> QrisSheet(
-            amount = state.total,
-            onPaid = viewModel::confirmQrisPaid,
-            onDismiss = viewModel::dismissPayment,
-        )
         is PaymentStep.Processing -> ProcessingDialog(step.kind)
         else -> Unit
     }
@@ -463,36 +470,6 @@ private fun PaymentOption(method: PaymentMethod, selected: Boolean, onSelect: ()
             onClick = null,
             colors = RadioButtonDefaults.colors(selectedColor = SgColor.Brand500, unselectedColor = SgColor.InkMuted),
         )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun QrisSheet(amount: Int, onPaid: () -> Unit, onDismiss: () -> Unit) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = SgColor.BaseWhite,
-        scrimColor = SgColor.Ink.copy(alpha = 0.32f),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = SgSpacing.Gutter).padding(bottom = SgSpacing.Xl),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(SgSpacing.Md),
-        ) {
-            Text("Scan untuk bayar", style = SgTextStyle.Title)
-            Text("Buka aplikasi bank atau e-wallet apa pun, lalu scan kode QRIS ini.", style = SgTextStyle.Body, textAlign = TextAlign.Center)
-            Box(
-                modifier = Modifier
-                    .size(220.dp)
-                    .border(1.dp, SgColor.Hairline, RoundedCornerShape(SgRadius.Tile))
-                    .padding(SgSpacing.Lg),
-            ) { FakeQr(seed = amount) }
-            Text(formatRupiah(amount), style = SgTextStyle.Display, color = SgColor.Brand700)
-            Text("Ini simulasi. Tidak ada uang yang ditarik.", style = SgTextStyle.Caption)
-            SgButton("Saya sudah bayar", onClick = onPaid, modifier = Modifier.fillMaxWidth())
-            SgButton("Ganti metode", onClick = onDismiss, style = SgButtonStyle.Ghost, modifier = Modifier.fillMaxWidth())
-        }
     }
 }
 

@@ -58,6 +58,7 @@ import com.sisaguna.android.ui.theme.SgRadius
 import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 import kotlinx.coroutines.launch
+import com.sisaguna.android.ui.domain.UserAvatar
 
 /** Figma 273:12569. */
 @Composable
@@ -86,7 +87,7 @@ fun EditProfileScreen(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {
             Button(
-                onClick = { if (viewModel.save()) onSaved() },
+                onClick = { viewModel.save(onSaved) },
                 enabled = canSave,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = SgColor.Brand500,
@@ -115,7 +116,7 @@ fun EditProfileScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val profile by viewModel.profile.collectAsStateWithLifecycle()
-            com.sisaguna.android.ui.domain.UserAvatar(
+            UserAvatar(
                 profile = profile,
                 size = 88.dp,
                 ring = SgColor.Brand300,

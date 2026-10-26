@@ -4,6 +4,7 @@ import com.sisaguna.android.data.model.SafetyCheck
 import com.sisaguna.android.data.model.StorageMethod
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.repository.ListingRepository
+import com.sisaguna.android.core.ui.AppMessenger
 import com.sisaguna.android.testutil.MainDispatcherRule
 import com.sisaguna.android.testutil.TestListingRepository
 import java.time.Instant
@@ -21,12 +22,14 @@ class UploadViewModelTest {
 
     private val now = Instant.parse("2026-10-03T05:00:00Z")
     private val repo = TestListingRepository()
-    private fun vm() = UploadViewModel(repo, { now })
+    private fun vm() = UploadViewModel(repo, AppMessenger(), { now })
 
     @Test
     fun `invalid publish reveals errors and adds nothing`() {
         val vm = vm()
-        assertNull(vm.publish())
+        var published: String? = null
+        vm.publish { published = it }
+        assertNull(published)
         assertEquals("Nama makanan wajib diisi", vm.form.value.visibleError(UploadField.TITLE))
         assertEquals(5, repo.listings.value.size)
     }
@@ -47,7 +50,13 @@ class UploadViewModelTest {
     }
 
     @Test
-    fun `valid publish lands in my store with pickup window`() {
+    fun `a photo is required because the server requires one`() {
+        assertEquals("Tambahkan minimal 1 foto", UploadForm().error(UploadField.PHOTO))
+        assertNull(UploadForm(photos = listOf("content://x/1.jpg")).error(UploadField.PHOTO))
+    }
+
+    @Test
+    fun `valid publish sends the draft to the repository`() {
         val vm = vm()
         vm.update {
             copy(
@@ -55,15 +64,21 @@ class UploadViewModelTest {
                 description = "Bolu pandan sisa acara, masih lembut.",
                 originalPrice = "40000", price = "15000", stock = 3, pickupHours = 4,
                 madeHoursAgo = 0, storage = StorageMethod.SHELF, checks = SafetyCheck.entries.toSet(),
+                photos = listOf("content://x/1.jpg"),
             )
         }
-        val id = vm.publish()
+        var id: String? = null
+        vm.publish { id = it }
         assertNotNull(id)
         val listing = repo.listings.value.first()
         assertEquals(id, listing.id)
         assertEquals(ListingRepository.MY_MERCHANT_ID, listing.merchantId)
-        assertEquals(15000, listing.unitPrice)
-        assertEquals(now.plus(4, ChronoUnit.HOURS), listing.pickupEnd)
+        val draft = repo.lastDraft!!
+        assertEquals(15000, draft.price)
+        assertEquals(40000, draft.priceOriginal)
+        assertEquals(4, draft.pickupHours)
+        assertEquals(now, draft.madeAt)
+        assertEquals(listOf("content://x/1.jpg"), draft.photoUris)
     }
 
     @Test
@@ -78,13 +93,17 @@ class UploadViewModelTest {
             copy(
                 title = "Nasi Rames", tier = ListingTier.HUMAN, description = "Nasi rames sisa makan siang kantor.",
                 isFree = true, madeHoursAgo = 6, storage = StorageMethod.ROOM_TEMP, checks = SafetyCheck.entries.toSet(),
+                photos = listOf("content://x/1.jpg"),
             )
         }
-        assertNull(vm.publish())
+        var id: String? = null
+        vm.publish { id = it }
+        assertNull(id)
         assertNotNull(vm.form.value.error(UploadField.SAFETY, now))
         vm.switchToFeed()
         vm.update { copy(weight = "3") }
-        assertNotNull(vm.publish())
+        vm.publish { id = it }
+        assertNotNull(id)
     }
 
     @Test
@@ -95,15 +114,18 @@ class UploadViewModelTest {
     }
 
     @Test
-    fun `pickup window never outlives the safe-to-eat time`() {
+    fun `draft carries made-at and window so the server enforces the safe-to-eat limit`() {
         val vm = vm()
         vm.update {
             copy(
                 title = "Sop Ayam", tier = ListingTier.HUMAN, description = "Sop ayam kampung sisa katering.",
-                isFree = true, madeHoursAgo = 3, storage = StorageMethod.ROOM_TEMP, pickupHours = 8, checks = SafetyCheck.entries.toSet(),
+                isFree = true, madeHoursAgo = 3, storage = StorageMethod.ROOM_TEMP, pickupHours = 8,
+                checks = SafetyCheck.entries.toSet(), photos = listOf("content://x/1.jpg"),
             )
         }
-        vm.publish()
-        assertEquals(now.plus(1, ChronoUnit.HOURS), repo.listings.value.first().pickupEnd)
+        vm.publish {}
+        val draft = repo.lastDraft!!
+        assertEquals(now.minus(3, ChronoUnit.HOURS), draft.madeAt)
+        assertEquals(8, draft.pickupHours)
     }
 }

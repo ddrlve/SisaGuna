@@ -2,7 +2,7 @@ package com.sisaguna.android.data.model
 
 import java.time.Instant
 
-enum class MerchantStatus { PENDING, APPROVED, REJECTED }
+enum class MerchantStatus { PENDING, APPROVED, REJECTED, SUSPENDED }
 
 data class Merchant(
     val id: String,
@@ -28,6 +28,11 @@ data class Merchant(
     val prepMinutes: Int = 15,
     val distanceKm: Double? = null,
     val totalRescued: Int = 0,
+    /** Listings that can be picked up right now; set by store lists, 0 elsewhere. */
+    val availableCount: Int = 0,
+    val nextPickupEnd: Instant? = null,
+    /** Reviews per star (1..5) over all of the store's reviews; empty until a store page has loaded. */
+    val ratingBreakdown: Map<Int, Int> = emptyMap(),
 )
 
 data class Review(

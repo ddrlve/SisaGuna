@@ -4,16 +4,20 @@ import com.sisaguna.android.ui.i18n.l
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.sisaguna.android.core.ui.AppMessenger
+import com.sisaguna.android.data.remote.ApiException
+import com.sisaguna.android.data.remote.AppException
 import com.sisaguna.android.data.model.Allergen
 import com.sisaguna.android.data.model.FoodSafety
 import com.sisaguna.android.data.model.HalalStatus
-import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.data.model.ListingTier
 import com.sisaguna.android.data.model.QuantityUnit
 import com.sisaguna.android.data.model.SafetyAssessment
 import com.sisaguna.android.data.model.SafetyCheck
 import com.sisaguna.android.data.model.SafetyLevel
 import com.sisaguna.android.data.model.StorageMethod
+import com.sisaguna.android.data.repository.ListingDraft
 import com.sisaguna.android.data.repository.ListingRepository
 import com.sisaguna.android.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +29,7 @@ import kotlin.math.ceil
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 enum class UploadField { TITLE, DESCRIPTION, PRICE, ORIGINAL_PRICE, STOCK, PHOTO, SAFETY }
 
@@ -102,7 +107,7 @@ data class UploadForm(
             !isFood && (weightKg ?: 0.0) > 500 -> "Maksimal 500 kg per listing"
             else -> null
         }
-        UploadField.PHOTO -> null // optional — a photo helps but a warung without a good camera can still post
+        UploadField.PHOTO -> if (photos.isEmpty()) l("Tambahkan minimal 1 foto", "Add at least 1 photo") else null // the server requires it
         UploadField.SAFETY -> assessment(now).takeIf { isFood && it.level == SafetyLevel.UNSAFE }?.headline
     }
 
@@ -118,18 +123,26 @@ data class UploadForm(
 @HiltViewModel
 class UploadViewModel(
     private val listingRepository: ListingRepository,
+    private val messenger: AppMessenger,
     private val clock: () -> Instant,
     initialTier: ListingTier = ListingTier.HUMAN,
 ) : ViewModel() {
 
-    @Inject constructor(listingRepository: ListingRepository, savedStateHandle: SavedStateHandle) : this(
+    @Inject constructor(listingRepository: ListingRepository, messenger: AppMessenger, savedStateHandle: SavedStateHandle) : this(
         listingRepository,
+        messenger,
         Instant::now,
         savedStateHandle.get<String>(Screen.Upload.ARG_TIER)?.let { name -> ListingTier.entries.firstOrNull { it.name == name } } ?: ListingTier.HUMAN,
     )
 
     private val _form = MutableStateFlow(UploadForm(tier = initialTier))
     val form: StateFlow<UploadForm> = _form.asStateFlow()
+
+    /** The draft and key of an attempt that may have reached the server; the same draft retries with the same key. */
+    private var attempt: Pair<ListingDraft, String>? = null
+
+    private val _publishing = MutableStateFlow(false)
+    val publishing: StateFlow<Boolean> = _publishing.asStateFlow()
 
     val now: Instant get() = clock()
 
@@ -150,42 +163,50 @@ class UploadViewModel(
     /** "Alihkan ke pakan ternak" when the food is past its human-safe window. */
     fun switchToFeed() = update { copy(tier = ListingTier.ANIMAL_FEED) }
 
-    /** Returns the new listing id, or null (and reveals all errors) when invalid. */
-    fun publish(): String? {
+    /**
+     * Reveals all errors when invalid; otherwise uploads the media and creates the listing, then calls
+     * [onPublished] with its id. A server refusal (e.g. past the safe window) is shown and the form stays.
+     */
+    fun publish(onPublished: (String) -> Unit) {
         val f = _form.value
         val now = clock()
         if (!UploadField.entries.all { f.error(it, now) == null }) {
             _form.value = f.copy(submitted = true)
-            return null
+            return
         }
-        val madeAt = now.minus(f.madeHoursAgo.toLong(), ChronoUnit.HOURS)
-        val requested = now.plus(f.pickupHours, ChronoUnit.HOURS)
-        // Food never stays listed past its safe-to-eat time, whatever window the seller picked.
-        val pickupEnd = if (f.isFood) minOf(requested, FoodSafety.safeUntil(madeAt, f.storage)) else requested
-        val listing = Listing(
-            id = "u-" + UUID.randomUUID().toString().take(8),
-            merchantId = ListingRepository.MY_MERCHANT_ID,
+        if (_publishing.value) return
+        _publishing.value = true
+        val draft = ListingDraft(
             title = f.title.trim(),
-            tier = f.tier,
-            priceOriginal = f.originalPriceValue,
-            priceDiscounted = if (f.isFree) null else f.priceValue,
-            isFree = f.isFree,
-            pickupEnd = pickupEnd,
-            imageUrl = f.photoUri,
-            distanceKm = 0.3,
             description = f.description.trim(),
+            tier = f.tier,
+            isFree = f.isFree,
+            price = f.priceValue,
+            priceOriginal = f.originalPriceValue,
             stock = f.stockUnits,
-            pickupStart = now,
-            gallery = f.photos.drop(1),
-            unit = f.unit,
             halal = if (f.isFood) f.halal else HalalStatus.OTHER,
             allergens = f.allergens,
-            madeAt = madeAt,
+            madeAt = if (f.isFood) now.minus(f.madeHoursAgo.toLong(), ChronoUnit.HOURS) else null,
             storage = f.storage,
             safetyChecks = f.checks,
-            videoUrl = f.videoUri,
+            pickupHours = f.pickupHours.toInt(),
+            photoUris = f.photos,
+            videoUri = f.videoUri,
         )
-        listingRepository.addListing(listing)
-        return listing.id
+        val key = attempt?.takeIf { it.first == draft }?.second ?: UUID.randomUUID().toString()
+        attempt = draft to key
+        viewModelScope.launch {
+            try {
+                val created = listingRepository.createListing(draft, key)
+                attempt = null
+                onPublished(created.id)
+            } catch (e: AppException) {
+                // A refusal (not a lost connection) means the next tap is a new intent.
+                if (e is ApiException) attempt = null
+                messenger.show(e)
+            } finally {
+                _publishing.value = false
+            }
+        }
     }
 }

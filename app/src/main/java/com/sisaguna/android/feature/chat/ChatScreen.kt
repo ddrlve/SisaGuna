@@ -49,14 +49,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.AsyncImage
 import com.sisaguna.android.data.model.ChatMessage
 import com.sisaguna.android.data.model.Listing
 import com.sisaguna.android.ui.domain.FruitAvatar
@@ -83,6 +80,7 @@ import com.sisaguna.android.ui.theme.SgSpacing
 import com.sisaguna.android.ui.theme.SgTextStyle
 import java.time.Instant
 import java.time.ZoneId
+import androidx.compose.runtime.getValue
 
 /**
  * Buyer-to-store chat. Built from interview feedback: before paying, buyers want to ask
@@ -101,14 +99,14 @@ fun ChatScreen(
     ChatConversation(
         state = state,
         mine = { it.fromBuyer },
-        title = merchant?.name.orEmpty(),
+        title = merchant?.name ?: state.counterpartName,
         idleStatus = l("Biasanya membalas dalam 5 menit", "Usually replies within 5 min"),
         avatar = {
-            AsyncImage(
+            StoreAvatar(
+                merchant?.name ?: state.counterpartName,
                 merchant?.photos?.firstOrNull() ?: merchant?.bannerUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(SgColor.Mint),
+                size = 40.dp,
+                radius = 12.dp,
             )
         },
         trailing = {
@@ -145,9 +143,9 @@ fun SellerChatScreen(
     ChatConversation(
         state = state,
         mine = { !it.fromBuyer },
-        title = viewModel.buyer,
+        title = state.counterpartName,
         idleStatus = l("Pembeli", "Buyer"),
-        avatar = { FruitAvatarBadge(FruitAvatar.defaultFor(viewModel.buyer), 40.dp) },
+        avatar = { FruitAvatarBadge(FruitAvatar.defaultFor(state.counterpartName), 40.dp) },
         trailing = {},
         contextLabel = l("Ditanyakan pembeli", "Buyer is asking about"),
         emptyTitle = l("Belum ada pesan", "No messages yet"),

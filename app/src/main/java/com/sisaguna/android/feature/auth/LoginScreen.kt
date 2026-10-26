@@ -16,6 +16,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import com.sisaguna.android.ui.i18n.Text
+import com.sisaguna.android.ui.i18n.l
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,13 +37,15 @@ import com.sisaguna.android.ui.theme.SgTextStyle
 import com.sisaguna.android.ui.theme.SisaGunaTheme
 
 /**
- * Matches Figma node 70:2365 "Login". No real auth backend this session (repo is
- * frontend-only, see README) — "Masuk" just calls [onLoginSuccess] unconditionally.
+ * Matches Figma node 70:2365 "Login". Credentials are checked by the backend (login is by email
+ * only); [state] carries the loading/error result of the last attempt from [AuthViewModel].
  */
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    state: AuthUiState,
+    onSubmit: (email: String, password: String) -> Unit,
     onRegisterClick: () -> Unit,
+    onForgotClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     var email by remember { mutableStateOf("") }
@@ -63,7 +66,7 @@ fun LoginScreen(
                 modifier = Modifier.padding(horizontal = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                LabeledField(label = "Email atau Nomor HP") {
+                LabeledField(label = "Email") {
                     if (email.isEmpty()) {
                         Text(text = "user.sisaguna@gmail.com", style = SgTextStyle.TextSmRegular, color = SgColor.Neutral400)
                     }
@@ -109,8 +112,11 @@ fun LoginScreen(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = SgColor.Brand600,
-                    modifier = Modifier.fillMaxWidth().clickable { /* not built yet this session */ },
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onForgotClick),
                 )
+                state.error?.let { message ->
+                    Text(text = message, fontSize = 12.sp, color = SgColor.RedStatus)
+                }
             }
         }
         Column(
@@ -122,11 +128,16 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(SgColor.Brand500, RoundedCornerShape(100.dp))
-                    .clickable(onClick = onLoginSuccess)
+                    .clickable(enabled = !state.loading) { onSubmit(email, password) }
                     .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(text = "Masuk", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = SgColor.OnBrand)
+                Text(
+                    text = if (state.loading) l("Memproses…", "Processing…") else "Masuk",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = SgColor.OnBrand,
+                )
             }
             // Both halves share one text style and sit on a shared baseline. The link used to
             // have its own fontSize with the default line height, so it rode higher than the
@@ -154,7 +165,7 @@ fun LoginScreen(
 }
 
 @Composable
-private fun LabeledField(label: String, content: @Composable () -> Unit) {
+internal fun LabeledField(label: String, content: @Composable () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(text = label, style = SgTextStyle.TextXsMedium, color = SgColor.Neutral500)
         Box(
@@ -173,6 +184,6 @@ private fun LabeledField(label: String, content: @Composable () -> Unit) {
 @Composable
 private fun LoginScreenPreview() {
     SisaGunaTheme {
-        LoginScreen(onLoginSuccess = {}, onRegisterClick = {})
+        LoginScreen(state = AuthUiState(), onSubmit = { _, _ -> }, onRegisterClick = {})
     }
 }

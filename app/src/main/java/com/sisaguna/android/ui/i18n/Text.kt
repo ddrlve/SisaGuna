@@ -37,7 +37,7 @@ import androidx.compose.material3.Text as M3Text
  * then [EnPatterns] (templated strings like "3 porsi"). Unknown strings fall through
  * unchanged, so a missing entry shows Indonesian instead of crashing or showing a key.
  *
- * Screens import `com.sisaguna.android.ui.i18n.Text` instead of Material's — same signature.
+ * Screens import `Text` instead of Material's — same signature.
  */
 object SgLocale {
     var language by mutableStateOf(AppLanguage.ID)
